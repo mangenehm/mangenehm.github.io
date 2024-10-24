@@ -1,0 +1,40 @@
+name: Update Tools Index
+
+on:
+  push:
+    paths:
+      - 'tools/*/tool.json'
+      - 'tools/*/index.html'
+      - 'scripts/**'
+  workflow_dispatch:  # Erlaubt manuelle Ausführung
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # Komplette Git-Historie für bessere Versionierung
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    
+    - name: Generate Index
+      run: |
+        python scripts/generate-index.py
+    
+    - name: Commit changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add index.html
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update tools index"
+    
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
