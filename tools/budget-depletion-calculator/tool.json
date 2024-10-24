@@ -1,0 +1,10 @@
+{
+    "name": "Budget Depletion calculator",
+    "description": "Ein Rechner, um die offenen Stunden bei mehreren Positionen mit unterschiedlichen Stundensätzen zu errechnen.",
+    "category": "Budget",
+    "tags": ["rechner", "mathematik", "basic"],
+    "created": "2024-10-24",
+    "lastUpdated": "2024-10-24",
+    "path": "/tools/budget-depletion-calculator",
+    "previewImage": "preview.png"
+}
