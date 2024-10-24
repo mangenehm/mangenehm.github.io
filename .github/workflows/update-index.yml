@@ -6,7 +6,13 @@ on:
       - 'tools/*/tool.json'
       - 'tools/*/index.html'
       - 'scripts/**'
-  workflow_dispatch:  # Erlaubt manuelle Ausführung
+  workflow_dispatch:
+
+# Füge diese Zeilen hinzu
+permissions:
+  contents: write    # Erlaubt das Schreiben von Repository-Inhalten
+  pages: write      # Erlaubt das Verwalten von GitHub Pages
+  id-token: write   # Erlaubt das Authentifizieren bei GitHub Pages
 
 jobs:
   build:
@@ -15,7 +21,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        fetch-depth: 0  # Komplette Git-Historie für bessere Versionierung
+        fetch-depth: 0
     
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -28,8 +34,8 @@ jobs:
     
     - name: Commit changes
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
         git add index.html
         git diff --quiet && git diff --staged --quiet || git commit -m "Update tools index"
     
