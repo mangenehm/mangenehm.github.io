@@ -6,7 +6,7 @@ from pathlib import Path
 class ToolsIndexGenerator:
     def __init__(self):
         self.tools_dir = Path("tools")
-        self.template_path = Path("scripts/template.html")
+        self.template_path = Path("scripts/index-template.html")
         self.output_path = Path("index.html")
 
     def load_tool_metadata(self):
