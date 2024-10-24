@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budgetrechner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        .button.remove {
+            background-color: #ff4444;
+        }
+
+        .button.remove:hover {
+            background-color: #cc0000;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .status-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            margin: 20px auto;
+        }
+
+        .session-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .position-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .alert {
+            padding: 10px;
+            background-color: #f44336;
+            color: white;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        #savedSessionsDialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: none;
+        }
+
+        .dialog-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 999;
+        }
+
+        .session-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Budget-Rechner</h1>
+
+    <div class="session-controls">
+        <input type="text" id="sessionName" placeholder="Sitzungsname">
+        <button class="button" onclick="saveSession()">Sitzung speichern</button>
+        <button class="button" onclick="showSavedSessions()">Sitzung laden</button>
+    </div>
+
+    <div id="positions"></div>
+
+    <button class="button" onclick="addPosition()">Position hinzufügen</button>
+
+    <div class="card">
+        <h2>Umrechnung verbleibender Stunden</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <select id="selectedPosition" onchange="calculateRemainingHours()">
+                <option value="">Position auswählen</option>
+            </select>
+            <div>
+                <span id="remainingHours">Verbleibende Stunden: 0,00</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Budget-Status</h2>
+        <div id="statusCircle" class="status-circle">0%</div>
+        <p>Gesamtbudget: <span id="totalBudget">0,00 €</span></p>
+        <p>Verbrauchtes Budget: <span id="usedBudget">0,00 €</span></p>
+        <p>Verbleibend: <span id="remainingBudget">0,00 €</span></p>
+    </div>
+
+    <div id="savedSessionsDialog">
+        <h2>Gespeicherte Sitzungen</h2>
+        <div id="savedSessionsList"></div>
+        <button class="button" onclick="closeSavedSessions()">Schließen</button>
+    </div>
+
+    <div class="dialog-backdrop" id="dialogBackdrop" onclick="closeSavedSessions()"></div>
+
+    <script>
+        let positions = [
+            { id: 1, name: 'Projektmanagement', rate: '100', plannedHours: '40', actualHours: '0' },
+            { id: 2, name: 'Content Management', rate: '80', plannedHours: '60', actualHours: '0' }
+        ];
+        let nextId = 3;
+
+        function formatNumber(number, decimals = 2) {
+            return Number(number).toLocaleString('de-DE', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        function parseGermanNumber(value) {
+            if (typeof value === 'number') return value;
+            return parseFloat(value.replace(',', '.')) || 0;
+        }
+
+        function renderPositions() {
+            const container = document.getElementById('positions');
+            container.innerHTML = positions.map(position => `
+                <div class="card">
+                    <div class="position-header">
+                        <input type="text" value="${position.name}" 
+                               onchange="updatePosition(${position.id}, 'name', this.value)"
+                               placeholder="Positionsname" style="width: 80%;">
+                        <button class="button remove" onclick="removePosition(${position.id})"
+                                ${positions.length === 1 ? 'disabled' : ''}>
+                            Entfernen
+                        </button>
+                    </div>
+                    <div class="grid">
+                        <div>
+                            <label>Stundensatz (€/h)</label>
+                            <input type="text" value="${position.rate}"
+                                   onchange="updatePosition(${position.id}, 'rate', this.value)"
+                                   onkeyup="validateNumberInput(this)">
+                        </div>
+                        <div>
+                            <label>Geplante Stunden</label>
+                            <input type="text" value="${position.plannedHours}"
+                                   onchange="updatePosition(${position.id}, 'plannedHours', this.value)"
+                                   onkeyup="validateNumberInput(this)">
+                        </div>
+                        <div>
+                            <label>Tatsächliche Stunden</label>
+                            <input type="text" value="${position.actualHours}"
+                                   onchange="updatePosition(${position.id}, 'actualHours', this.value)"
+                                   onkeyup="validateNumberInput(this)">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            updatePositionSelect();
+            updateCalculations();
+        }
+
+        function validateNumberInput(input) {
+            const value = input.value.replace('.', ',');
+            if (/^[0-9]*,?[0-9]*$/.test(value)) {
+                input.value = value;
+            }
+        }
+
+        function addPosition() {
+            positions.push({ 
+                id: nextId,
+                name: `Position ${nextId}`,
+                rate: '0',
+                plannedHours: '0',
+                actualHours: '0'
+            });
+            nextId++;
+            renderPositions();
+        }
+
+        function removePosition(id) {
+            if (positions.length > 1) {
+                positions = positions.filter(pos => pos.id !== id);
+                renderPositions();
+            }
+        }
+
+        function updatePosition(id, field, value) {
+            positions = positions.map(pos =>
+                pos.id === id ? { ...pos, [field]: value } : pos
+            );
+            renderPositions();
+        }
+
+        function updatePositionSelect() {
+            const select = document.getElementById('selectedPosition');
+            select.innerHTML = '<option value="">Position auswählen</option>' +
+                positions.map(pos => `
+                    <option value="${pos.id}">${pos.name}</option>
+                `).join('');
+        }
+
+        function calculateRemainingHours() {
+            const selectedId = document.getElementById('selectedPosition').value;
+            if (!selectedId) {
+                document.getElementById('remainingHours').textContent = 'Verbleibende Stunden: 0,00';
+                return;
+            }
+
+            const selectedPos = positions.find(p => p.id === parseInt(selectedId));
+            if (selectedPos) {
+                const remainingBudget = calculateTotalBudget() - calculateUsedBudget();
+                const remainingHours = remainingBudget / parseGermanNumber(selectedPos.rate);
+                document.getElementById('remainingHours').textContent = 
+                    `Verbleibende Stunden: ${formatNumber(remainingHours)}`;
+            }
+        }
+
+        function calculateTotalBudget() {
+            return positions.reduce((total, pos) => 
+                total + parseGermanNumber(pos.rate) * parseGermanNumber(pos.plannedHours), 0);
+        }
+
+        function calculateUsedBudget() {
+            return positions.reduce((total, pos) => 
+                total + parseGermanNumber(pos.rate) * parseGermanNumber(pos.actualHours), 0);
+        }
+
+        function updateCalculations() {
+            const totalBudget = calculateTotalBudget();
+            const usedBudget = calculateUsedBudget();
+            const remainingBudget = totalBudget - usedBudget;
+            const usagePercentage = totalBudget > 0 ? (usedBudget / totalBudget) * 100 : 0;
+
+            document.getElementById('totalBudget').textContent = `${formatNumber(totalBudget)} €`;
+            document.getElementById('usedBudget').textContent = `${formatNumber(usedBudget)} €`;
+            document.getElementById('remainingBudget').textContent = `${formatNumber(remainingBudget)} €`;
+
+            const statusCircle = document.getElementById('statusCircle');
+            statusCircle.textContent = `${formatNumber(usagePercentage, 1)}%`;
+            
+            if (usagePercentage >= 100) {
+                statusCircle.style.backgroundColor = '#ff4444';
+            } else if (usagePercentage >= 75) {
+                statusCircle.style.backgroundColor = '#ffdd44';
+            } else {
+                statusCircle.style.backgroundColor = '#4CAF50';
+            }
+
+            calculateRemainingHours();
+        }
+
+        function saveSession() {
+            const sessionName = document.getElementById('sessionName').value;
+            if (!sessionName) {
+                alert('Bitte geben Sie einen Namen für die Sitzung ein.');
+                return;
+            }
+
+            const sessions = JSON.parse(localStorage.getItem('budgetSessions') || '[]');
+            const newSession = { name: sessionName, positions, nextId };
+            localStorage.setItem('budgetSessions', JSON.stringify([...sessions, newSession]));
+            document.getElementById('sessionName').value = '';
+            alert('Sitzung wurde gespeichert!');
+        }
+
+        function showSavedSessions() {
+            const sessions = JSON.parse(localStorage.getItem('budgetSessions') || '[]');
+            const sessionsList = document.getElementById('savedSessionsList');
+            sessionsList.innerHTML = sessions.map(session => `
+                <div class="session-item">
+                    <span>${session.name}</span>
+                    <div>
+                        <button class="button" onclick="loadSession('${session.name}')">Laden</button>
+                        <button class="button remove" onclick="deleteSession('${session.name}')">Löschen</button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('savedSessionsDialog').style.display = 'block';
+            document.getElementById('dialogBackdrop').style.display = 'block';
+        }
+
+        function closeSavedSessions() {
+            document.getElementById('savedSessionsDialog').style.display = 'none';
+            document.getElementById('dialogBackdrop').style.display = 'none';
+        }
+
+        function loadSession(sessionName) {
+            const sessions = JSON.parse(localStorage.getItem('budgetSessions') || '[]');
+            const session = sessions.find(s => s.name === sessionName);
+            if (session) {
+                positions = session.positions;
+                nextId = session.nextId;
+                renderPositions();
+                closeSavedSessions();
+            }
+        }
+
+        function deleteSession(sessionName) {
+            const sessions = JSON.parse(localStorage.getItem('budgetSessions') || '[]');
+            const updatedSessions = sessions.filter(s => s.name !== sessionName);
+            localStorage.setItem('budgetSessions', JSON.stringify(updatedSessions));
+            showSavedSessions();
+        }
+
+        // Initial render
+        renderPositions();
+    </script>
+</body>
+</html>
