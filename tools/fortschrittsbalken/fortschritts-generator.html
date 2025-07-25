@@ -1,1 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Progress Bar Generator</title>
+  <style>
+    body { font-family: monospace; margin: 2rem; }
+    #output { margin-top: 2rem; font-size: 1.2rem; }
+    label, input { font-size: 1rem; }
+    input[type="number"] { width: 4em; }
+    .bar { white-space: pre; background: #f7f7f7; padding: 1em; border-radius: 6px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <h1>Progress Bar Generator</h1>
+  <form id="progressForm">
+    <label>Progress:
+      <input type="number" id="progress" min="0" value="27" required>
+    </label>
+    <label>Total:
+      <input type="number" id="total" min="1" value="100" required>
+    </label>
+    <label>Bar Length:
+      <input type="number" id="barLength" min="5" value="30" required>
+    </label>
+    <button type="submit">Generate</button>
+  </form>
+  <div id="output"></div>
 
+  <script>
+    function generateProgressBar(progress, total, barLength) {
+      let percent = total === 0 ? 0 : Math.floor((progress / total) * 100);
+      let filledLength = Math.floor(barLength * percent / 100);
+      let bar = "▒".repeat(filledLength) + " ".repeat(barLength - filledLength);
+      return `Progress: [${bar}] ${percent}%`;
+    }
+
+    document.getElementById('progressForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      let progress = parseInt(document.getElementById('progress').value, 10);
+      let total = parseInt(document.getElementById('total').value, 10);
+      let barLength = parseInt(document.getElementById('barLength').value, 10);
+      let bar = generateProgressBar(progress, total, barLength);
+      document.getElementById('output').innerHTML = `<div class="bar">${bar}</div>`;
+    });
+  </script>
+</body>
+</html>
