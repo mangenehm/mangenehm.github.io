@@ -10,6 +10,7 @@
         canvas { display: block; margin: 20px 0; border: 1px solid #ccc; }
         input[type="number"] { width: 60px; }
         button { margin-right: 10px; padding: 5px 10px; }
+        input[disabled] { opacity: 0.6; }
     </style>
 </head>
 <body>
@@ -31,11 +32,12 @@
         <input type="color" id="bgColor" value="#000000">
     </label>
 
-    <label>Transparenter Hintergrund:
-        <input type="checkbox" id="transparentBg">
+    <label>
+        <input type="checkbox" id="transparentBg" checked>
+        Transparenter Hintergrund
     </label>
 
-    <button id="applyBtn">Anwenden</button>
+    <button id="applyBtn">Vorschau</button>
     <button id="downloadBtn">Download</button>
 
     <canvas id="canvas"></canvas>
@@ -51,10 +53,19 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         let img = new Image();
+        let originalName = '';
+
+        // Initiale Deaktivierung der Farbauswahl, wenn Transparent vorausgewählt
+        bgColorInput.disabled = transparentBgCheckbox.checked;
+
+        transparentBgCheckbox.addEventListener('change', () => {
+            bgColorInput.disabled = transparentBgCheckbox.checked;
+        });
 
         inputImage.addEventListener('change', e => {
             const file = e.target.files[0];
             if (file) {
+                originalName = file.name;
                 img.src = URL.createObjectURL(file);
                 img.onload = () => draw();
             }
@@ -71,14 +82,12 @@
             canvas.width = w + 2 * margin;
             canvas.height = h + 2 * margin;
 
-            // Hintergrund zeichnen
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (!transparent) {
                 ctx.fillStyle = bgColor;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // Abgerundete Ecke als Clip-Pfad
             ctx.save();
             ctx.beginPath();
             const x = margin, y = margin;
@@ -94,7 +103,6 @@
             ctx.closePath();
             ctx.clip();
 
-            // Bild zeichnen
             ctx.drawImage(img, x, y);
             ctx.restore();
         }
@@ -112,8 +120,14 @@
                 alert('Kein Bild geladen.');
                 return;
             }
+            let name = originalName;
+            const dotIndex = name.lastIndexOf('.');
+            let base = dotIndex !== -1 ? name.substring(0, dotIndex) : name;
+            const ext = dotIndex !== -1 ? name.substring(dotIndex) : '.png';
+            const downloadName = base + '-rounded' + ext;
+
             const link = document.createElement('a');
-            link.download = 'rounded.png';
+            link.download = downloadName;
             link.href = canvas.toDataURL('image/png');
             link.click();
         });
