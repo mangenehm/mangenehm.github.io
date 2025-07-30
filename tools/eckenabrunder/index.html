@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runde Ecken Bild-Tool</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        label { display: block; margin: 10px 0; }
+        canvas { display: block; margin: 20px 0; border: 1px solid #ccc; }
+        input[type="number"] { width: 60px; }
+        button { margin-right: 10px; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h1>Runde Ecken - Bild-Tool</h1>
+
+    <label>Bild auswählen:
+        <input type="file" id="inputImage" accept="image/*">
+    </label>
+
+    <label>Radius (px):
+        <input type="number" id="radius" value="20" min="0">
+    </label>
+
+    <label>Margin (px):
+        <input type="number" id="margin" value="0" min="0">
+    </label>
+
+    <label>Hintergrundfarbe:
+        <input type="color" id="bgColor" value="#000000">
+    </label>
+
+    <label>Transparenter Hintergrund:
+        <input type="checkbox" id="transparentBg">
+    </label>
+
+    <button id="applyBtn">Anwenden</button>
+    <button id="downloadBtn">Download</button>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const inputImage = document.getElementById('inputImage');
+        const radiusInput = document.getElementById('radius');
+        const marginInput = document.getElementById('margin');
+        const bgColorInput = document.getElementById('bgColor');
+        const transparentBgCheckbox = document.getElementById('transparentBg');
+        const applyBtn = document.getElementById('applyBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let img = new Image();
+
+        inputImage.addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file) {
+                img.src = URL.createObjectURL(file);
+                img.onload = () => draw();
+            }
+        });
+
+        function draw() {
+            const radius = parseInt(radiusInput.value, 10);
+            const margin = parseInt(marginInput.value, 10);
+            const bgColor = bgColorInput.value;
+            const transparent = transparentBgCheckbox.checked;
+            const w = img.width;
+            const h = img.height;
+
+            canvas.width = w + 2 * margin;
+            canvas.height = h + 2 * margin;
+
+            // Hintergrund zeichnen
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!transparent) {
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Abgerundete Ecke als Clip-Pfad
+            ctx.save();
+            ctx.beginPath();
+            const x = margin, y = margin;
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + w - radius, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            ctx.lineTo(x + w, y + h - radius);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            ctx.lineTo(x + radius, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.clip();
+
+            // Bild zeichnen
+            ctx.drawImage(img, x, y);
+            ctx.restore();
+        }
+
+        applyBtn.addEventListener('click', () => {
+            if (img.src) {
+                draw();
+            } else {
+                alert('Bitte zuerst ein Bild auswählen.');
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (!img.src) {
+                alert('Kein Bild geladen.');
+                return;
+            }
+            const link = document.createElement('a');
+            link.download = 'rounded.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+</body>
+</html>
