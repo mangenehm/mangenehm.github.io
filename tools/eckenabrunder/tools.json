@@ -1,0 +1,8 @@
+{
+    "name": "Ecken abrunden",
+    "description": "Ein kleines Tool, dass die Ecken eines Bildes um einen bestimmten Radius abrunden kann.",
+    "category": "Projekt",
+    "tags": ["Bildbearbeitung"],
+    "created": "2025-07-30",
+    "lastUpdated": "2025-07-30"
+}
