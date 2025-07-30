@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ecken abrunden</title>
+    <title>Runde Ecken Bild-Tool (Batch-Download)</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
         label { display: block; margin: 10px 0; }
-        canvas { display: block; margin: 20px 0; border: 1px solid #ccc; }
         input[type="number"] { width: 60px; }
         button { margin-right: 10px; padding: 5px 10px; }
         input[disabled] { opacity: 0.6; }
@@ -16,8 +15,8 @@
 <body>
     <h1>Ecken abrunden</h1>
 
-    <label>Bild auswählen:
-        <input type="file" id="inputImage" accept="image/*">
+    <label>Bild(er) auswählen:
+        <input type="file" id="inputImages" accept="image/*" multiple>
     </label>
 
     <label>Radius (px):
@@ -28,61 +27,46 @@
         <input type="number" id="margin" value="0" min="0">
     </label>
 
+    <label>Hintergrundfarbe:
+        <input type="color" id="bgColor" value="#000000">
+    </label>
+
     <label>
         <input type="checkbox" id="transparentBg" checked>
         Transparenter Hintergrund
     </label>
 
-    <label>Hintergrundfarbe:
-        <input type="color" id="bgColor" value="#000000">
-    </label>
-
-    <button id="applyBtn">Vorschau</button>
-    <button id="downloadBtn">Download</button>
-
-    <canvas id="canvas"></canvas>
+    <button id="downloadAllBtn">Alle herunterladen</button>
 
     <script>
-        const inputImage = document.getElementById('inputImage');
+        const inputImages = document.getElementById('inputImages');
         const radiusInput = document.getElementById('radius');
         const marginInput = document.getElementById('margin');
         const bgColorInput = document.getElementById('bgColor');
         const transparentBgCheckbox = document.getElementById('transparentBg');
-        const applyBtn = document.getElementById('applyBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        let img = new Image();
-        let originalName = '';
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
 
-        // Initiale Deaktivierung der Farbauswahl, wenn Transparent vorausgewählt
+        // Disable color picker if transparent
         bgColorInput.disabled = transparentBgCheckbox.checked;
-
         transparentBgCheckbox.addEventListener('change', () => {
             bgColorInput.disabled = transparentBgCheckbox.checked;
         });
 
-        inputImage.addEventListener('change', e => {
-            const file = e.target.files[0];
-            if (file) {
-                originalName = file.name;
-                img.src = URL.createObjectURL(file);
-                img.onload = () => draw();
-            }
-        });
-
-        function draw() {
+        // Draw rounded corners on a canvas and return it
+        function createRoundedCanvas(img) {
             const radius = parseInt(radiusInput.value, 10);
             const margin = parseInt(marginInput.value, 10);
             const bgColor = bgColorInput.value;
             const transparent = transparentBgCheckbox.checked;
+
             const w = img.width;
             const h = img.height;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
 
             canvas.width = w + 2 * margin;
             canvas.height = h + 2 * margin;
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (!transparent) {
                 ctx.fillStyle = bgColor;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -105,31 +89,58 @@
 
             ctx.drawImage(img, x, y);
             ctx.restore();
+            return canvas;
         }
 
-        applyBtn.addEventListener('click', () => {
-            if (img.src) {
-                draw();
-            } else {
-                alert('Bitte zuerst ein Bild auswählen.');
-            }
-        });
+        // Read a file as DataURL (returns Promise)
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(file);
+            });
+        }
 
-        downloadBtn.addEventListener('click', () => {
-            if (!img.src) {
-                alert('Kein Bild geladen.');
+        // Delay helper
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Batch download function
+        downloadAllBtn.addEventListener('click', async () => {
+            const files = Array.from(inputImages.files);
+            if (files.length === 0) {
+                alert('Bitte zuerst mindestens ein Bild auswählen.');
                 return;
             }
-            let name = originalName;
-            const dotIndex = name.lastIndexOf('.');
-            let base = dotIndex !== -1 ? name.substring(0, dotIndex) : name;
-            const ext = dotIndex !== -1 ? name.substring(dotIndex) : '.png';
-            const downloadName = base + '-rounded' + ext;
+            for (let file of files) {
+                try {
+                    const dataURL = await readFileAsDataURL(file);
+                    const img = new Image();
+                    const imgLoad = new Promise(res => img.onload = res);
+                    img.src = dataURL;
+                    await imgLoad;
+                    const canvas = createRoundedCanvas(img);
 
-            const link = document.createElement('a');
-            link.download = downloadName;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+                    const dot = file.name.lastIndexOf('.');
+                    const base = dot !== -1 ? file.name.substring(0, dot) : file.name;
+                    const ext = dot !== -1 ? file.name.substring(dot) : '.png';
+                    const downloadName = base + '-rounded' + ext;
+
+                    const link = document.createElement('a');
+                    link.download = downloadName;
+                    link.href = canvas.toDataURL('image/png');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    // Kurze Pause, damit Browser mehrere Downloads akzeptiert
+                    await delay(300);
+                } catch (err) {
+                    console.error('Fehler beim Verarbeiten von', file.name, err);
+                }
+            }
         });
     </script>
 </body>
