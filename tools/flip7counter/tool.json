@@ -1,1 +1,8 @@
-
+{
+    "name": "Flip 7-Rechner",
+    "description": "Ein rechner, der die Punkte für Flip 7 zusammenrechnet.",
+    "category": "Projekt",
+    "tags": ["Spiel"],
+    "created": "2025-08-325",
+    "lastUpdated": "2025-08-25"
+}
