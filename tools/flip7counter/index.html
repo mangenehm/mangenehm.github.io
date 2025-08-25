@@ -127,7 +127,19 @@
     .dlg-header { padding: 14px 16px; border-bottom: 1px solid var(--border); font-weight: 700; }
     .dlg-body { padding: 14px 16px; }
     .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; padding: 14px 16px; border-top: 1px solid var(--border); }
-  </style>
+  
+/* === Mobile enhancements for round input === */
+#roundInputs.grid { grid-template-columns: 1fr; }
+@media (min-width: 540px) { #roundInputs.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.round-row { display: flex; flex-direction: column; gap: 8px; }
+.quick { display: flex; flex-wrap: wrap; gap: 8px; }
+.quick .btn { min-width: 56px; padding: 12px 14px; }
+
+
+/* Suppress caret/select for readonly round inputs (no mobile keyboard) */
+#roundInputs input[readonly] { caret-color: transparent; user-select: none; }
+        </style>
 </head>
 <body>
 <main>
@@ -232,6 +244,28 @@
   };
 
   const uid = () => Math.random().toString(36).slice(2, 9);
+
+  // Add quick +/- buttons below an input (no long-press)
+  const addQuickButtons = (wrap, input) => {
+    const quick = el('div', { className: 'quick' });
+    const mk = (label, delta) => {
+      const b = el('button', { type:'button', className:'btn', textContent: label,
+        'aria-label': `${label} für ${input.getAttribute('aria-label')}` });
+      const apply = () => {
+        const next = Math.max(0, clampInt(input.value) + delta);
+        input.value = String(next);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      b.addEventListener('click', apply);
+      return b;
+    };
+    quick.append(mk('−1', -1), mk('+1', 1), mk('+5', 5), mk('+10', 10));
+    const zero = el('button', { type:'button', className:'btn', textContent:'0', 'aria-label':'Wert auf 0 setzen' });
+    zero.addEventListener('click', () => { input.value = '0'; input.dispatchEvent(new Event('input', { bubbles: true })); });
+    quick.append(zero);
+    wrap.appendChild(quick);
+  };
+
 
   const save = (state) => localStorage.setItem(LS_KEY, JSON.stringify(state));
   const load = () => {
@@ -361,19 +395,47 @@
       playerListEl.appendChild(chip);
     });
 
-    // Round Inputs (Reihenfolge bleibt wie im Setup)
+    
+    
+
+// Round Inputs (Reihenfolge bleibt wie im Setup)
     roundInputsEl.innerHTML = '';
+    const lastIndex = state.players.length - 1;
     state.players.forEach((p, i) => {
-      const wrap = el('div');
+      const wrap = el('div', { className: 'round-row' });
       const label = el('label', { className: 'small muted', textContent: p.name });
-      const input = el('input', { type: 'number', inputMode: 'numeric', min: '0', step: '1', placeholder: '0', 'aria-label': `Punkte für ${p.name}` });
+
+      const input = el('input', {
+        type: 'number', inputMode: 'numeric', pattern: '[0-9]*',
+        min: '0', step: '1', placeholder: '0',
+        'aria-label': `Punkte für ${p.name}`
+      });
+      input.readOnly = true; // prevent mobile keyboard
       input.dataset.index = String(i);
+      input.setAttribute('enterkeyhint', i === lastIndex ? 'done' : 'next');
+      input.addEventListener('focus', () => {
+        try { input.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
+      });
+      input.addEventListener('click', (e) => { e.preventDefault(); input.blur(); });
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          const inputs = $$('#roundInputs input');
+          const idx = inputs.indexOf(input);
+          if (idx < inputs.length - 1) inputs[idx + 1].focus();
+          else $('#roundForm button[type="submit"]').focus();
+        }
+      });
       input.addEventListener('input', () => { if (Number(input.value) < 0) input.value = '0'; });
+
       wrap.append(label, input);
+      addQuickButtons(wrap, input);
       roundInputsEl.appendChild(wrap);
     });
 
     // History table
+
+
     renderHistory();
     // Winner banner
     renderWinnerBanner();
