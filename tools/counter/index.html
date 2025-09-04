@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=5">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MEGA-COUNTDOWN • Exchange-Umzug • 18.09.2025 • 09:30 (Berlin)</title>
+  <style>
+    /* === 90s MEGAMIX STYLES === */
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Verdana", "Comic Sans MS", Tahoma, sans-serif;
+      color: #000;
+      /* loud tiled background */
+      background-image:
+        repeating-linear-gradient(45deg, #ffea00 0 12px, #ff6a00 12px 24px,
+                                  #00e5ff 24px 36px, #7cff00 36px 48px);
+      image-rendering: pixelated;
+    }
+
+    table.page { width: 100%; height: 100%; }
+    td.center { text-align: center; vertical-align: top; }
+
+    .frame {
+      display: inline-block;
+      margin: 16px;
+      padding: 16px;
+      background: #fff;
+      border: 10px outset #c0c0c0;
+      box-shadow: 0 0 0 6px #000 inset, 0 0 30px rgba(0,0,0,.4);
+    }
+
+    .header {
+      border: 6px ridge #000;
+      padding: 6px;
+      background: linear-gradient(90deg,#ff0,#f0f,#0ff);
+      color: #000;
+      text-align: center;
+    }
+
+    .logo-box {
+      margin: 10px auto 0;
+      width: 340px; height: 90px;
+      border: 6px dashed #d00;
+      background: repeating-linear-gradient(90deg,#fff,#fff 10px,#ffe 10px,#ffe 20px);
+      display: grid; place-items: center;
+      font-weight: 900; font-size: 22px; color: #d00;
+      text-shadow: 2px 2px #ffa;
+    }
+
+    .marq {
+      font-weight: 900;
+      background: #000;
+      color: #0f0;
+      border: 4px groove #0f0;
+      margin: 10px 0;
+      font-size: clamp(24px, 4vw, 48px);
+      padding: 12px 0;
+    }
+
+    .blink { animation: blinker 1s steps(2, start) infinite; }
+    @keyframes blinker { to { visibility: hidden; } }
+
+    .mode-panel {
+      margin: 14px auto 6px;
+      border: 8px groove #0066ff;
+      background: #e0f0ff;
+      padding: 10px 12px;
+      width: min(900px, 95vw);
+    }
+
+    .mode-title { font-size: 18px; font-weight: 900; text-transform: uppercase; }
+
+    .radios { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+    .radio {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border: 4px outset #999; background: #fff;
+      box-shadow: 2px 2px #000;
+      font-size: 18px; font-weight: bold;
+    }
+    /* BIG clunky radio buttons */
+    .radio input[type="radio"] { width: 22px; height: 22px; accent-color: #000; }
+
+    hr.rainbow { height: 18px; border: none; margin: 14px 0; background:
+      linear-gradient(90deg, red, orange, yellow, green, cyan, blue, violet);
+      box-shadow: 0 2px 0 #000, 0 4px 0 #333;
+    }
+
+    .display {
+      border: 10px ridge #aaa; background: #111; color: #0f0;
+      width: min(1000px, 96vw); margin: 0 auto; padding: 18px;
+      text-align: center;
+    }
+
+    .led { font-family: "Courier New", monospace; letter-spacing: 1px; }
+
+    .bigtime { font-size: clamp(36px, 10vw, 96px); font-weight: 900; color: #0f0;
+      text-shadow: 0 0 6px #0f0, 0 0 12px #0f0, 2px 2px #030; }
+
+    .subline { color: #7fff7f; font-size: 14px; margin-top: 8px; }
+
+    .cards {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px; margin-top: 12px;
+    }
+    .card { background: #222; color: #0f0; border: 6px groove #0f0; padding: 8px; }
+    .card .label { font-weight: bold; font-size: 14px; color: #afffaf; }
+    .card .value { font-weight: 900; font-size: 28px; }
+
+    .settings {
+      margin: 12px auto 0; width: min(1000px, 96vw);
+      border: 8px inset #9900ff; background: #f7e6ff; padding: 10px;
+    }
+    .settings h3 { margin: 6px 0 10px; }
+    .setting { display: inline-flex; align-items: center; gap: 8px; margin: 8px 16px; }
+    .setting input { font-size: 18px; width: 120px; border: 4px inset #999; padding: 4px; }
+
+    .footer { margin-top: 12px; font-size: 12px; color: #222; text-align: center; }
+    .counter-box { margin-top: 8px; font-weight: bold; }
+
+    /* DONE OVERLAY */
+    .done {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      display: none; align-items: center; justify-content: center; text-align: center;
+      z-index: 9999; color: #fff;
+    }
+    .done .box {
+      padding: 20px; border: 12px ridge #ffd700; background: #000;
+      width: min(1000px, 95vw);
+    }
+    .done h1 { font-size: clamp(32px, 8vw, 80px); margin: 0 0 8px; color: #ffd700; text-shadow: 0 0 10px #ffd700; }
+    .done p { margin: 6px 0 0; font-size: 18px; }
+
+    /* CONFETTI */
+    .confetti { position: fixed; pointer-events: none; inset: 0; overflow: hidden; z-index: 10000; }
+    .confetto { position: absolute; top: -10px; width: 10px; height: 10px; opacity: 0.9; transform: rotate(0deg); }
+    @keyframes fall {
+      to { transform: translateY(110vh) rotate(720deg); }
+    }
+
+    /* Tiny "Under Construction" badge via inline SVG (kept small) */
+    .uc {
+      margin: 12px auto 0; display: inline-block; border: 4px outset #999;
+    }
+
+    /* Make tables/layout look 90s */
+    .layout-table { border: 6px outset #333; background: #fafafa; }
+      
+    /* Top area & small hero */
+    /* .top-area removed */
+    .hero-small { border: 8px groove #ff00ff; background: #000; padding: 4px; width: min(700px, 90%); margin: 10px auto; }
+    .hero-small img { display:block; width: 100%; height:auto; image-rendering:auto; }
+  </style>
+</head>
+<body>
+  <table class="page layout-table" cellspacing="0" cellpadding="10" border="8" align="center">
+    <tr>
+      <td class="center">
+        <div class="frame" style="max-width: 1100px;">
+          <div class="header">
+            <marquee class="marq" scrollamount="9" behavior="scroll" direction="left">
+              <span class="blink">★</span>
+              <strong>MEGA-COUNTDOWN</strong> zum <strong>EXCHANGE-UMZUG</strong> – Zieldatum: <b>18.09.2025, 09:30</b> (Europe/Berlin)
+              <span class="blink">★</span>
+            </marquee>
+          </div><div class="mode-panel">
+              <div class="mode-title">Anzeige wählen</div>
+              <div class="radios led">
+                <label class="radio"><input type="radio" name="mode" value="time" checked> Zeit (T / Std / Min / Sek)</label>
+                <label class="radio"><input type="radio" name="mode" value="mails"> Eingehende Mails (≈)</label>
+                <label class="radio"><input type="radio" name="mode" value="outages"> Ausfälle (Ø)</label>
+              </div>
+            </div>
+
+          <hr class="rainbow">
+
+          <div class="display led" id="display">
+            <!-- TIME VIEW -->
+            <div id="view-time">
+              <div class="bigtime" id="bigtime">--T --Std --Min --Sek</div>
+              <div class="subline" id="subline-time">Zielzeit (Berlin): … • Aktuell (Berlin): …</div>
+              <div class="cards" style="margin-top: 14px;">
+                <div class="card"><div class="label">Tage</div><div class="value" id="d">--</div></div>
+                <div class="card"><div class="label">Stunden</div><div class="value" id="h">--</div></div>
+                <div class="card"><div class="label">Minuten</div><div class="value" id="m">--</div></div>
+                <div class="card"><div class="label">Sekunden</div><div class="value" id="s">--</div></div>
+              </div>
+            </div>
+
+            <!-- MAILS VIEW -->
+            <div id="view-mails" style="display:none">
+              <div class="bigtime" id="bigmails">≈ --</div>
+              <div class="subline" id="subline-mails">Erwartete eingehende Mails bis zur Zielzeit.</div>
+            </div>
+
+            <!-- OUTAGES VIEW -->
+            <div id="view-outages" style="display:none">
+              <div class="bigtime" id="bigout">Ø --</div>
+              <div class="subline" id="subline-out">Erwartete Ausfälle im Schnitt bis zur Zielzeit.</div>
+            </div>
+          </div>
+
+          <div class="settings">
+            <h3>⚙️ Einstellungen (lokal, wird gespeichert)</h3>
+            <div class="setting"><label><b>Mails pro Tag: <input id="mailRate" type="number" min="0" step="1" value="900"></label></div>
+            <div class="setting"><label><b>Ausfälle pro Jahr: <input id="outageRate" type="number" min="0" step="0.1" value="4"></label></div>
+          </div>
+
+          <div class="footer">
+            <div class="counter-box">Besucherzähler: <span id="visitor">#0001</span></div>
+            <div class="hero-small"><img alt="Exchange Server Artwork" src="freepik__retouch__29049.jpeg"></div>
+            <div class="uc">
+              <img alt="Under Construction" width="176" height="50"
+                   src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTc2IiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMTc2IDUwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPg0KPHJlY3Qgd2lkdGg9IjE3NiIgaGVpZ2h0PSI1MCIgZmlsbD0iI2ZmMDAwMCIvPg0KPHRleHQgeD0iODgiIHk9IjE5IiBmb250LXNpemU9IjE2IiBmb250LXdlaWdodD0iYm9sZCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2ZmZiI+VU5ERVI8L3RleHQ+DQo8dGV4dCB4PSI4OCIgeT0iNDAiIGZvbnQtc2l6ZT0iMTYiIGZvbnQtd2VpZ2h0PSJib2xkIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmZmIj5DT05TVFJVQ1RJT048L3RleHQ+DQo8L3N2Zz4='>
+            </div>
+            <p style="margin:10px 0 0;">Made with <span class="blink">♥</span> &amp; <code>&lt;marquee&gt;</code></p>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- DONE OVERLAY -->
+  <div class="done" id="done">
+    <div class="box">
+      <h1>🎉 Umzug abgeschlossen! 🎉</h1>
+      <p>Willkommen auf dem neuen Exchange-Server. Sie dürfen jetzt offiziell angeben. 😎</p>
+      <marquee class="marq" scrollamount="12">Glückwunsch an das gesamte Team! • Keine Tickets, nur Konfetti! • Exchange FTW!</marquee>
+      <button onclick="document.getElementById('done').style.display='none'" style="margin-top:10px; font-size:18px; border:6px outset #999; padding:8px 14px; cursor:pointer;">Overlay schließen</button>
+    </div>
+  </div>
+  <div class="confetti" id="confetti"></div>
+
+  <script>
+    // ====== CONFIG ======
+    // Target: 18.09.2025 09:30 Europe/Berlin == 07:30:00Z (CEST is UTC+2)
+    const TARGET_UTC_ISO = '2025-09-18T07:30:00Z';
+    const TARGET = new Date(TARGET_UTC_ISO);
+
+    // Load & persist local settings
+    const store = {
+      get(key, fallback) { try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch { return fallback; } },
+      set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+    };
+
+    const mailRateEl = document.getElementById('mailRate');
+    const outageRateEl = document.getElementById('outageRate');
+    mailRateEl.value = store.get('mailRate', 900);
+    outageRateEl.value = store.get('outageRate', 4);
+
+    function saveSettings() {
+      store.set('mailRate', Number(mailRateEl.value));
+      store.set('outageRate', Number(outageRateEl.value));
+    }
+    mailRateEl.addEventListener('input', saveSettings);
+    outageRateEl.addEventListener('input', saveSettings);
+
+    // Visitor counter (fake, local)
+    const vis = document.getElementById('visitor');
+    if (vis) {
+      const n = (store.get('visitors', 0) + 1);
+      store.set('visitors', n);
+      vis.textContent = '#' + String(n).padStart(4, '0');
+    }
+
+    // Elements
+    const bigtime = document.getElementById('bigtime');
+    const sublineTime = document.getElementById('subline-time');
+    const dEl = document.getElementById('d');
+    const hEl = document.getElementById('h');
+    const mEl = document.getElementById('m');
+    const sEl = document.getElementById('s');
+
+    const bigmails = document.getElementById('bigmails');
+    const bigout = document.getElementById('bigout');
+
+    const viewTime = document.getElementById('view-time');
+    const viewMails = document.getElementById('view-mails');
+    const viewOut = document.getElementById('view-outages');
+
+    // Mode switching
+    document.querySelectorAll('input[name="mode"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        viewTime.style.display = (mode === 'time') ? '' : 'none';
+        viewMails.style.display = (mode === 'mails') ? '' : 'none';
+        viewOut.style.display = (mode === 'outages') ? '' : 'none';
+      });
+    });
+
+    // formatting helpers
+    const deFmt = new Intl.NumberFormat('de-DE');
+    function fmt2(n){ return String(Math.floor(n)).padStart(2,'0'); }
+    function fmtTZ(date, tz){
+      return new Intl.DateTimeFormat('de-DE', { timeZone: tz, dateStyle: 'full', timeStyle: 'medium' }).format(date);
+    }
+
+    // Confetti
+    const confettiEl = document.getElementById('confetti');
+    function launchConfetti(durationMs = 6000, count = 160){
+      const colors = ['#ff0040','#ff8000','#ffe600','#00e676','#00bcd4','#3d5afe','#d500f9'];
+      for(let i=0;i<count;i++){
+        const c = document.createElement('div');
+        c.className = 'confetto';
+        const size = 6 + Math.random() * 8;
+        c.style.width = size + 'px';
+        c.style.height = size + 'px';
+        c.style.left = Math.random() * 100 + 'vw';
+        c.style.background = colors[(Math.random()*colors.length)|0];
+        c.style.animation = `fall ${3 + Math.random()*4}s linear ${Math.random()}s forwards`;
+        confettiEl.appendChild(c);
+        setTimeout(() => c.remove(), durationMs + 1000);
+      }
+      setTimeout(()=>{ confettiEl.innerHTML=''; }, durationMs + 1200);
+    }
+
+    // Done overlay
+    const done = document.getElementById('done');
+    let finished = false;
+
+    function update(){
+      const now = new Date();
+      let ms = TARGET.getTime() - now.getTime();
+      if (ms <= 0) {
+        if (!finished) {
+          finished = true;
+          // Show overlay & confetti once
+          done.style.display = 'flex';
+          launchConfetti();
+        }
+        ms = 0; // clamp
+      }
+      const secs = Math.floor(ms / 1000);
+      const days = Math.floor(secs / 86400);
+      const hours = Math.floor((secs % 86400) / 3600);
+      const minutes = Math.floor((secs % 3600) / 60);
+      const seconds = Math.floor(secs % 60);
+
+      // Time view
+      bigtime.textContent = `${days}T ${fmt2(hours)}Std ${fmt2(minutes)}Min ${fmt2(seconds)}Sek`;
+      dEl.textContent = deFmt.format(days);
+      hEl.textContent = fmt2(hours);
+      mEl.textContent = fmt2(minutes);
+      sEl.textContent = fmt2(seconds);
+
+      const berlinNow = fmtTZ(now, 'Europe/Berlin');
+      const berlinTarget = fmtTZ(TARGET, 'Europe/Berlin');
+      sublineTime.textContent = `Zielzeit (Berlin): ${berlinTarget} • Aktuell (Berlin): ${berlinNow}`;
+
+      // Mails view (rate per day)
+      const mailsPerDay = Math.max(0, Number(mailRateEl.value) || 0);
+      const expectedMails = mailsPerDay * (secs / 86400);
+      bigmails.textContent = `≈ ${deFmt.format(Math.round(expectedMails))}`;
+
+      // Outage view (rate per year)
+      const outagesPerYear = Math.max(0, Number(outageRateEl.value) || 0);
+      const expectedOut = outagesPerYear * (secs / (365.25 * 86400));
+      bigout.textContent = `Ø ${expectedOut.toLocaleString('de-DE', { maximumFractionDigits: 2, minimumFractionDigits: 0 })}`;
+    }
+
+    // Tick 4× pro Sekunde für flüssiges Blinken
+    update();
+    setInterval(update, 250);
+  </script>
+
+  <!--
+  === Hinweise zum Anpassen ===
+  • Logo: Ersetzen Sie den DIV mit Klasse ".logo-box" durch ein <img> oder setzen Sie per CSS ein background-image ein.
+  • Zielzeit: TARGET_UTC_ISO oben anpassen (Achtung: Berlin-Zeit ↔ UTC-Differenz beachten).
+  • 90er-Flair: Farben, Rahmen, <marquee> usw. sind bewusst "überladen". Viel Spaß :-)
+  -->
+</body>
+</html>
