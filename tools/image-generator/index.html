@@ -360,9 +360,15 @@
               'X-goog-api-key': apiKey
             },
             body: JSON.stringify({
-              prompt: prompt,
-              number_of_images: 1,
-              aspect_ratio: "1:1"
+              instances: [
+                {
+                  prompt: prompt
+                }
+              ],
+              parameters: {
+                sampleCount: 1,
+                aspectRatio: "1:1"
+              }
             })
           }
         );
