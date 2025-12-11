@@ -1,46 +1,52 @@
-name: Update Tools Index
+name: Build and Deploy Pages
 
 on:
   push:
+    branches:
+      - main
     paths:
-      - 'tools/*/tool.json'
-      - 'tools/*/index.html'
+      - 'tools/**'
       - 'scripts/**'
+      - 'index.html'
   workflow_dispatch:
 
-# Füge diese Zeilen hinzu
 permissions:
-  contents: write    # Erlaubt das Schreiben von Repository-Inhalten
-  pages: write      # Erlaubt das Verwalten von GitHub Pages
-  id-token: write   # Erlaubt das Authentifizieren bei GitHub Pages
+  contents: read
+  pages: write
+  id-token: write
+
+# Prevent concurrent deployments
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    
+    - uses: actions/checkout@v4
+
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
-    
+
     - name: Generate Index
       run: |
         python scripts/generate-index.py
-    
-    - name: Commit changes
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        git add index.html
-        git diff --quiet && git diff --staged --quiet || git commit -m "Update tools index [skip ci]"
-    
-    - name: Push changes
-      uses: ad-m/github-push-action@master
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: ${{ github.ref }}
+        path: '.'
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
