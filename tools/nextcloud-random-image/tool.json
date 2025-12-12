@@ -1,0 +1,8 @@
+{
+    "name": "Nextcloud Random Image",
+    "description": "Zeigt ein zufälliges Bild aus einem geteilten Nextcloud-Ordner an.",
+    "category": "Bildergalerie",
+    "tags": ["Nextcloud", "Bilder", "Zufällig"],
+    "created": "2025-12-12",
+    "lastUpdated": "2025-12-12"
+}

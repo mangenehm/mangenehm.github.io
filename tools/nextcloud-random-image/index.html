@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nextcloud Random Image</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 1000px;
+      width: 100%;
+      padding: 40px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 0.95rem;
+    }
+
+    .button-container {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .load-btn {
+      padding: 15px 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .load-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .load-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 30px 0;
+    }
+
+    .loading.active {
+      display: block;
+    }
+
+    .spinner {
+      font-size: 3rem;
+      display: inline-block;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      margin-top: 15px;
+      color: #666;
+      font-size: 1rem;
+    }
+
+    .image-container {
+      display: none;
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    .image-container.active {
+      display: block;
+    }
+
+    .display-image {
+      max-width: 100%;
+      max-height: 600px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      margin-bottom: 15px;
+    }
+
+    .image-info {
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
+
+    .error {
+      display: none;
+      background: #fee;
+      border: 2px solid #fcc;
+      color: #c33;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .error.active {
+      display: block;
+    }
+
+    .stats {
+      text-align: center;
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 25px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .display-image {
+        max-height: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🖼️ Nextcloud Random Image</h1>
+    <p class="subtitle">Zeigt ein zufälliges Bild aus dem geteilten Nextcloud-Ordner</p>
+
+    <div class="button-container">
+      <button class="load-btn" id="loadBtn">Zufälliges Bild laden</button>
+    </div>
+
+    <div class="loading" id="loading">
+      <div class="spinner">🔄</div>
+      <div class="loading-text">Lade Bild...</div>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <div class="image-container" id="imageContainer">
+      <img class="display-image" id="displayImage" alt="Random image from Nextcloud">
+      <div class="image-info" id="imageInfo"></div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <script>
+    // Nextcloud configuration
+    const NEXTCLOUD_URL = 'https://cloud.ngenendt.de';
+    const SHARE_TOKEN = '7HYsiFr7ZGiFt67';
+    const WEBDAV_URL = `${NEXTCLOUD_URL}/public.php/webdav/`;
+
+    // DOM Elements
+    const loadBtn = document.getElementById('loadBtn');
+    const loading = document.getElementById('loading');
+    const error = document.getElementById('error');
+    const imageContainer = document.getElementById('imageContainer');
+    const displayImage = document.getElementById('displayImage');
+    const imageInfo = document.getElementById('imageInfo');
+    const stats = document.getElementById('stats');
+
+    // Cached file list
+    let imageFiles = [];
+    let lastFetch = 0;
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+    // Image extensions to filter
+    const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+
+    // Show error message
+    function showError(message) {
+      error.textContent = message;
+      error.classList.add('active');
+      setTimeout(() => {
+        error.classList.remove('active');
+      }, 5000);
+    }
+
+    // Hide all states
+    function hideAllStates() {
+      loading.classList.remove('active');
+      error.classList.remove('active');
+      imageContainer.classList.remove('active');
+    }
+
+    // Parse WebDAV XML response
+    function parseWebDAVResponse(xmlText) {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      const responses = xmlDoc.getElementsByTagNameNS('DAV:', 'response');
+
+      const files = [];
+      for (let i = 0; i < responses.length; i++) {
+        const response = responses[i];
+        const href = response.getElementsByTagNameNS('DAV:', 'href')[0]?.textContent;
+        const isCollection = response.getElementsByTagNameNS('DAV:', 'resourcetype')[0]
+          ?.getElementsByTagNameNS('DAV:', 'collection').length > 0;
+
+        if (href && !isCollection) {
+          const fileName = decodeURIComponent(href.split('/').pop());
+          const extension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+
+          if (IMAGE_EXTENSIONS.includes(extension)) {
+            files.push({
+              name: fileName,
+              path: href
+            });
+          }
+        }
+      }
+
+      return files;
+    }
+
+    // Fetch file list from Nextcloud
+    async function fetchFileList() {
+      // Check cache
+      const now = Date.now();
+      if (imageFiles.length > 0 && (now - lastFetch) < CACHE_DURATION) {
+        return imageFiles;
+      }
+
+      try {
+        const response = await fetch(WEBDAV_URL, {
+          method: 'PROPFIND',
+          headers: {
+            'Authorization': 'Basic ' + btoa(SHARE_TOKEN + ':' + SHARE_TOKEN),
+            'Depth': '1'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Fehler beim Abrufen der Dateiliste: ${response.status} ${response.statusText}`);
+        }
+
+        const xmlText = await response.text();
+        imageFiles = parseWebDAVResponse(xmlText);
+        lastFetch = now;
+
+        if (imageFiles.length === 0) {
+          throw new Error('Keine Bilder im Ordner gefunden');
+        }
+
+        return imageFiles;
+      } catch (err) {
+        throw new Error(`Fehler beim Verbinden mit Nextcloud: ${err.message}`);
+      }
+    }
+
+    // Load random image
+    async function loadRandomImage() {
+      hideAllStates();
+      loading.classList.add('active');
+      loadBtn.disabled = true;
+
+      try {
+        // Get file list
+        const files = await fetchFileList();
+
+        // Select random file
+        const randomFile = files[Math.floor(Math.random() * files.length)];
+
+        // Construct image URL
+        const imageUrl = `${NEXTCLOUD_URL}/public.php/webdav${randomFile.path.replace('/public.php/webdav', '')}`;
+
+        // Load image with authentication
+        const imageResponse = await fetch(imageUrl, {
+          headers: {
+            'Authorization': 'Basic ' + btoa(SHARE_TOKEN + ':' + SHARE_TOKEN)
+          }
+        });
+
+        if (!imageResponse.ok) {
+          throw new Error('Fehler beim Laden des Bildes');
+        }
+
+        const imageBlob = await imageResponse.blob();
+        const imageObjectUrl = URL.createObjectURL(imageBlob);
+
+        // Display image
+        displayImage.onload = () => {
+          hideAllStates();
+          imageContainer.classList.add('active');
+          imageInfo.textContent = `📁 ${randomFile.name}`;
+          stats.textContent = `${imageFiles.length} Bild${imageFiles.length !== 1 ? 'er' : ''} verfügbar`;
+        };
+
+        displayImage.onerror = () => {
+          hideAllStates();
+          showError('Fehler beim Anzeigen des Bildes');
+          loadBtn.disabled = false;
+        };
+
+        displayImage.src = imageObjectUrl;
+
+      } catch (err) {
+        hideAllStates();
+        showError(err.message);
+        loadBtn.disabled = false;
+      } finally {
+        if (!error.classList.contains('active')) {
+          loadBtn.disabled = false;
+        }
+      }
+    }
+
+    // Event listeners
+    loadBtn.addEventListener('click', loadRandomImage);
+
+    // Load initial random image on page load
+    loadRandomImage();
+  </script>
+</body>
+</html>
