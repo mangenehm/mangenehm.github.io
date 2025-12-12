@@ -265,7 +265,7 @@
         const response = await fetch(WEBDAV_URL, {
           method: 'PROPFIND',
           headers: {
-            'Authorization': 'Basic ' + btoa(SHARE_TOKEN + ':' + SHARE_TOKEN),
+            'Authorization': 'Basic ' + btoa(SHARE_TOKEN + ':'),
             'Depth': '1'
           }
         });
@@ -307,7 +307,7 @@
         // Load image with authentication
         const imageResponse = await fetch(imageUrl, {
           headers: {
-            'Authorization': 'Basic ' + btoa(SHARE_TOKEN + ':' + SHARE_TOKEN)
+            'Authorization': 'Basic ' + btoa(SHARE_TOKEN + ':')
           }
         });
 
