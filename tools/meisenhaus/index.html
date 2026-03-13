@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Webcam Gallery</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f5f5f5; }
+        img { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .controls { margin: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Latest Capture</h1>
+    <img id="main-img" src="images/latest.jpg" alt="Webcam Loading...">
+
+    <div class="controls">
+        <label>Browse History: </label>
+        <select id="history-select" onchange="document.getElementById('main-img').src = this.value">
+            <option value="images/latest.jpg">Current View</option>
+        </select>
+    </div>
+
+    <script>
+        // Fetch the list of images from the GitHub Repo API
+        async function loadHistory() {
+            const response = await fetch('https://api.github.com/repos/mangenehm/mangenehm.github.io/contents/tools/webcam-gallery/images');
+            const files = await response.json();
+            const select = document.getElementById('history-select');
+            
+            // Filter for jpgs and sort newest first
+            files.filter(f => f.name.endsWith('.jpg') && f.name !== 'latest.jpg')
+                 .reverse()
+                 .forEach(file => {
+                    const opt = document.createElement('option');
+                    opt.value = file.path;
+                    opt.innerHTML = file.name;
+                    select.appendChild(opt);
+                 });
+        }
+        loadHistory();
+    </script>
+</body>
+</html>
