@@ -1,8 +1,0 @@
-{
-  "name": "OpenRouter Image Generator",
-  "description": "KI-Bildgenerierung mit Text-to-Image und Image-to-Image via OpenRouter API. Unterstützt FLUX, SDXL und weitere Modelle mit lokalem API-Key-Management.",
-  "category": "AI Tools",
-  "tags": ["AI", "Image Generation", "OpenRouter", "FLUX", "SDXL", "Text-to-Image", "Image-to-Image"],
-  "created": "2026-03-19",
-  "lastUpdated": "2026-03-19"
-}
