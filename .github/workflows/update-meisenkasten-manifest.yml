@@ -1,0 +1,61 @@
+name: Update Meisenkasten Manifest
+
+on:
+  push:
+    paths:
+      - 'tools/meisenkasten/images/*.jpg'
+      - 'tools/meisenkasten/images/*.jpeg'
+      - 'tools/meisenkasten/images/*.png'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Generate images.json
+        run: |
+          python - <<'EOF'
+          import json, re
+          from pathlib import Path
+
+          images_dir = Path("tools/meisenkasten/images")
+          pattern = re.compile(r"^\d{8}-\d{6}\.(jpg|jpeg|png)$", re.IGNORECASE)
+
+          filenames = sorted(
+              [f.name for f in images_dir.iterdir()
+               if f.is_file() and pattern.match(f.name) and f.name != ".gitkeep"],
+              reverse=True
+          )
+
+          out = Path("tools/meisenkasten/images.json")
+          out.write_text(json.dumps(filenames, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(f"Written {len(filenames)} entries to {out}")
+          EOF
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add tools/meisenkasten/images.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update Meisenkasten manifest [skip ci]"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
