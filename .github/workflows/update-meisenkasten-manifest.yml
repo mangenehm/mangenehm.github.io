@@ -1,12 +1,13 @@
 name: Update Meisenkasten Manifest
 
 on:
-  push:
-    paths:
-      - 'tools/meisenkasten/images/*.jpg'
-      - 'tools/meisenkasten/images/*.jpeg'
-      - 'tools/meisenkasten/images/*.png'
+  schedule:
+    - cron: '*/10 * * * *'
   workflow_dispatch:
+
+concurrency:
+  group: meisenkasten-manifest
+  cancel-in-progress: true
 
 permissions:
   contents: write
