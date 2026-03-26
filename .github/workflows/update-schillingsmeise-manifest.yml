@@ -1,17 +1,17 @@
-name: Update Meisenkasten Manifest
+name: Update Schillingsmeise Manifest
 
 on:
   push:
     paths:
-      - 'tools/meisenkasten/images/*.jpg'
-      - 'tools/meisenkasten/images/*.jpeg'
-      - 'tools/meisenkasten/images/*.png'
+      - 'tools/schillingsmeise/images/*.jpg'
+      - 'tools/schillingsmeise/images/*.jpeg'
+      - 'tools/schillingsmeise/images/*.png'
   schedule:
     - cron: '*/10 * * * *'
   workflow_dispatch:
 
 concurrency:
-  group: meisenkasten-manifest
+  group: schillingsmeise-manifest
   cancel-in-progress: true
 
 permissions:
@@ -39,7 +39,7 @@ jobs:
           import json, re
           from pathlib import Path
 
-          images_dir = Path("tools/meisenkasten/images")
+          images_dir = Path("tools/schillingsmeise/images")
           pattern = re.compile(r"^\d{8}-\d{6}\.(jpg|jpeg|png)$", re.IGNORECASE)
 
           filenames = sorted(
@@ -48,7 +48,7 @@ jobs:
               reverse=True
           )
 
-          out = Path("tools/meisenkasten/images.json")
+          out = Path("tools/schillingsmeise/images.json")
           out.write_text(json.dumps(filenames, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           print(f"Written {len(filenames)} entries to {out}")
           EOF
@@ -57,8 +57,8 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add tools/meisenkasten/images.json
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update Meisenkasten manifest [skip ci]"
+          git add tools/schillingsmeise/images.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update Schillingsmeise manifest [skip ci]"
 
       - name: Push changes
         uses: ad-m/github-push-action@master
