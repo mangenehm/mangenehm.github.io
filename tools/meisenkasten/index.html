@@ -282,8 +282,7 @@
     <!-- Hero -->
     <div class="card" style="margin-bottom:14px; padding:12px;">
       <div class="row wrap hero-meta">
-        <span class="badge-new">Aktuell</span>
-        <span id="heroCount" class="muted small"></span>
+        <span class="tl-title">Aktuellste Aufnahme</span>
         <span class="spacer"></span>
       </div>
       <div class="hero-wrap">
@@ -297,8 +296,7 @@
     <!-- Timeline -->
     <div class="card">
       <div class="tl-header">
-        <span class="tl-title">Aufnahmen</span>
-        <span class="tl-count" id="tlCount"></span>
+        <span class="tl-title">Alle Aufnahmen</span>
       </div>
 
       <!-- Month selector -->
@@ -439,7 +437,6 @@
     img.onerror = () => { img.closest('.hero-wrap').style.display = 'none'; };
     img.onclick = () => openLightboxGlobal(0);
     $('#heroTs').textContent = formatFullTs(fn);
-    $('#heroCount').textContent = allImages.length + '\u00A0Aufnahme' + (allImages.length !== 1 ? 'n' : '');
   }
 
   // ── Timeline ──────────────────────────────────────────────────────────────
@@ -447,10 +444,6 @@
     renderMonthSelector();
     renderDaySelector();
     renderDayGrid();
-    // update total count label
-    let total = 0;
-    monthMap.forEach(dm => dm.forEach(arr => total += arr.length));
-    $('#tlCount').textContent = total + '\u00A0Aufnahme' + (total !== 1 ? 'n' : '');
   }
 
   function renderMonthSelector() {
