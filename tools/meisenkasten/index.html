@@ -6,7 +6,6 @@
   <title>Meisenkasten – Kamera-Galerie</title>
   <style>
     :root {
-      /* Dark (default) */
       --bg: #0f172a;
       --panel: #111827;
       --muted: #94a3b8;
@@ -18,7 +17,6 @@
       --shadow: 0 10px 30px rgba(0,0,0,0.25);
       --grad: linear-gradient(160deg, var(--bg), #0b1020 35%, #0a0f1a 100%);
       --radius: 16px;
-      --overlay: rgba(2,6,23,0.70);
     }
     html[data-theme="light"] {
       --bg: #f8fafc;
@@ -31,7 +29,6 @@
       --card: #f1f5f9;
       --shadow: 0 6px 18px rgba(2,6,23,0.08);
       --grad: linear-gradient(160deg, #eef2ff, #f8fafc 40%, #ffffff 100%);
-      --overlay: rgba(15,23,42,0.55);
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
@@ -44,7 +41,6 @@
     }
     main { max-width: 1100px; margin: 0 auto; padding: 20px; }
     h1 { font-size: 1.6rem; margin: 6px 0 16px; letter-spacing: 0.2px; }
-    h2 { font-size: 1.1rem; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
 
     .card {
       background: radial-gradient(1200px 600px at -10% -20%, rgba(34,211,238,0.06), transparent 70%),
@@ -55,10 +51,13 @@
       padding: 16px;
       box-shadow: var(--shadow);
     }
-    .row { display: flex; gap: 12px; align-items: center; }
+    .row { display: flex; gap: 10px; align-items: center; }
     .row.wrap { flex-wrap: wrap; }
     .spacer { flex: 1; }
     .muted { color: var(--muted); }
+    .small { font-size: .88rem; }
+    .hidden { display: none !important; }
+
     .pill {
       display: inline-flex; align-items: center;
       padding: 3px 10px; border-radius: 999px;
@@ -67,57 +66,86 @@
       font-size: .8rem; white-space: nowrap;
     }
     html[data-theme="light"] .pill { background: rgba(255,255,255,0.70); }
-    .hidden { display: none !important; }
+
+    .badge-new {
+      background: var(--brand); color: #0f172a;
+      font-size: .72rem; font-weight: 800; padding: 3px 9px;
+      border-radius: 999px; border: none; letter-spacing: .05em;
+      text-transform: uppercase; white-space: nowrap;
+    }
 
     button, .btn {
       appearance: none; border: 1px solid var(--border); color: var(--text);
       background: linear-gradient(180deg, #0f172a, #0b1220);
-      padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 600;
+      padding: 8px 13px; border-radius: 10px; cursor: pointer; font-weight: 600;
       transition: transform .06s ease, border-color .2s ease, background .2s ease;
-      font-size: .95rem;
+      font-size: .9rem;
     }
     html[data-theme="light"] button, html[data-theme="light"] .btn {
       background: linear-gradient(180deg, #ffffff, #f8fafc);
     }
-    button:hover { border-color: #23324b; }
+    button:hover { border-color: #2d4060; }
     html[data-theme="light"] button:hover { border-color: #cbd5e1; }
     button:active { transform: translateY(1px); }
     .btn-ghost { background: transparent; border-color: transparent; }
-    .btn-icon {
-      padding: 8px 12px; font-size: 1.1rem; border-radius: 10px;
-      background: transparent; border-color: transparent;
-    }
+    .btn-icon { padding: 8px 11px; font-size: 1.1rem; background: transparent; border-color: transparent; }
     .btn-icon:hover { border-color: var(--border); }
 
     /* ── Hero ── */
+    .hero-meta { margin-bottom: 8px; }
     .hero-wrap {
       position: relative; overflow: hidden;
       border-radius: calc(var(--radius) - 4px);
       background: var(--border);
-      margin-bottom: 0;
     }
     .hero-wrap img {
       width: 100%; max-height: 68vh; object-fit: cover;
       display: block; border-radius: calc(var(--radius) - 4px);
+      cursor: zoom-in;
     }
     .hero-label {
       position: absolute; bottom: 0; left: 0; right: 0;
       padding: 10px 12px;
       background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%);
-      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
       border-radius: 0 0 calc(var(--radius) - 4px) calc(var(--radius) - 4px);
+      pointer-events: none;
     }
-    .badge-new {
-      background: var(--brand); color: #0f172a;
-      font-size: .72rem; font-weight: 800; padding: 2px 8px;
-      border-radius: 999px; border: none; letter-spacing: .05em;
-      text-transform: uppercase;
+
+    /* ── Timeline ── */
+    .tl-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px; flex-wrap: wrap;
     }
+    .tl-title { font-size: 1rem; font-weight: 700; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+    .tl-count { font-size: .82rem; color: var(--muted); }
+
+    .selector-row {
+      display: flex; gap: 6px;
+      overflow-x: auto; padding-bottom: 2px;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .selector-row::-webkit-scrollbar { height: 4px; }
+    .selector-row::-webkit-scrollbar-track { background: transparent; }
+    .selector-row::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .sel-btn {
+      white-space: nowrap; flex-shrink: 0;
+      padding: 7px 13px; font-size: .88rem;
+    }
+    .sel-btn.active {
+      border-color: var(--brand);
+      background: linear-gradient(180deg, rgba(34,211,238,0.18), rgba(34,211,238,0.08));
+      color: var(--brand);
+    }
+    html[data-theme="light"] .sel-btn.active {
+      background: linear-gradient(180deg, rgba(6,182,212,0.12), rgba(6,182,212,0.06));
+    }
+
+    hr.tl-divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
     /* ── Gallery Grid ── */
     .gallery-grid {
-      display: grid;
-      gap: 8px;
+      display: grid; gap: 8px;
       grid-template-columns: repeat(2, 1fr);
     }
     @media (min-width: 480px) { .gallery-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; } }
@@ -133,23 +161,19 @@
       transition: transform .15s ease, border-color .15s ease;
     }
     .thumb-item:hover { transform: scale(1.03); border-color: var(--brand); }
-    .thumb-item img {
-      width: 100%; height: 100%; object-fit: cover;
-      display: block; border-radius: 10px;
-      loading: lazy;
-    }
+    .thumb-item img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px; }
     .thumb-ts {
       position: absolute; bottom: 0; left: 0; right: 0;
       padding: 4px 6px;
-      background: linear-gradient(to top, rgba(0,0,0,0.70) 0%, transparent 100%);
-      font-size: .7rem; color: #e5e7eb;
+      background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%);
+      font-size: .72rem; color: #e5e7eb;
       border-radius: 0 0 10px 10px;
     }
 
     /* ── Skeletons ── */
     @keyframes shimmer {
       0%   { background-position: -600px 0; }
-      100% { background-position: 600px 0; }
+      100% { background-position:  600px 0; }
     }
     .skeleton {
       border-radius: 10px;
@@ -165,39 +189,27 @@
     .skeleton-thumb { aspect-ratio: 1 / 1; }
 
     /* ── State containers ── */
-    .state-box {
-      text-align: center; padding: 48px 20px;
-      color: var(--muted); font-size: 1rem;
-    }
+    .state-box { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 1rem; }
     .state-box .icon { font-size: 2.5rem; margin-bottom: 12px; }
 
-    /* ── Lightbox dialog ── */
+    /* ── Lightbox ── */
     dialog#lightbox {
       padding: 0; background: #050d1a; color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border: 1px solid var(--border); border-radius: var(--radius);
       box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-      max-width: min(96vw, 1100px); width: 100%;
-      outline: none;
+      max-width: min(96vw, 1100px); width: 100%; outline: none;
     }
     dialog#lightbox::backdrop { background: rgba(2,6,23,0.82); }
     html[data-theme="light"] dialog#lightbox { background: #ffffff; }
     html[data-theme="light"] dialog#lightbox::backdrop { background: rgba(15,23,42,0.45); }
-
     .lb-header {
       display: flex; align-items: center; gap: 8px; padding: 10px 14px;
-      border-bottom: 1px solid var(--border);
-      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap;
     }
     .lb-body {
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-      padding: 12px;
+      display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px;
     }
-    .lb-body img {
-      max-width: 100%; max-height: 80vh;
-      object-fit: contain; border-radius: 10px; display: block;
-      flex: 1; min-width: 0;
-    }
+    .lb-body img { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 10px; display: block; flex: 1; min-width: 0; }
     .lb-nav {
       font-size: 1.6rem; padding: 10px 14px; flex-shrink: 0;
       border-radius: 50%; width: 46px; height: 46px;
@@ -238,31 +250,50 @@
     <div class="state-box">
       <div class="icon">⚠️</div>
       <p>Bilder konnten nicht geladen werden.<br>
-         <button id="btnRetry" class="btn" style="margin-top:12px">Erneut versuchen</button>
+        <button id="btnRetry" class="btn" style="margin-top:12px">Erneut versuchen</button>
       </p>
     </div>
   </div>
 
-  <!-- Gallery (shown when images loaded) -->
+  <!-- Gallery -->
   <div id="stateGallery" class="hidden">
+
     <!-- Hero -->
-    <div class="card" style="margin-bottom:14px; padding: 12px;">
+    <div class="card" style="margin-bottom:14px; padding:12px;">
+      <div class="row wrap hero-meta">
+        <span class="badge-new">Aktuell</span>
+        <span id="heroCount" class="muted small"></span>
+        <span class="spacer"></span>
+      </div>
       <div class="hero-wrap">
         <img id="heroImg" alt="Aktuellstes Bild" loading="eager" />
         <div class="hero-label">
-          <span class="badge-new">Aktuell</span>
           <span class="pill" id="heroTs"></span>
-          <span class="spacer"></span>
-          <span class="pill muted" id="heroCount"></span>
         </div>
       </div>
     </div>
 
-    <!-- Grid -->
+    <!-- Timeline -->
     <div class="card">
-      <h2>Alle Aufnahmen</h2>
-      <div id="galleryGrid" class="gallery-grid"></div>
+      <div class="tl-header">
+        <span class="tl-title">Aufnahmen</span>
+        <span class="tl-count" id="tlCount"></span>
+      </div>
+
+      <!-- Month selector -->
+      <div class="selector-row" id="monthSelector" role="tablist" aria-label="Monat wählen"></div>
+
+      <hr class="tl-divider" />
+
+      <!-- Day selector -->
+      <div class="selector-row" id="daySelector" role="tablist" aria-label="Tag wählen"></div>
+
+      <hr class="tl-divider" />
+
+      <!-- Image grid for selected day -->
+      <div id="dayGrid" class="gallery-grid"></div>
     </div>
+
   </div>
 </main>
 
@@ -286,19 +317,47 @@
   const MANIFEST    = 'images.json';
   const IMAGES_PATH = 'images/';
   const THEME_KEY   = 'meisenkasten-theme';
-  const SKELETON_COUNT = 10;
+  const SKELETON_N  = 10;
 
-  const $  = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const $  = (sel, r = document) => r.querySelector(sel);
+  const $$ = (sel, r = document) => Array.from(r.querySelectorAll(sel));
 
-  // ── Timestamp parser ──────────────────────────────────────────────────────
-  // Input:  "20260311-150000.jpg"
-  // Output: "11.03.2026, 15:00:00"
-  function parseFilename(filename) {
-    const m = filename.match(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})\./);
-    if (!m) return filename;
-    const [, yyyy, mm, dd, hh, min, ss] = m;
-    return `${dd}.${mm}.${yyyy}, ${hh}:${min}:${ss}`;
+  // ── Filename helpers ───────────────────────────────────────────────────────
+  // Format: "20260326-150000.jpg"
+
+  function parseParts(fn) {
+    const m = fn.match(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})\./);
+    if (!m) return null;
+    return { yyyy: m[1], mm: m[2], dd: m[3], hh: m[4], min: m[5], ss: m[6] };
+  }
+
+  function getMonthKey(fn) {
+    const p = parseParts(fn); return p ? `${p.yyyy}-${p.mm}` : null;
+  }
+  function getDayKey(fn) {
+    const p = parseParts(fn); return p ? `${p.yyyy}-${p.mm}-${p.dd}` : null;
+  }
+  function getTimeLabel(fn) {
+    const p = parseParts(fn); return p ? `${p.hh}:${p.min}` : fn;
+  }
+  function formatFullTs(fn) {
+    const p = parseParts(fn);
+    return p ? `${p.dd}.${p.mm}.${p.yyyy}, ${p.hh}:${p.min}:${p.ss}` : fn;
+  }
+
+  const DE_MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  const DE_DAYS   = ['So.','Mo.','Di.','Mi.','Do.','Fr.','Sa.'];
+
+  function formatMonth(key) {
+    // key = "2026-03"
+    const [yyyy, mm] = key.split('-');
+    return `${DE_MONTHS[parseInt(mm, 10) - 1]} ${yyyy}`;
+  }
+  function formatDay(key) {
+    // key = "2026-03-26"
+    const [yyyy, mm, dd] = key.split('-');
+    const dow = DE_DAYS[new Date(parseInt(yyyy), parseInt(mm)-1, parseInt(dd)).getDay()];
+    return `${dow} ${parseInt(dd, 10)}.${mm}.`;
   }
 
   // ── Theme ─────────────────────────────────────────────────────────────────
@@ -312,76 +371,126 @@
     btn.textContent = dark ? '🌙\u00A0Dark' : '☀️\u00A0Light';
     btn.title = dark ? 'Zu Light wechseln' : 'Zu Dark wechseln';
   }
-
   function initTheme() {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === 'dark' || saved === 'light') { applyTheme(saved); return; }
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    applyTheme(prefersDark ? 'dark' : 'light');
+    applyTheme(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   }
 
   // ── State ─────────────────────────────────────────────────────────────────
-  let images   = [];
-  let lbIndex  = 0;
-  const lb     = $('#lightbox');
+  let allImages  = [];
+  let monthMap   = new Map();  // Map<"YYYY-MM", Map<"YYYY-MM-DD", string[]>>
+  let activeMonth = null;
+  let activeDay   = null;
+  let viewImages  = [];        // images visible in current day grid (for lightbox)
+  let lbIndex     = 0;
+  const lb        = $('#lightbox');
 
-  // ── Loading skeletons ─────────────────────────────────────────────────────
-  function buildSkeletons() {
-    const grid = $('#skeletonGrid');
-    for (let i = 0; i < SKELETON_COUNT; i++) {
-      const d = document.createElement('div');
-      d.className = 'skeleton skeleton-thumb';
-      grid.appendChild(d);
+  // ── Build month map ────────────────────────────────────────────────────────
+  function buildMonthMap(images) {
+    const map = new Map();
+    for (const fn of images) {
+      const mk = getMonthKey(fn);
+      const dk = getDayKey(fn);
+      if (!mk || !dk) continue;
+      if (!map.has(mk)) map.set(mk, new Map());
+      const dayMap = map.get(mk);
+      if (!dayMap.has(dk)) dayMap.set(dk, []);
+      dayMap.get(dk).push(fn);
     }
+    return map;
   }
 
-  // ── State switches ────────────────────────────────────────────────────────
+  // ── State switch ──────────────────────────────────────────────────────────
   function showState(name) {
-    ['stateLoading', 'stateEmpty', 'stateError', 'stateGallery'].forEach(id => {
+    ['stateLoading','stateEmpty','stateError','stateGallery'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.toggle('hidden', id !== name);
     });
   }
 
-  // ── Render hero ───────────────────────────────────────────────────────────
-  function renderHero(filename) {
+  // ── Hero ──────────────────────────────────────────────────────────────────
+  function renderHero(fn) {
     const img = $('#heroImg');
-    img.src = IMAGES_PATH + filename;
-    img.alt = 'Aktuellstes Bild – ' + parseFilename(filename);
-    img.onerror = () => {
-      img.closest('.hero-wrap').style.display = 'none';
-    };
-    img.addEventListener('click', () => openLightbox(0));
-    img.style.cursor = 'zoom-in';
-    $('#heroTs').textContent = parseFilename(filename);
-    $('#heroCount').textContent = images.length + ' Aufnahme' + (images.length !== 1 ? 'n' : '');
+    img.src = IMAGES_PATH + fn;
+    img.alt = 'Aktuellstes Bild – ' + formatFullTs(fn);
+    img.onerror = () => { img.closest('.hero-wrap').style.display = 'none'; };
+    img.onclick = () => openLightboxGlobal(0);
+    $('#heroTs').textContent = formatFullTs(fn);
+    $('#heroCount').textContent = allImages.length + '\u00A0Aufnahme' + (allImages.length !== 1 ? 'n' : '');
   }
 
-  // ── Render gallery grid ───────────────────────────────────────────────────
-  function renderGrid() {
-    const grid = $('#galleryGrid');
+  // ── Timeline ──────────────────────────────────────────────────────────────
+  function renderTimeline() {
+    renderMonthSelector();
+    renderDaySelector();
+    renderDayGrid();
+    // update total count label
+    let total = 0;
+    monthMap.forEach(dm => dm.forEach(arr => total += arr.length));
+    $('#tlCount').textContent = total + '\u00A0Aufnahme' + (total !== 1 ? 'n' : '');
+  }
+
+  function renderMonthSelector() {
+    const row = $('#monthSelector');
+    row.innerHTML = '';
+    const months = [...monthMap.keys()].sort().reverse();
+    months.forEach(mk => {
+      const btn = document.createElement('button');
+      btn.className = 'btn sel-btn' + (mk === activeMonth ? ' active' : '');
+      btn.textContent = formatMonth(mk);
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(mk === activeMonth));
+      btn.onclick = () => selectMonth(mk);
+      row.appendChild(btn);
+    });
+  }
+
+  function renderDaySelector() {
+    const row = $('#daySelector');
+    row.innerHTML = '';
+    if (!activeMonth || !monthMap.has(activeMonth)) return;
+    const days = [...monthMap.get(activeMonth).keys()].sort().reverse();
+    days.forEach(dk => {
+      const btn = document.createElement('button');
+      btn.className = 'btn sel-btn' + (dk === activeDay ? ' active' : '');
+      btn.textContent = formatDay(dk);
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(dk === activeDay));
+      btn.onclick = () => selectDay(dk);
+      row.appendChild(btn);
+    });
+  }
+
+  function renderDayGrid() {
+    const grid = $('#dayGrid');
     grid.innerHTML = '';
-    images.forEach((filename, index) => {
+    if (!activeMonth || !activeDay) return;
+    const dm = monthMap.get(activeMonth);
+    if (!dm || !dm.has(activeDay)) return;
+
+    viewImages = dm.get(activeDay);
+
+    viewImages.forEach((fn, idx) => {
       const item = document.createElement('div');
       item.className = 'thumb-item';
       item.setAttribute('role', 'button');
       item.setAttribute('tabindex', '0');
-      item.setAttribute('aria-label', 'Bild vom ' + parseFilename(filename) + ' öffnen');
+      item.setAttribute('aria-label', 'Bild um ' + getTimeLabel(fn) + ' Uhr öffnen');
 
       const img = document.createElement('img');
-      img.src = IMAGES_PATH + filename;
-      img.alt = 'Aufnahme ' + parseFilename(filename);
+      img.src = IMAGES_PATH + fn;
+      img.alt = 'Aufnahme ' + getTimeLabel(fn);
       img.loading = 'lazy';
       img.onerror = () => { item.style.display = 'none'; };
 
       const ts = document.createElement('div');
       ts.className = 'thumb-ts';
-      ts.textContent = parseFilename(filename);
+      ts.textContent = getTimeLabel(fn);
 
-      item.appendChild(img);
-      item.appendChild(ts);
+      item.append(img, ts);
 
-      const open = () => openLightbox(index);
+      const open = () => openLightboxView(idx);
       item.addEventListener('click', open);
       item.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
 
@@ -389,33 +498,62 @@
     });
   }
 
-  // ── Lightbox ──────────────────────────────────────────────────────────────
-  function openLightbox(index) {
-    lbIndex = index;
-    updateLightbox();
+  function selectMonth(mk) {
+    activeMonth = mk;
+    const days = [...monthMap.get(mk).keys()].sort().reverse();
+    activeDay = days[0] || null;
+    renderTimeline();
+  }
+
+  function selectDay(dk) {
+    activeDay = dk;
+    renderDaySelector();
+    renderDayGrid();
+  }
+
+  // ── Lightbox (view = current day) ─────────────────────────────────────────
+  function openLightboxView(idx) {
+    lbIndex = idx;
+    updateLightbox(viewImages);
     if (typeof lb.showModal === 'function') lb.showModal();
   }
 
-  function closeLightbox() {
-    lb.close();
+  // Hero lightbox navigates allImages
+  function openLightboxGlobal(idx) {
+    viewImages = allImages;
+    lbIndex = idx;
+    updateLightbox(viewImages);
+    if (typeof lb.showModal === 'function') lb.showModal();
   }
+
+  function closeLightbox() { lb.close(); }
 
   function navLightbox(delta) {
-    lbIndex = (lbIndex + delta + images.length) % images.length;
-    updateLightbox();
+    lbIndex = (lbIndex + delta + viewImages.length) % viewImages.length;
+    updateLightbox(viewImages);
   }
 
-  function updateLightbox() {
-    const filename = images[lbIndex];
-    $('#lbImg').src = IMAGES_PATH + filename;
-    $('#lbImg').alt = 'Aufnahme ' + parseFilename(filename);
-    $('#lbTs').textContent = parseFilename(filename);
-    $('#lbCounter').textContent = (lbIndex + 1) + ' / ' + images.length;
-    $('#lbPrev').disabled = images.length <= 1;
-    $('#lbNext').disabled = images.length <= 1;
+  function updateLightbox(imgs) {
+    const fn = imgs[lbIndex];
+    $('#lbImg').src = IMAGES_PATH + fn;
+    $('#lbImg').alt = 'Aufnahme ' + formatFullTs(fn);
+    $('#lbTs').textContent = formatFullTs(fn);
+    $('#lbCounter').textContent = (lbIndex + 1) + ' / ' + imgs.length;
+    $('#lbPrev').disabled = imgs.length <= 1;
+    $('#lbNext').disabled = imgs.length <= 1;
   }
 
-  // ── Fetch & init gallery ──────────────────────────────────────────────────
+  // ── Skeletons ─────────────────────────────────────────────────────────────
+  function buildSkeletons() {
+    const grid = $('#skeletonGrid');
+    for (let i = 0; i < SKELETON_N; i++) {
+      const d = document.createElement('div');
+      d.className = 'skeleton skeleton-thumb';
+      grid.appendChild(d);
+    }
+  }
+
+  // ── Fetch ─────────────────────────────────────────────────────────────────
   async function loadImages() {
     showState('stateLoading');
     try {
@@ -423,13 +561,19 @@
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error('Ungültiges Format');
-      images = data;
-      if (images.length === 0) {
-        showState('stateEmpty');
-        return;
-      }
-      renderHero(images[0]);
-      renderGrid();
+      allImages = data;
+      if (allImages.length === 0) { showState('stateEmpty'); return; }
+
+      monthMap = buildMonthMap(allImages);
+
+      // Default selection: newest month + newest day
+      const months = [...monthMap.keys()].sort().reverse();
+      activeMonth = months[0];
+      const days = [...monthMap.get(activeMonth).keys()].sort().reverse();
+      activeDay = days[0];
+
+      renderHero(allImages[0]);
+      renderTimeline();
       showState('stateGallery');
     } catch (e) {
       showState('stateError');
@@ -442,26 +586,21 @@
     buildSkeletons();
 
     $('#btnTheme').addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme') || 'dark';
-      applyTheme(current === 'dark' ? 'light' : 'dark');
+      const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+      applyTheme(cur === 'dark' ? 'light' : 'dark');
     });
-
     $('#btnRefresh').addEventListener('click', loadImages);
     $('#btnRetry').addEventListener('click', loadImages);
 
     $('#lbClose').addEventListener('click', closeLightbox);
     $('#lbPrev').addEventListener('click', () => navLightbox(-1));
     $('#lbNext').addEventListener('click', () => navLightbox(+1));
-
-    lb.addEventListener('click', e => {
-      if (e.target === lb) closeLightbox();
-    });
-
+    lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
     document.addEventListener('keydown', e => {
       if (!lb.open) return;
-      if (e.key === 'Escape')      { e.preventDefault(); closeLightbox(); }
-      if (e.key === 'ArrowLeft')   { e.preventDefault(); navLightbox(-1); }
-      if (e.key === 'ArrowRight')  { e.preventDefault(); navLightbox(+1); }
+      if (e.key === 'Escape')     { e.preventDefault(); closeLightbox(); }
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); navLightbox(-1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); navLightbox(+1); }
     });
 
     loadImages();
