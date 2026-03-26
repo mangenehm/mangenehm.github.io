@@ -198,7 +198,28 @@
       border: 1px solid var(--border); border-radius: var(--radius);
       box-shadow: 0 20px 60px rgba(0,0,0,0.6);
       max-width: min(96vw, 1100px); width: 100%; outline: none;
+      overflow: hidden;
     }
+
+    /* ── Lightbox filmstrip ── */
+    .lb-strip {
+      display: flex; gap: 5px;
+      overflow-x: auto; padding: 8px 12px 10px;
+      border-top: 1px solid var(--border);
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .lb-strip::-webkit-scrollbar { height: 4px; }
+    .lb-strip::-webkit-scrollbar-track { background: transparent; }
+    .lb-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .lb-strip-thumb {
+      flex-shrink: 0; width: 52px; height: 52px;
+      border-radius: 7px; overflow: hidden; cursor: pointer;
+      border: 2px solid transparent; opacity: 0.55;
+      transition: opacity .15s ease, border-color .15s ease;
+    }
+    .lb-strip-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .lb-strip-thumb.active { border-color: var(--brand); opacity: 1; }
+    .lb-strip-thumb:hover { opacity: 0.85; }
     dialog#lightbox::backdrop { background: rgba(2,6,23,0.82); }
     html[data-theme="light"] dialog#lightbox { background: #ffffff; }
     html[data-theme="light"] dialog#lightbox::backdrop { background: rgba(15,23,42,0.45); }
@@ -310,6 +331,7 @@
     <img id="lbImg" alt="Vergrößertes Bild" />
     <button id="lbNext" class="lb-nav btn" aria-label="Nächstes Bild">›</button>
   </div>
+  <div class="lb-strip" id="lbStrip" role="listbox" aria-label="Aufnahmen"></div>
 </dialog>
 
 <script>
@@ -512,18 +534,47 @@
   }
 
   // ── Lightbox (view = current day) ─────────────────────────────────────────
+  function renderStrip(imgs) {
+    const strip = $('#lbStrip');
+    strip.innerHTML = '';
+    imgs.forEach((fn, i) => {
+      const thumb = document.createElement('div');
+      thumb.className = 'lb-strip-thumb' + (i === lbIndex ? ' active' : '');
+      thumb.setAttribute('role', 'option');
+      thumb.setAttribute('aria-selected', String(i === lbIndex));
+      thumb.setAttribute('aria-label', 'Aufnahme ' + getTimeLabel(fn));
+      const img = document.createElement('img');
+      img.src = IMAGES_PATH + fn;
+      img.alt = '';
+      img.loading = 'lazy';
+      thumb.appendChild(img);
+      thumb.addEventListener('click', () => { lbIndex = i; updateLightbox(imgs); });
+      strip.appendChild(thumb);
+    });
+  }
+
   function openLightboxView(idx) {
     lbIndex = idx;
+    renderStrip(viewImages);
     updateLightbox(viewImages);
     if (typeof lb.showModal === 'function') lb.showModal();
+    requestAnimationFrame(() => {
+      const t = $('#lbStrip').children[lbIndex];
+      if (t) t.scrollIntoView({ inline: 'center', block: 'nearest' });
+    });
   }
 
   // Hero lightbox navigates allImages
   function openLightboxGlobal(idx) {
     viewImages = allImages;
     lbIndex = idx;
+    renderStrip(viewImages);
     updateLightbox(viewImages);
     if (typeof lb.showModal === 'function') lb.showModal();
+    requestAnimationFrame(() => {
+      const t = $('#lbStrip').children[lbIndex];
+      if (t) t.scrollIntoView({ inline: 'center', block: 'nearest' });
+    });
   }
 
   function closeLightbox() { lb.close(); }
@@ -541,6 +592,15 @@
     $('#lbCounter').textContent = (lbIndex + 1) + ' / ' + imgs.length;
     $('#lbPrev').disabled = imgs.length <= 1;
     $('#lbNext').disabled = imgs.length <= 1;
+    // Filmstreifen synchronisieren
+    const strip = $('#lbStrip');
+    $$('.lb-strip-thumb', strip).forEach((el, i) => {
+      const active = i === lbIndex;
+      el.classList.toggle('active', active);
+      el.setAttribute('aria-selected', String(active));
+    });
+    const activeThumb = strip.children[lbIndex];
+    if (activeThumb) activeThumb.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   }
 
   // ── Skeletons ─────────────────────────────────────────────────────────────
@@ -602,6 +662,21 @@
       if (e.key === 'ArrowLeft')  { e.preventDefault(); navLightbox(-1); }
       if (e.key === 'ArrowRight') { e.preventDefault(); navLightbox(+1); }
     });
+
+    // Touch-Swipe für Lightbox
+    let _touchStartX = 0, _touchStartY = 0;
+    const lbBody = $('.lb-body');
+    lbBody.addEventListener('touchstart', e => {
+      _touchStartX = e.changedTouches[0].clientX;
+      _touchStartY = e.changedTouches[0].clientY;
+    }, { passive: true });
+    lbBody.addEventListener('touchend', e => {
+      if (!lb.open) return;
+      const dx = e.changedTouches[0].clientX - _touchStartX;
+      const dy = e.changedTouches[0].clientY - _touchStartY;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+      navLightbox(dx < 0 ? +1 : -1);
+    }, { passive: true });
 
     loadImages();
   }
