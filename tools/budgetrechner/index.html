@@ -174,11 +174,8 @@
     <div class="dialog-backdrop" id="dialogBackdrop" onclick="closeSavedSessions()"></div>
 
     <script>
-        let positions = [
-            { id: 1, name: 'Projektmanagement', rate: '100', plannedHours: '40', actualHours: '0' },
-            { id: 2, name: 'Content Management', rate: '80', plannedHours: '60', actualHours: '0' }
-        ];
-        let nextId = 3;
+        let positions = [];
+        let nextId = 1;
 
         function formatNumber(number, decimals = 2) {
             return Number(number).toLocaleString('de-DE', {
