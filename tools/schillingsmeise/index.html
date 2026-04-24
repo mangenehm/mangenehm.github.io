@@ -111,6 +111,25 @@
       pointer-events: none;
     }
 
+    /* ── Hero Video ── */
+    .hero-video-wrap {
+      position: relative; overflow: hidden;
+      border-radius: calc(var(--radius) - 4px);
+      background: #000;
+      line-height: 0;
+    }
+    .hero-video-wrap video {
+      width: 100%; max-height: 68vh; object-fit: cover;
+      display: block; border-radius: calc(var(--radius) - 4px);
+    }
+    .hero-video-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 10px 12px;
+      background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%);
+      border-radius: 0 0 calc(var(--radius) - 4px) calc(var(--radius) - 4px);
+      pointer-events: none;
+    }
+
     /* ── Timeline ── */
     .tl-header {
       display: flex; align-items: center; gap: 10px;
@@ -279,6 +298,23 @@
   <!-- Gallery -->
   <div id="stateGallery" class="hidden">
 
+    <!-- Hero Video -->
+    <div id="heroVideoCard" class="card hidden" style="margin-bottom:14px; padding:12px;">
+      <div class="row wrap hero-meta">
+        <span class="tl-title">Live-Aufnahme</span>
+        <span class="spacer"></span>
+        <span class="pill muted small" id="heroVideoLabel">Video</span>
+      </div>
+      <div class="hero-video-wrap">
+        <video id="heroVideo" autoplay muted loop playsinline
+               preload="metadata" aria-label="Aktuellstes Video">
+        </video>
+        <div class="hero-video-label">
+          <span class="pill" id="heroVideoTs"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- Hero -->
     <div class="card" style="margin-bottom:14px; padding:12px;">
       <div class="row wrap hero-meta">
@@ -336,6 +372,7 @@
 (() => {
   const MANIFEST    = 'images.json';
   const IMAGES_PATH = 'images/';
+  const VIDEO_PATH  = 'images/hero.mp4';
   const THEME_KEY   = 'schillingsmeise-theme';
   const SKELETON_N  = 10;
 
@@ -427,6 +464,30 @@
       const el = document.getElementById(id);
       if (el) el.classList.toggle('hidden', id !== name);
     });
+  }
+
+  // ── Hero Video ────────────────────────────────────────────────────────────
+  function initHeroVideo() {
+    const video = $('#heroVideo');
+    const card  = $('#heroVideoCard');
+    if (!video || !card) return;
+
+    video.addEventListener('loadedmetadata', () => {
+      card.classList.remove('hidden');
+      const label = $('#heroVideoLabel');
+      if (label && video.duration && isFinite(video.duration)) {
+        const m = Math.floor(video.duration / 60);
+        const s = Math.floor(video.duration % 60);
+        label.textContent = m > 0 ? `${m} min ${s} s` : `${s} s`;
+      }
+      const ts = $('#heroVideoTs');
+      const name = VIDEO_PATH.split('/').pop().replace(/\.[^.]+$/, '');
+      const p = name.match(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})$/);
+      if (ts) ts.textContent = p ? `${p[3]}.${p[2]}.${p[1]}, ${p[4]}:${p[5]}:${p[6]}` : 'Video';
+    });
+    video.addEventListener('error', () => { card.classList.add('hidden'); });
+
+    video.src = VIDEO_PATH;
   }
 
   // ── Hero ──────────────────────────────────────────────────────────────────
@@ -637,6 +698,7 @@
   function boot() {
     initTheme();
     buildSkeletons();
+    initHeroVideo();
 
     $('#btnTheme').addEventListener('click', () => {
       const cur = document.documentElement.getAttribute('data-theme') || 'dark';
