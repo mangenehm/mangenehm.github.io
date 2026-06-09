@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Faraway – Punktezähler</title>
+  <style>
+    :root {
+      --sand: #f5e6c8;
+      --sand-dark: #e8d5a3;
+      --rust: #c0392b;
+      --rust-light: #e74c3c;
+      --amber: #d35400;
+      --amber-light: #e67e22;
+      --brown: #6e4c1e;
+      --brown-light: #8b6914;
+      --stone: #7f8c8d;
+      --stone-light: #bdc3c7;
+      --text: #2c1810;
+      --white: #faf7f0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--sand);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      width: 100%;
+      background: linear-gradient(135deg, var(--brown) 0%, var(--rust) 100%);
+      padding: 16px 20px;
+      text-align: center;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.35);
+    }
+    .app-header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--sand);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    .app-header .subtitle {
+      font-size: 0.8rem;
+      color: var(--sand-dark);
+      letter-spacing: 2px;
+      margin-top: 2px;
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; width: 100%; max-width: 700px; padding: 24px 16px; }
+    .screen.active { display: block; }
+
+    /* ── SETUP SCREEN ── */
+    .setup-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 28px 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    }
+    .setup-card h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--brown);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .player-count-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .player-count-row label {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .count-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--rust);
+      background: var(--white);
+      color: var(--rust);
+      font-size: 1.3rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .count-btn:hover { background: var(--rust); color: var(--white); }
+    .count-display {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--rust);
+      min-width: 36px;
+      text-align: center;
+    }
+    .player-inputs { display: flex; flex-direction: column; gap: 12px; }
+    .player-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .player-color-dot {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .player-inputs input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid var(--sand-dark);
+      border-radius: 10px;
+      font-size: 1rem;
+      background: var(--sand);
+      color: var(--text);
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    .player-inputs input:focus { border-color: var(--amber); }
+    .btn-primary {
+      width: 100%;
+      margin-top: 28px;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--rust) 0%, var(--amber) 100%);
+      color: var(--white);
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: opacity 0.15s, transform 0.1s;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    /* ── SCORE SCREEN ── */
+    .score-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .round-badge {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--amber);
+      letter-spacing: 1px;
+    }
+    .btn-reset {
+      padding: 7px 14px;
+      background: transparent;
+      border: 2px solid var(--stone);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--stone);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .btn-reset:hover { border-color: var(--rust); color: var(--rust); }
+
+    /* Score Table */
+    .score-table-wrap {
+      background: var(--white);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      overflow-x: auto;
+    }
+    table.score-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 340px;
+    }
+    table.score-table thead th {
+      background: linear-gradient(135deg, var(--brown) 0%, var(--rust) 100%);
+      color: var(--sand);
+      padding: 10px 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-align: center;
+      position: sticky;
+      top: 0;
+    }
+    table.score-table thead th.row-label-head {
+      width: 56px;
+      text-align: center;
+    }
+    table.score-table tbody tr { border-bottom: 1px solid var(--sand-dark); }
+    table.score-table tbody tr:last-child { border-bottom: none; }
+    table.score-table tbody td {
+      padding: 4px 4px;
+      text-align: center;
+    }
+    .row-label {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--brown);
+      width: 56px;
+      text-align: center;
+    }
+    .row-icon { font-size: 1.2rem; }
+
+    /* sanctuary & total rows */
+    tr.sanctuary-row { background: #f5f0e8; }
+    tr.sanctuary-row .row-label { color: var(--stone); font-size: 0.95rem; }
+    tr.total-row {
+      background: linear-gradient(90deg, #c0392b11, #e67e2211);
+    }
+    tr.total-row td { padding: 8px 4px; }
+    tr.total-row .row-label {
+      color: var(--rust);
+      font-size: 1rem;
+      font-weight: 800;
+    }
+    tr.total-row .score-cell input {
+      background: transparent;
+      border: none;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--rust);
+      text-align: center;
+      width: 100%;
+      pointer-events: none;
+    }
+
+    /* score inputs */
+    .score-cell input {
+      width: 100%;
+      min-width: 44px;
+      max-width: 70px;
+      padding: 8px 4px;
+      border: 1.5px solid var(--sand-dark);
+      border-radius: 8px;
+      font-size: 1rem;
+      text-align: center;
+      background: var(--sand);
+      color: var(--text);
+      transition: border-color 0.15s, background 0.15s;
+      -moz-appearance: textfield;
+    }
+    .score-cell input::-webkit-inner-spin-button,
+    .score-cell input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .score-cell input:focus {
+      outline: none;
+      border-color: var(--amber);
+      background: #fff7eb;
+    }
+    .score-cell input.has-value {
+      background: #fff7eb;
+      border-color: var(--amber-light);
+    }
+    .sanctuary-row .score-cell input {
+      border-color: var(--stone-light);
+      background: #f0ede8;
+    }
+    .sanctuary-row .score-cell input:focus {
+      border-color: var(--stone);
+      background: #fff;
+    }
+
+    /* Results button */
+    .results-btn-row {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    .results-btn-row .btn-primary { margin-top: 0; }
+
+    /* ── RESULTS SCREEN ── */
+    .results-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 24px 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    }
+    .results-card h2 {
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--brown);
+      margin-bottom: 24px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .podium {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 12px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .podium-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .podium-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text);
+      max-width: 80px;
+      text-align: center;
+      word-break: break-word;
+    }
+    .podium-score {
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+    .podium-block {
+      width: 70px;
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 8px;
+      font-size: 1.5rem;
+    }
+    .podium-block.rank1 { background: #FFD700; min-height: 90px; }
+    .podium-block.rank2 { background: #C0C0C0; min-height: 65px; }
+    .podium-block.rank3 { background: #CD7F32; min-height: 48px; }
+    .podium-block.rankN { background: var(--sand-dark); min-height: 36px; }
+
+    .results-list { display: flex; flex-direction: column; gap: 8px; }
+    .result-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: var(--sand);
+    }
+    .result-row.rank-1 { background: #fff8dc; border: 2px solid #FFD700; }
+    .result-row.rank-2 { background: #f8f8f8; border: 2px solid #C0C0C0; }
+    .result-row.rank-3 { background: #fdf5ec; border: 2px solid #CD7F32; }
+    .result-rank {
+      font-size: 1.2rem;
+      font-weight: 800;
+      min-width: 28px;
+    }
+    .result-color-dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .result-name { flex: 1; font-weight: 600; font-size: 1rem; }
+    .result-score {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--rust);
+    }
+    .result-breakdown {
+      font-size: 0.75rem;
+      color: var(--stone);
+      margin-top: 2px;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      padding: 12px;
+      background: var(--sand-dark);
+      color: var(--brown);
+      border: 2px solid var(--brown-light);
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-secondary:hover { background: var(--brown-light); color: var(--white); }
+
+    /* ── MISC ── */
+    .emoji-icon { font-style: normal; }
+    @media (max-width: 400px) {
+      .app-header h1 { font-size: 1.6rem; }
+      .score-cell input { min-width: 38px; font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1>FARAWAY</h1>
+  <div class="subtitle">Punktezähler</div>
+</header>
+
+<!-- SETUP SCREEN -->
+<section class="screen active" id="screen-setup">
+  <div class="setup-card">
+    <h2>Spieler einrichten</h2>
+
+    <div class="player-count-row">
+      <label>Anzahl Spieler:</label>
+      <button class="count-btn" id="btn-minus">−</button>
+      <span class="count-display" id="count-display">3</span>
+      <button class="count-btn" id="btn-plus">+</button>
+    </div>
+
+    <div class="player-inputs" id="player-inputs"></div>
+
+    <button class="btn-primary" id="btn-start">Spiel starten →</button>
+  </div>
+</section>
+
+<!-- SCORE SCREEN -->
+<section class="screen" id="screen-score">
+  <div class="score-header-row">
+    <span class="round-badge">8 RUNDEN · PUNKTE AM ENDE EINTRAGEN</span>
+    <button class="btn-reset" id="btn-reset">↺ Neu</button>
+  </div>
+
+  <div class="score-table-wrap">
+    <table class="score-table" id="score-table">
+      <thead id="score-thead"></thead>
+      <tbody id="score-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="results-btn-row">
+    <button class="btn-primary" id="btn-show-results">Ergebnis anzeigen 🏆</button>
+  </div>
+</section>
+
+<!-- RESULTS SCREEN -->
+<section class="screen" id="screen-results">
+  <div class="results-card">
+    <h2>🏆 Ergebnis</h2>
+    <div class="podium" id="podium"></div>
+    <div class="results-list" id="results-list"></div>
+  </div>
+  <div class="results-btn-row" style="margin-top:16px;">
+    <button class="btn-secondary" id="btn-back-score">← Zurück zur Tabelle</button>
+    <button class="btn-primary" id="btn-new-game">Neues Spiel</button>
+  </div>
+</section>
+
+<script>
+  const PLAYER_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c'];
+  const PLAYER_EMOJIS = ['🔴','🔵','🟢','🟡','🟣','🟤'];
+  const MIN_PLAYERS = 2;
+  const MAX_PLAYERS = 6;
+  const ROUNDS = 8;
+
+  let players = [];
+  let scores = {}; // scores[playerIndex][rowKey] = value
+
+  // ── SETUP ──
+  let playerCount = 3;
+
+  const countDisplay = document.getElementById('count-display');
+  const playerInputs = document.getElementById('player-inputs');
+
+  function renderPlayerInputs() {
+    countDisplay.textContent = playerCount;
+    playerInputs.innerHTML = '';
+    const defaultNames = ['Anna','Ben','Clara','David','Eva','Felix'];
+    for (let i = 0; i < playerCount; i++) {
+      const row = document.createElement('div');
+      row.className = 'player-input-row';
+      const dot = document.createElement('div');
+      dot.className = 'player-color-dot';
+      dot.style.background = PLAYER_COLORS[i];
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = defaultNames[i];
+      input.maxLength = 16;
+      input.dataset.playerIndex = i;
+      // keep existing value if re-rendering
+      if (players[i]) input.value = players[i];
+      row.appendChild(dot);
+      row.appendChild(input);
+      playerInputs.appendChild(row);
+    }
+  }
+
+  document.getElementById('btn-minus').addEventListener('click', () => {
+    if (playerCount > MIN_PLAYERS) { playerCount--; renderPlayerInputs(); }
+  });
+  document.getElementById('btn-plus').addEventListener('click', () => {
+    if (playerCount < MAX_PLAYERS) { playerCount++; renderPlayerInputs(); }
+  });
+
+  document.getElementById('btn-start').addEventListener('click', () => {
+    const inputs = playerInputs.querySelectorAll('input');
+    players = Array.from(inputs).map((el, i) => el.value.trim() || `Spieler ${i+1}`);
+    scores = {};
+    for (let i = 0; i < players.length; i++) {
+      scores[i] = {};
+    }
+    buildScoreTable();
+    showScreen('screen-score');
+  });
+
+  // ── SCORE TABLE ──
+  function buildScoreTable() {
+    const thead = document.getElementById('score-thead');
+    const tbody = document.getElementById('score-tbody');
+
+    // Header
+    thead.innerHTML = '';
+    const headRow = document.createElement('tr');
+    const labelTh = document.createElement('th');
+    labelTh.className = 'row-label-head';
+    labelTh.textContent = '';
+    headRow.appendChild(labelTh);
+    players.forEach((name, i) => {
+      const th = document.createElement('th');
+      th.style.maxWidth = '80px';
+      th.innerHTML = `<span style="color:${PLAYER_COLORS[i]};margin-right:4px;">${PLAYER_EMOJIS[i]}</span>${name}`;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+
+    // Rows 1-8
+    tbody.innerHTML = '';
+    for (let r = 1; r <= ROUNDS; r++) {
+      const tr = document.createElement('tr');
+      const tdLabel = document.createElement('td');
+      tdLabel.className = 'row-label';
+      tdLabel.textContent = r;
+      tr.appendChild(tdLabel);
+      players.forEach((_, pi) => {
+        tr.appendChild(makeScoreCell(pi, `r${r}`));
+      });
+      tbody.appendChild(tr);
+    }
+
+    // Sanctuary row
+    const sanctuaryTr = document.createElement('tr');
+    sanctuaryTr.className = 'sanctuary-row';
+    const sanctuaryLabel = document.createElement('td');
+    sanctuaryLabel.className = 'row-label';
+    sanctuaryLabel.innerHTML = '<span title="Heiligtümer">⛩️</span>';
+    sanctuaryLabel.style.fontSize = '1.1rem';
+    sanctuaryTr.appendChild(sanctuaryLabel);
+    players.forEach((_, pi) => {
+      sanctuaryTr.appendChild(makeScoreCell(pi, 'sanctuary'));
+    });
+    tbody.appendChild(sanctuaryTr);
+
+    // Total row
+    const totalTr = document.createElement('tr');
+    totalTr.className = 'total-row';
+    const totalLabel = document.createElement('td');
+    totalLabel.className = 'row-label';
+    totalLabel.textContent = 'T';
+    totalTr.appendChild(totalLabel);
+    players.forEach((_, pi) => {
+      const td = document.createElement('td');
+      td.className = 'score-cell';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.readOnly = true;
+      input.id = `total-${pi}`;
+      input.value = '0';
+      td.appendChild(input);
+      totalTr.appendChild(td);
+    });
+    tbody.appendChild(totalTr);
+  }
+
+  function makeScoreCell(playerIndex, rowKey) {
+    const td = document.createElement('td');
+    td.className = 'score-cell';
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.inputMode = 'numeric';
+    input.min = '-99';
+    input.max = '999';
+    input.placeholder = '–';
+    input.dataset.player = playerIndex;
+    input.dataset.row = rowKey;
+
+    const saved = scores[playerIndex]?.[rowKey];
+    if (saved !== undefined && saved !== '') {
+      input.value = saved;
+      input.classList.add('has-value');
+    }
+
+    input.addEventListener('input', () => {
+      const val = input.value.trim();
+      scores[playerIndex][rowKey] = val === '' ? '' : parseInt(val, 10) || 0;
+      input.classList.toggle('has-value', val !== '');
+      updateTotal(playerIndex);
+    });
+
+    // Move focus on Enter
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const allInputs = Array.from(document.querySelectorAll('.score-cell input[type="number"]'));
+        const idx = allInputs.indexOf(input);
+        if (idx < allInputs.length - 1) allInputs[idx + 1].focus();
+      }
+    });
+
+    td.appendChild(input);
+    return td;
+  }
+
+  function updateTotal(playerIndex) {
+    let sum = 0;
+    for (let r = 1; r <= ROUNDS; r++) {
+      const v = scores[playerIndex][`r${r}`];
+      if (v !== '' && v !== undefined) sum += Number(v);
+    }
+    const sv = scores[playerIndex]['sanctuary'];
+    if (sv !== '' && sv !== undefined) sum += Number(sv);
+    const totalEl = document.getElementById(`total-${playerIndex}`);
+    if (totalEl) totalEl.value = sum;
+  }
+
+  function getTotal(playerIndex) {
+    const el = document.getElementById(`total-${playerIndex}`);
+    return el ? parseInt(el.value, 10) || 0 : 0;
+  }
+
+  // ── RESULTS ──
+  document.getElementById('btn-show-results').addEventListener('click', showResults);
+  document.getElementById('btn-back-score').addEventListener('click', () => showScreen('screen-score'));
+  document.getElementById('btn-new-game').addEventListener('click', () => {
+    players = [];
+    scores = {};
+    renderPlayerInputs();
+    showScreen('screen-setup');
+  });
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    if (confirm('Alle Punkte zurücksetzen?')) {
+      for (let i = 0; i < players.length; i++) scores[i] = {};
+      buildScoreTable();
+    }
+  });
+
+  function showResults() {
+    const ranked = players.map((name, i) => ({
+      name, index: i, total: getTotal(i),
+      breakdown: buildBreakdown(i)
+    })).sort((a, b) => b.total - a.total);
+
+    // assign ranks (handle ties)
+    let rank = 1;
+    for (let i = 0; i < ranked.length; i++) {
+      if (i > 0 && ranked[i].total === ranked[i-1].total) {
+        ranked[i].rank = ranked[i-1].rank;
+      } else {
+        ranked[i].rank = rank;
+      }
+      rank++;
+    }
+
+    renderPodium(ranked);
+    renderList(ranked);
+    showScreen('screen-results');
+  }
+
+  function buildBreakdown(pi) {
+    const parts = [];
+    for (let r = 1; r <= ROUNDS; r++) {
+      const v = scores[pi]?.[`r${r}`];
+      if (v !== '' && v !== undefined) parts.push(`K${r}: ${v}`);
+    }
+    const s = scores[pi]?.['sanctuary'];
+    if (s !== '' && s !== undefined) parts.push(`⛩️: ${s}`);
+    return parts.join(' · ');
+  }
+
+  function renderPodium(ranked) {
+    const podium = document.getElementById('podium');
+    podium.innerHTML = '';
+    const top3 = ranked.slice(0, Math.min(3, ranked.length));
+    // Reorder for visual: 2nd, 1st, 3rd
+    const order = top3.length === 1 ? [top3[0]]
+      : top3.length === 2 ? [top3[1], top3[0]]
+      : [top3[1], top3[0], top3[2]];
+    const heights = {'rank-1': 'rank1', 'rank-2': 'rank2', 'rank-3': 'rank3'};
+    const medals = ['🥇','🥈','🥉'];
+
+    order.forEach(p => {
+      const rankClass = p.rank <= 3 ? `rank${p.rank}` : 'rankN';
+      const item = document.createElement('div');
+      item.className = 'podium-item';
+      item.innerHTML = `
+        <div class="podium-name">${escHtml(p.name)}</div>
+        <div class="podium-score" style="color:${PLAYER_COLORS[p.index]}">${p.total}</div>
+        <div class="podium-block ${rankClass}">${p.rank <= 3 ? medals[p.rank-1] : p.rank + '.'}</div>
+      `;
+      podium.appendChild(item);
+    });
+  }
+
+  function renderList(ranked) {
+    const list = document.getElementById('results-list');
+    list.innerHTML = '';
+    const rankEmoji = ['🥇','🥈','🥉'];
+    ranked.forEach(p => {
+      const div = document.createElement('div');
+      div.className = `result-row${p.rank <= 3 ? ` rank-${p.rank}` : ''}`;
+      div.innerHTML = `
+        <span class="result-rank">${p.rank <= 3 ? rankEmoji[p.rank-1] : p.rank + '.'}</span>
+        <div class="result-color-dot" style="background:${PLAYER_COLORS[p.index]}"></div>
+        <div style="flex:1">
+          <div class="result-name">${escHtml(p.name)}</div>
+          <div class="result-breakdown">${p.breakdown || '–'}</div>
+        </div>
+        <span class="result-score">${p.total}</span>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  // ── HELPERS ──
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── INIT ──
+  renderPlayerInputs();
+</script>
+</body>
+</html>
