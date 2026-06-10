@@ -4,471 +4,649 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Faraway – Punktezähler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --sand: #f5e6c8;
-      --sand-dark: #e8d5a3;
-      --rust: #c0392b;
-      --rust-light: #e74c3c;
-      --amber: #d35400;
-      --amber-light: #e67e22;
-      --brown: #6e4c1e;
-      --brown-light: #8b6914;
-      --stone: #7f8c8d;
-      --stone-light: #bdc3c7;
-      --text: #2c1810;
-      --white: #faf7f0;
+      --night: #1b1040;
+      --dusk: #45206e;
+      --magenta: #b53471;
+      --coral: #e8595c;
+      --sunset: #f0932b;
+      --gold: #f6c667;
+      --cream: #fdf3e3;
+      --cream-dark: #f0e0c4;
+      --ink: #2c1530;
+      --teal: #1d8a8a;
+      --teal-deep: #11605f;
+      --pad-gray: #d8d6d2;
+      --pad-red: #d94f3d;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body { min-height: 100%; }
+
     body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--sand);
-      color: var(--text);
-      min-height: 100vh;
+      font-family: 'Nunito', system-ui, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg,
+        var(--night) 0%,
+        var(--dusk) 22%,
+        var(--magenta) 48%,
+        var(--coral) 66%,
+        var(--sunset) 85%,
+        var(--gold) 100%);
+      background-attachment: fixed;
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
     }
 
-    /* ── HEADER ── */
+    /* ── decorative sky ── */
+    .sky {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .sun {
+      position: absolute;
+      left: 50%;
+      top: 38%;
+      width: 340px; height: 340px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffe9b0 0%, #f9c74f 35%, rgba(249,199,79,0.25) 62%, transparent 70%);
+      opacity: 0.85;
+    }
+    .sun::after {
+      content: '';
+      position: absolute;
+      inset: -60px;
+      border-radius: 50%;
+      background: repeating-conic-gradient(rgba(255,220,140,0.14) 0deg 6deg, transparent 6deg 18deg);
+      animation: sunspin 90s linear infinite;
+    }
+    @keyframes sunspin { to { transform: rotate(360deg); } }
+    .star {
+      position: absolute;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: #fff;
+      opacity: 0.7;
+      animation: twinkle 3s ease-in-out infinite;
+    }
+    @keyframes twinkle { 0%,100% { opacity: 0.25; } 50% { opacity: 0.9; } }
+    .dunes {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      height: 130px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .dunes svg { width: 100%; height: 100%; display: block; }
+
+    /* ── header ── */
     .app-header {
-      width: 100%;
-      background: linear-gradient(135deg, var(--brown) 0%, var(--rust) 100%);
-      padding: 16px 20px;
+      position: relative;
+      z-index: 1;
       text-align: center;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.35);
+      padding: 26px 16px 10px;
     }
     .app-header h1 {
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--sand);
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      font-family: 'Yatra One', cursive;
+      font-size: 2.7rem;
+      letter-spacing: 6px;
+      color: var(--cream);
+      text-shadow: 0 3px 0 rgba(80,20,60,0.55), 0 8px 24px rgba(0,0,0,0.45);
     }
     .app-header .subtitle {
-      font-size: 0.8rem;
-      color: var(--sand-dark);
-      letter-spacing: 2px;
+      color: var(--gold);
+      letter-spacing: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
       margin-top: 2px;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.5);
     }
 
-    /* ── SCREENS ── */
-    .screen { display: none; width: 100%; max-width: 700px; padding: 24px 16px; }
+    /* ── screens ── */
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 560px;
+      padding: 14px 16px 160px;
+      position: relative;
+      z-index: 1;
+    }
     .screen.active { display: block; }
 
-    /* ── SETUP SCREEN ── */
-    .setup-card {
-      background: var(--white);
-      border-radius: 16px;
-      padding: 28px 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    /* ── shared card panel ── */
+    .panel {
+      background: var(--cream);
+      border-radius: 22px;
+      border: 3px solid rgba(60,20,50,0.25);
+      box-shadow: 0 14px 40px rgba(20,5,35,0.45), inset 0 2px 0 rgba(255,255,255,0.7);
+      padding: 24px 20px;
     }
-    .setup-card h2 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--brown);
-      margin-bottom: 20px;
+    .panel h2 {
+      font-family: 'Yatra One', cursive;
+      font-weight: 400;
       text-align: center;
+      font-size: 1.35rem;
+      color: var(--dusk);
+      margin-bottom: 18px;
     }
+
+    /* ── buttons ── */
+    .btn {
+      border: none;
+      border-radius: 14px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem;
+      cursor: pointer;
+      padding: 14px 18px;
+      transition: transform 0.1s, filter 0.15s;
+      letter-spacing: 0.5px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--coral), var(--sunset));
+      color: #fff;
+      box-shadow: 0 5px 0 #a93a30, 0 8px 18px rgba(0,0,0,0.3);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    }
+    .btn-primary:hover { filter: brightness(1.07); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--dusk);
+      border: 2.5px solid var(--dusk);
+      box-shadow: none;
+    }
+    .btn-ghost:hover { background: rgba(69,32,110,0.08); }
+    .btn-row { display: flex; gap: 12px; margin-top: 20px; }
+    .btn-row .btn { flex: 1; }
+
+    /* ── setup ── */
     .player-count-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
-    }
-    .player-count-row label {
-      font-weight: 600;
-      color: var(--text);
+      gap: 14px;
+      margin-bottom: 22px;
     }
     .count-btn {
-      width: 36px; height: 36px;
+      width: 44px; height: 44px;
       border-radius: 50%;
-      border: 2px solid var(--rust);
-      background: var(--white);
-      color: var(--rust);
-      font-size: 1.3rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.15s;
-    }
-    .count-btn:hover { background: var(--rust); color: var(--white); }
-    .count-display {
-      font-size: 1.6rem;
+      border: none;
+      background: var(--teal);
+      color: #fff;
+      font-size: 1.5rem;
       font-weight: 800;
-      color: var(--rust);
-      min-width: 36px;
+      cursor: pointer;
+      box-shadow: 0 3px 0 var(--teal-deep);
+      transition: transform 0.1s;
+    }
+    .count-btn:active { transform: scale(0.94); }
+    .count-display {
+      font-family: 'Yatra One', cursive;
+      font-size: 2rem;
+      color: var(--coral);
+      min-width: 44px;
       text-align: center;
     }
-    .player-inputs { display: flex; flex-direction: column; gap: 12px; }
-    .player-input-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .player-inputs { display: flex; flex-direction: column; gap: 10px; }
+    .player-input-row { display: flex; align-items: center; gap: 10px; }
     .player-color-dot {
-      width: 18px; height: 18px;
+      width: 22px; height: 22px;
       border-radius: 50%;
       flex-shrink: 0;
+      border: 2.5px solid rgba(0,0,0,0.2);
+      box-shadow: inset 0 -3px 5px rgba(0,0,0,0.25);
     }
     .player-inputs input {
       flex: 1;
-      padding: 10px 14px;
-      border: 2px solid var(--sand-dark);
-      border-radius: 10px;
-      font-size: 1rem;
-      background: var(--sand);
-      color: var(--text);
-      transition: border-color 0.15s;
-      outline: none;
-    }
-    .player-inputs input:focus { border-color: var(--amber); }
-    .btn-primary {
-      width: 100%;
-      margin-top: 28px;
-      padding: 14px;
-      background: linear-gradient(135deg, var(--rust) 0%, var(--amber) 100%);
-      color: var(--white);
-      border: none;
+      padding: 12px 16px;
+      border: 2.5px solid var(--cream-dark);
       border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 1px;
-      transition: opacity 0.15s, transform 0.1s;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      background: #fff;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.15s;
     }
-    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
-    .btn-primary:active { transform: translateY(0); }
+    .player-inputs input:focus { border-color: var(--sunset); }
 
-    /* ── SCORE SCREEN ── */
-    .score-header-row {
+    /* ── wizard ── */
+    .progress-track {
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .progress-dot {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.75);
+      background: rgba(255,255,255,0.16);
+      border: 2px solid rgba(255,255,255,0.3);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .progress-dot.done {
+      background: var(--gold);
+      color: var(--ink);
+      border-color: #fff;
+    }
+    .progress-dot.current {
+      background: #fff;
+      color: var(--coral);
+      border-color: #fff;
+      transform: scale(1.2);
+      box-shadow: 0 0 16px rgba(255,255,255,0.8);
+    }
+
+    /* the big "game card" */
+    .game-card {
+      background: var(--cream);
+      border-radius: 22px;
+      border: 3px solid rgba(60,20,50,0.3);
+      box-shadow: 0 16px 44px rgba(20,5,35,0.5), inset 0 2px 0 rgba(255,255,255,0.7);
+      overflow: hidden;
+    }
+    .game-card-banner {
+      position: relative;
+      padding: 18px 20px 20px;
+      text-align: center;
+      color: #fff;
+      overflow: hidden;
+    }
+    .game-card-banner::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: -1px;
+      height: 14px;
+      background: var(--cream);
+      border-radius: 100% 100% 0 0 / 200% 200% 0 0;
+    }
+    .banner-sun {
+      position: absolute;
+      left: 50%; top: -46px;
+      transform: translateX(-50%);
+      width: 150px; height: 150px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.35), transparent 65%);
+      pointer-events: none;
+    }
+    .game-card-banner .step-kicker {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.85;
+    }
+    .game-card-banner .step-number {
+      font-family: 'Yatra One', cursive;
+      font-size: 3.2rem;
+      line-height: 1.1;
+      text-shadow: 0 3px 0 rgba(0,0,0,0.28), 0 6px 16px rgba(0,0,0,0.3);
+    }
+    .game-card-banner .step-hint {
+      font-size: 0.82rem;
+      font-weight: 600;
+      opacity: 0.92;
+      margin-top: 2px;
+    }
+    .game-card-body { padding: 16px 16px 20px; }
+
+    /* player score rows in wizard */
+    .wizard-player {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 14px;
+      background: #fff;
+      border: 2px solid var(--cream-dark);
+      margin-bottom: 9px;
+    }
+    .wizard-player:last-child { margin-bottom: 0; }
+    .wizard-player .player-color-dot { width: 18px; height: 18px; }
+    .wizard-player .wp-name {
+      flex: 1;
+      font-weight: 700;
+      font-size: 0.98rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .wizard-player .wp-total {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #9a8c78;
+      margin-right: 2px;
+      white-space: nowrap;
+    }
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stepper button {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      border: none;
+      background: var(--teal);
+      color: #fff;
+      font-size: 1.25rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 2.5px 0 var(--teal-deep);
+      transition: transform 0.08s;
+      line-height: 1;
+    }
+    .stepper button:active { transform: scale(0.92); }
+    .stepper input {
+      width: 58px;
+      padding: 9px 4px;
+      text-align: center;
+      border: 2.5px solid var(--cream-dark);
+      border-radius: 10px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--ink);
+      background: var(--cream);
+      outline: none;
+      -moz-appearance: textfield;
+    }
+    .stepper input::-webkit-inner-spin-button,
+    .stepper input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .stepper input:focus { border-color: var(--sunset); background: #fff; }
+
+    .wizard-topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
-    .round-badge {
-      font-size: 0.85rem;
+    .btn-small {
+      padding: 7px 13px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
       font-weight: 700;
-      color: var(--amber);
-      letter-spacing: 1px;
-    }
-    .btn-reset {
-      padding: 7px 14px;
-      background: transparent;
-      border: 2px solid var(--stone);
-      border-radius: 8px;
-      font-size: 0.8rem;
-      color: var(--stone);
+      font-size: 0.78rem;
       cursor: pointer;
-      font-weight: 600;
-      transition: all 0.15s;
+      letter-spacing: 0.5px;
     }
-    .btn-reset:hover { border-color: var(--rust); color: var(--rust); }
+    .btn-small:hover { background: rgba(255,255,255,0.24); }
 
-    /* Score Table */
-    .score-table-wrap {
-      background: var(--white);
-      border-radius: 16px;
+    /* ── score pad (overview, styled like the original sheet) ── */
+    .scorepad {
+      background: var(--pad-gray);
+      border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-      overflow-x: auto;
+      box-shadow: 0 10px 30px rgba(20,5,35,0.45);
+      border: 3px solid rgba(60,20,50,0.3);
     }
-    table.score-table {
+    .scorepad table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 340px;
     }
-    table.score-table thead th {
-      background: linear-gradient(135deg, var(--brown) 0%, var(--rust) 100%);
-      color: var(--sand);
-      padding: 10px 8px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      text-align: center;
-      position: sticky;
-      top: 0;
-    }
-    table.score-table thead th.row-label-head {
-      width: 56px;
-      text-align: center;
-    }
-    table.score-table tbody tr { border-bottom: 1px solid var(--sand-dark); }
-    table.score-table tbody tr:last-child { border-bottom: none; }
-    table.score-table tbody td {
-      padding: 4px 4px;
-      text-align: center;
-    }
-    .row-label {
-      font-weight: 700;
-      font-size: 1rem;
-      color: var(--brown);
-      width: 56px;
-      text-align: center;
-    }
-    .row-icon { font-size: 1.2rem; }
-
-    /* sanctuary & total rows */
-    tr.sanctuary-row { background: #f5f0e8; }
-    tr.sanctuary-row .row-label { color: var(--stone); font-size: 0.95rem; }
-    tr.total-row {
-      background: linear-gradient(90deg, #c0392b11, #e67e2211);
-    }
-    tr.total-row td { padding: 8px 4px; }
-    tr.total-row .row-label {
-      color: var(--rust);
-      font-size: 1rem;
-      font-weight: 800;
-    }
-    tr.total-row .score-cell input {
-      background: transparent;
-      border: none;
-      font-weight: 800;
-      font-size: 1.1rem;
-      color: var(--rust);
-      text-align: center;
-      width: 100%;
-      pointer-events: none;
-    }
-
-    /* score inputs */
-    .score-cell input {
-      width: 100%;
-      min-width: 44px;
-      max-width: 70px;
+    .scorepad th {
+      background: #c7c4bf;
       padding: 8px 4px;
-      border: 1.5px solid var(--sand-dark);
-      border-radius: 8px;
-      font-size: 1rem;
-      text-align: center;
-      background: var(--sand);
-      color: var(--text);
-      transition: border-color 0.15s, background 0.15s;
-      -moz-appearance: textfield;
-    }
-    .score-cell input::-webkit-inner-spin-button,
-    .score-cell input::-webkit-outer-spin-button { -webkit-appearance: none; }
-    .score-cell input:focus {
-      outline: none;
-      border-color: var(--amber);
-      background: #fff7eb;
-    }
-    .score-cell input.has-value {
-      background: #fff7eb;
-      border-color: var(--amber-light);
-    }
-    .sanctuary-row .score-cell input {
-      border-color: var(--stone-light);
-      background: #f0ede8;
-    }
-    .sanctuary-row .score-cell input:focus {
-      border-color: var(--stone);
-      background: #fff;
-    }
-
-    /* Results button */
-    .results-btn-row {
-      margin-top: 20px;
-      display: flex;
-      gap: 10px;
-    }
-    .results-btn-row .btn-primary { margin-top: 0; }
-
-    /* ── RESULTS SCREEN ── */
-    .results-card {
-      background: var(--white);
-      border-radius: 16px;
-      padding: 24px 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-    }
-    .results-card h2 {
-      text-align: center;
-      font-size: 1.4rem;
+      font-size: 0.78rem;
       font-weight: 800;
-      color: var(--brown);
-      margin-bottom: 24px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
+      color: #4a4542;
+      text-align: center;
     }
+    .scorepad td {
+      border: 1px dashed #b3afa8;
+      padding: 6px 4px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #3c3833;
+      min-width: 40px;
+    }
+    .scorepad .pad-label {
+      font-family: 'Yatra One', cursive;
+      font-size: 1.05rem;
+      color: #6e3b34;
+      width: 44px;
+    }
+    .scorepad tr.pad-sanctuary td {
+      background: #cfccc6;
+    }
+    .scorepad tr.pad-total td {
+      background: var(--pad-red);
+      color: #fff;
+      border: none;
+      padding: 10px 4px;
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+    .scorepad tr.pad-total .pad-label {
+      color: #fff;
+      font-size: 1.3rem;
+    }
+    .scorepad tr.pad-total .pad-cell-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      padding: 4px 8px;
+      background: #f4f1ea;
+      color: #3c3833;
+      border-radius: 8px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.25);
+    }
+
+    /* ── results ── */
     .podium {
       display: flex;
       justify-content: center;
       align-items: flex-end;
-      gap: 12px;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
+      gap: 10px;
+      margin: 6px 0 22px;
     }
-    .podium-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
+    .podium-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .podium-name {
-      font-weight: 700;
-      font-size: 0.9rem;
-      color: var(--text);
-      max-width: 80px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      color: var(--cream);
+      max-width: 90px;
       text-align: center;
       word-break: break-word;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
     }
     .podium-score {
-      font-size: 1.4rem;
-      font-weight: 800;
+      font-family: 'Yatra One', cursive;
+      font-size: 1.5rem;
+      color: var(--gold);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
     .podium-block {
-      width: 70px;
-      border-radius: 8px 8px 0 0;
+      width: 76px;
+      border-radius: 10px 10px 0 0;
       display: flex;
       align-items: flex-start;
       justify-content: center;
       padding-top: 8px;
       font-size: 1.5rem;
+      border: 2.5px solid rgba(60,20,50,0.35);
+      border-bottom: none;
+      box-shadow: 0 -4px 14px rgba(0,0,0,0.25);
     }
-    .podium-block.rank1 { background: #FFD700; min-height: 90px; }
-    .podium-block.rank2 { background: #C0C0C0; min-height: 65px; }
-    .podium-block.rank3 { background: #CD7F32; min-height: 48px; }
-    .podium-block.rankN { background: var(--sand-dark); min-height: 36px; }
+    .podium-block.rank1 { background: linear-gradient(180deg,#ffe9a3,#f6c667); min-height: 96px; }
+    .podium-block.rank2 { background: linear-gradient(180deg,#e8e8e8,#bfbfbf); min-height: 68px; }
+    .podium-block.rank3 { background: linear-gradient(180deg,#e8b27d,#c98850); min-height: 50px; }
 
-    .results-list { display: flex; flex-direction: column; gap: 8px; }
-    .result-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      background: var(--sand);
+    .winner-banner {
+      text-align: center;
+      margin-bottom: 14px;
     }
-    .result-row.rank-1 { background: #fff8dc; border: 2px solid #FFD700; }
-    .result-row.rank-2 { background: #f8f8f8; border: 2px solid #C0C0C0; }
-    .result-row.rank-3 { background: #fdf5ec; border: 2px solid #CD7F32; }
-    .result-rank {
-      font-size: 1.2rem;
+    .winner-banner .wb-label {
+      font-size: 0.72rem;
       font-weight: 800;
-      min-width: 28px;
+      letter-spacing: 3px;
+      color: var(--gold);
+      text-transform: uppercase;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
     }
-    .result-color-dot {
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .result-name { flex: 1; font-weight: 600; font-size: 1rem; }
-    .result-score {
-      font-size: 1.3rem;
-      font-weight: 800;
-      color: var(--rust);
-    }
-    .result-breakdown {
-      font-size: 0.75rem;
-      color: var(--stone);
-      margin-top: 2px;
+    .winner-banner .wb-name {
+      font-family: 'Yatra One', cursive;
+      font-size: 1.9rem;
+      color: var(--cream);
+      text-shadow: 0 3px 0 rgba(80,20,60,0.5), 0 6px 18px rgba(0,0,0,0.45);
     }
 
-    .btn-secondary {
-      flex: 1;
-      padding: 12px;
-      background: var(--sand-dark);
-      color: var(--brown);
-      border: 2px solid var(--brown-light);
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .btn-secondary:hover { background: var(--brown-light); color: var(--white); }
-
-    /* ── MISC ── */
-    .emoji-icon { font-style: normal; }
-    @media (max-width: 400px) {
-      .app-header h1 { font-size: 1.6rem; }
-      .score-cell input { min-width: 38px; font-size: 0.9rem; }
+    @media (max-width: 420px) {
+      .app-header h1 { font-size: 2.1rem; letter-spacing: 4px; }
+      .game-card-banner .step-number { font-size: 2.6rem; }
+      .stepper button { width: 34px; height: 34px; }
+      .stepper input { width: 50px; font-size: 1.05rem; }
+      .scorepad td { font-size: 0.85rem; min-width: 34px; }
     }
   </style>
 </head>
 <body>
+
+<div class="sky" id="sky"><div class="sun"></div></div>
+<div class="dunes">
+  <svg viewBox="0 0 1440 130" preserveAspectRatio="none">
+    <path d="M0,70 C240,20 420,95 720,60 C980,30 1180,100 1440,55 L1440,130 L0,130 Z" fill="#8a4a1f" opacity="0.55"/>
+    <path d="M0,95 C300,60 560,115 860,85 C1120,60 1300,110 1440,90 L1440,130 L0,130 Z" fill="#5e2d12" opacity="0.75"/>
+  </svg>
+</div>
 
 <header class="app-header">
   <h1>FARAWAY</h1>
   <div class="subtitle">Punktezähler</div>
 </header>
 
-<!-- SETUP SCREEN -->
+<!-- SETUP -->
 <section class="screen active" id="screen-setup">
-  <div class="setup-card">
-    <h2>Spieler einrichten</h2>
-
+  <div class="panel">
+    <h2>Wer reist mit?</h2>
     <div class="player-count-row">
-      <label>Anzahl Spieler:</label>
       <button class="count-btn" id="btn-minus">−</button>
       <span class="count-display" id="count-display">3</span>
       <button class="count-btn" id="btn-plus">+</button>
     </div>
-
     <div class="player-inputs" id="player-inputs"></div>
-
-    <button class="btn-primary" id="btn-start">Spiel starten →</button>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-start">Wertung starten</button>
+    </div>
   </div>
 </section>
 
-<!-- SCORE SCREEN -->
-<section class="screen" id="screen-score">
-  <div class="score-header-row">
-    <span class="round-badge">8 RUNDEN · PUNKTE AM ENDE EINTRAGEN</span>
-    <button class="btn-reset" id="btn-reset">↺ Neu</button>
+<!-- WIZARD -->
+<section class="screen" id="screen-wizard">
+  <div class="wizard-topbar">
+    <button class="btn-small" id="btn-abort">↺ Neues Spiel</button>
+    <button class="btn-small" id="btn-overview">Übersicht</button>
   </div>
-
-  <div class="score-table-wrap">
-    <table class="score-table" id="score-table">
-      <thead id="score-thead"></thead>
-      <tbody id="score-tbody"></tbody>
-    </table>
-  </div>
-
-  <div class="results-btn-row">
-    <button class="btn-primary" id="btn-show-results">Ergebnis anzeigen 🏆</button>
+  <div class="progress-track" id="progress-track"></div>
+  <div class="game-card">
+    <div class="game-card-banner" id="wizard-banner">
+      <div class="banner-sun"></div>
+      <div class="step-kicker" id="step-kicker">Gemeinsam werten</div>
+      <div class="step-number" id="step-title">Karte 8</div>
+      <div class="step-hint" id="step-hint"></div>
+    </div>
+    <div class="game-card-body">
+      <div id="wizard-players"></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btn-prev">← Zurück</button>
+        <button class="btn btn-primary" id="btn-next">Weiter →</button>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- RESULTS SCREEN -->
+<!-- OVERVIEW -->
+<section class="screen" id="screen-overview">
+  <div class="wizard-topbar">
+    <button class="btn-small" id="btn-back-wizard">← Zur Wertung</button>
+  </div>
+  <div class="scorepad" id="overview-pad"></div>
+</section>
+
+<!-- RESULTS -->
 <section class="screen" id="screen-results">
-  <div class="results-card">
-    <h2>🏆 Ergebnis</h2>
-    <div class="podium" id="podium"></div>
-    <div class="results-list" id="results-list"></div>
+  <div class="winner-banner">
+    <div class="wb-label">Gewinner der Reise</div>
+    <div class="wb-name" id="winner-name"></div>
   </div>
-  <div class="results-btn-row" style="margin-top:16px;">
-    <button class="btn-secondary" id="btn-back-score">← Zurück zur Tabelle</button>
-    <button class="btn-primary" id="btn-new-game">Neues Spiel</button>
+  <div class="podium" id="podium"></div>
+  <div class="scorepad" id="results-pad"></div>
+  <div class="btn-row">
+    <button class="btn btn-ghost" id="btn-edit-scores">✎ Korrigieren</button>
+    <button class="btn btn-primary" id="btn-new-game">Neues Spiel</button>
   </div>
 </section>
 
 <script>
-  const PLAYER_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c'];
-  const PLAYER_EMOJIS = ['🔴','🔵','🟢','🟡','🟣','🟤'];
-  const MIN_PLAYERS = 2;
-  const MAX_PLAYERS = 6;
-  const ROUNDS = 8;
+  const PLAYER_COLORS = ['#e8595c','#2980b9','#27ae60','#b8860b','#8e44ad','#e67e22'];
+  const MIN_PLAYERS = 2, MAX_PLAYERS = 6, ROUNDS = 8;
+
+  // banner colors per step, echoing the colored card frames of the game
+  const STEP_COLORS = {
+    8: ['#b53471','#83275a'], 7: ['#2980b9','#1b5a85'], 6: ['#27ae60','#1a7a43'],
+    5: ['#e67e22','#aa5a14'], 4: ['#8e44ad','#65307c'], 3: ['#16a085','#0e6b59'],
+    2: ['#c0392b','#8a261c'], 1: ['#d35400','#9a3d00'], sanctuary: ['#1d8a8a','#11605f']
+  };
+
+  // scoring order as in the original game: card 8 first, down to card 1, then sanctuaries
+  const STEPS = [8,7,6,5,4,3,2,1,'sanctuary'];
 
   let players = [];
-  let scores = {}; // scores[playerIndex][rowKey] = value
-
-  // ── SETUP ──
+  let scores = {};      // scores[playerIndex][stepKey] = number | ''
+  let stepIndex = 0;
   let playerCount = 3;
 
+  // ── stars in the sky ──
+  (function makeStars(){
+    const sky = document.getElementById('sky');
+    for (let i = 0; i < 26; i++) {
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.style.left = Math.random()*100 + '%';
+      s.style.top = Math.random()*30 + '%';
+      s.style.animationDelay = (Math.random()*3) + 's';
+      s.style.transform = `scale(${0.5 + Math.random()})`;
+      sky.appendChild(s);
+    }
+  })();
+
+  // ── setup ──
   const countDisplay = document.getElementById('count-display');
   const playerInputs = document.getElementById('player-inputs');
 
   function renderPlayerInputs() {
     countDisplay.textContent = playerCount;
+    const existing = Array.from(playerInputs.querySelectorAll('input')).map(i => i.value);
     playerInputs.innerHTML = '';
-    const defaultNames = ['Anna','Ben','Clara','David','Eva','Felix'];
     for (let i = 0; i < playerCount; i++) {
       const row = document.createElement('div');
       row.className = 'player-input-row';
@@ -477,264 +655,245 @@
       dot.style.background = PLAYER_COLORS[i];
       const input = document.createElement('input');
       input.type = 'text';
-      input.placeholder = defaultNames[i];
+      input.placeholder = `Spieler ${i+1}`;
       input.maxLength = 16;
-      input.dataset.playerIndex = i;
-      // keep existing value if re-rendering
-      if (players[i]) input.value = players[i];
-      row.appendChild(dot);
-      row.appendChild(input);
+      if (existing[i]) input.value = existing[i];
+      row.append(dot, input);
       playerInputs.appendChild(row);
     }
   }
 
-  document.getElementById('btn-minus').addEventListener('click', () => {
-    if (playerCount > MIN_PLAYERS) { playerCount--; renderPlayerInputs(); }
-  });
-  document.getElementById('btn-plus').addEventListener('click', () => {
-    if (playerCount < MAX_PLAYERS) { playerCount++; renderPlayerInputs(); }
-  });
+  document.getElementById('btn-minus').onclick = () => { if (playerCount > MIN_PLAYERS) { playerCount--; renderPlayerInputs(); } };
+  document.getElementById('btn-plus').onclick  = () => { if (playerCount < MAX_PLAYERS) { playerCount++; renderPlayerInputs(); } };
 
-  document.getElementById('btn-start').addEventListener('click', () => {
+  document.getElementById('btn-start').onclick = () => {
     const inputs = playerInputs.querySelectorAll('input');
     players = Array.from(inputs).map((el, i) => el.value.trim() || `Spieler ${i+1}`);
     scores = {};
-    for (let i = 0; i < players.length; i++) {
-      scores[i] = {};
-    }
-    buildScoreTable();
-    showScreen('screen-score');
-  });
+    players.forEach((_, i) => scores[i] = {});
+    stepIndex = 0;
+    renderWizard();
+    showScreen('screen-wizard');
+  };
 
-  // ── SCORE TABLE ──
-  function buildScoreTable() {
-    const thead = document.getElementById('score-thead');
-    const tbody = document.getElementById('score-tbody');
+  // ── wizard ──
+  function stepKey(s) { return s === 'sanctuary' ? 'sanctuary' : `r${s}`; }
 
-    // Header
-    thead.innerHTML = '';
-    const headRow = document.createElement('tr');
-    const labelTh = document.createElement('th');
-    labelTh.className = 'row-label-head';
-    labelTh.textContent = '';
-    headRow.appendChild(labelTh);
-    players.forEach((name, i) => {
-      const th = document.createElement('th');
-      th.style.maxWidth = '80px';
-      th.innerHTML = `<span style="color:${PLAYER_COLORS[i]};margin-right:4px;">${PLAYER_EMOJIS[i]}</span>${name}`;
-      headRow.appendChild(th);
+  function renderWizard() {
+    const step = STEPS[stepIndex];
+    const key = stepKey(step);
+    const [c1, c2] = STEP_COLORS[step];
+
+    const banner = document.getElementById('wizard-banner');
+    banner.style.background = `linear-gradient(150deg, ${c1}, ${c2})`;
+    document.getElementById('step-title').textContent = step === 'sanctuary' ? '⛩ Heiligtümer' : `Karte ${step}`;
+    document.getElementById('step-kicker').textContent = step === 'sanctuary' ? 'Zum Abschluss' : 'Gemeinsam werten';
+    document.getElementById('step-hint').textContent = step === 'sanctuary'
+      ? 'Jeder zählt die Punkte seiner Heiligtümer'
+      : `Jeder Spieler wertet seine ${step}. Karte`;
+
+    // progress dots
+    const track = document.getElementById('progress-track');
+    track.innerHTML = '';
+    STEPS.forEach((s, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'progress-dot' + (i < stepIndex ? ' done' : i === stepIndex ? ' current' : '');
+      dot.textContent = s === 'sanctuary' ? '⛩' : s;
+      dot.onclick = () => { commitInputs(); stepIndex = i; renderWizard(); };
+      track.appendChild(dot);
     });
-    thead.appendChild(headRow);
 
-    // Rows 1-8
-    tbody.innerHTML = '';
-    for (let r = 1; r <= ROUNDS; r++) {
-      const tr = document.createElement('tr');
-      const tdLabel = document.createElement('td');
-      tdLabel.className = 'row-label';
-      tdLabel.textContent = r;
-      tr.appendChild(tdLabel);
-      players.forEach((_, pi) => {
-        tr.appendChild(makeScoreCell(pi, `r${r}`));
-      });
-      tbody.appendChild(tr);
-    }
+    // player rows
+    const wrap = document.getElementById('wizard-players');
+    wrap.innerHTML = '';
+    players.forEach((name, pi) => {
+      const row = document.createElement('div');
+      row.className = 'wizard-player';
 
-    // Sanctuary row
-    const sanctuaryTr = document.createElement('tr');
-    sanctuaryTr.className = 'sanctuary-row';
-    const sanctuaryLabel = document.createElement('td');
-    sanctuaryLabel.className = 'row-label';
-    sanctuaryLabel.innerHTML = '<span title="Heiligtümer">⛩️</span>';
-    sanctuaryLabel.style.fontSize = '1.1rem';
-    sanctuaryTr.appendChild(sanctuaryLabel);
-    players.forEach((_, pi) => {
-      sanctuaryTr.appendChild(makeScoreCell(pi, 'sanctuary'));
-    });
-    tbody.appendChild(sanctuaryTr);
+      const dot = document.createElement('div');
+      dot.className = 'player-color-dot';
+      dot.style.background = PLAYER_COLORS[pi];
 
-    // Total row
-    const totalTr = document.createElement('tr');
-    totalTr.className = 'total-row';
-    const totalLabel = document.createElement('td');
-    totalLabel.className = 'row-label';
-    totalLabel.textContent = 'T';
-    totalTr.appendChild(totalLabel);
-    players.forEach((_, pi) => {
-      const td = document.createElement('td');
-      td.className = 'score-cell';
+      const nm = document.createElement('div');
+      nm.className = 'wp-name';
+      nm.textContent = name;
+
+      const total = document.createElement('div');
+      total.className = 'wp-total';
+      total.textContent = `Σ ${getTotal(pi)}`;
+
+      const stepper = document.createElement('div');
+      stepper.className = 'stepper';
+      const minus = document.createElement('button');
+      minus.textContent = '−';
       const input = document.createElement('input');
-      input.type = 'text';
-      input.readOnly = true;
-      input.id = `total-${pi}`;
-      input.value = '0';
-      td.appendChild(input);
-      totalTr.appendChild(td);
+      input.type = 'number';
+      input.inputMode = 'numeric';
+      input.placeholder = '0';
+      input.dataset.player = pi;
+      const saved = scores[pi][key];
+      if (saved !== undefined && saved !== '') input.value = saved;
+      const plus = document.createElement('button');
+      plus.textContent = '+';
+
+      const bump = (d) => {
+        const v = (parseInt(input.value, 10) || 0) + d;
+        input.value = v;
+        scores[pi][key] = v;
+        total.textContent = `Σ ${getTotal(pi)}`;
+      };
+      minus.onclick = () => bump(-1);
+      plus.onclick = () => bump(1);
+      input.oninput = () => {
+        const v = input.value.trim();
+        scores[pi][key] = v === '' ? '' : (parseInt(v, 10) || 0);
+        total.textContent = `Σ ${getTotal(pi)}`;
+      };
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const all = Array.from(document.querySelectorAll('#wizard-players input'));
+          const i = all.indexOf(input);
+          if (i < all.length - 1) all[i+1].focus(); else document.getElementById('btn-next').focus();
+        }
+      };
+
+      stepper.append(minus, input, plus);
+      row.append(dot, nm, total, stepper);
+      wrap.appendChild(row);
     });
-    tbody.appendChild(totalTr);
+
+    document.getElementById('btn-prev').style.visibility = stepIndex === 0 ? 'hidden' : 'visible';
+    document.getElementById('btn-next').textContent = stepIndex === STEPS.length - 1 ? 'Ergebnis 🏆' : 'Weiter →';
   }
 
-  function makeScoreCell(playerIndex, rowKey) {
-    const td = document.createElement('td');
-    td.className = 'score-cell';
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.inputMode = 'numeric';
-    input.min = '-99';
-    input.max = '999';
-    input.placeholder = '–';
-    input.dataset.player = playerIndex;
-    input.dataset.row = rowKey;
+  function commitInputs() {
+    const key = stepKey(STEPS[stepIndex]);
+    document.querySelectorAll('#wizard-players input').forEach(input => {
+      const pi = +input.dataset.player;
+      const v = input.value.trim();
+      scores[pi][key] = v === '' ? '' : (parseInt(v, 10) || 0);
+    });
+  }
 
-    const saved = scores[playerIndex]?.[rowKey];
-    if (saved !== undefined && saved !== '') {
-      input.value = saved;
-      input.classList.add('has-value');
+  document.getElementById('btn-prev').onclick = () => {
+    commitInputs();
+    if (stepIndex > 0) { stepIndex--; renderWizard(); }
+  };
+  document.getElementById('btn-next').onclick = () => {
+    commitInputs();
+    if (stepIndex < STEPS.length - 1) { stepIndex++; renderWizard(); }
+    else showResults();
+  };
+
+  document.getElementById('btn-abort').onclick = () => {
+    if (confirm('Neues Spiel starten? Alle Punkte gehen verloren.')) {
+      renderPlayerInputs();
+      showScreen('screen-setup');
     }
+  };
 
-    input.addEventListener('input', () => {
-      const val = input.value.trim();
-      scores[playerIndex][rowKey] = val === '' ? '' : parseInt(val, 10) || 0;
-      input.classList.toggle('has-value', val !== '');
-      updateTotal(playerIndex);
-    });
+  // ── overview ──
+  document.getElementById('btn-overview').onclick = () => {
+    commitInputs();
+    document.getElementById('overview-pad').innerHTML = buildPadHtml();
+    showScreen('screen-overview');
+  };
+  document.getElementById('btn-back-wizard').onclick = () => {
+    renderWizard();
+    showScreen('screen-wizard');
+  };
 
-    // Move focus on Enter
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const allInputs = Array.from(document.querySelectorAll('.score-cell input[type="number"]'));
-        const idx = allInputs.indexOf(input);
-        if (idx < allInputs.length - 1) allInputs[idx + 1].focus();
-      }
-    });
-
-    td.appendChild(input);
-    return td;
-  }
-
-  function updateTotal(playerIndex) {
+  // ── totals & results ──
+  function getTotal(pi) {
     let sum = 0;
-    for (let r = 1; r <= ROUNDS; r++) {
-      const v = scores[playerIndex][`r${r}`];
+    STEPS.forEach(s => {
+      const v = scores[pi][stepKey(s)];
       if (v !== '' && v !== undefined) sum += Number(v);
-    }
-    const sv = scores[playerIndex]['sanctuary'];
-    if (sv !== '' && sv !== undefined) sum += Number(sv);
-    const totalEl = document.getElementById(`total-${playerIndex}`);
-    if (totalEl) totalEl.value = sum;
+    });
+    return sum;
   }
 
-  function getTotal(playerIndex) {
-    const el = document.getElementById(`total-${playerIndex}`);
-    return el ? parseInt(el.value, 10) || 0 : 0;
-  }
-
-  // ── RESULTS ──
-  document.getElementById('btn-show-results').addEventListener('click', showResults);
-  document.getElementById('btn-back-score').addEventListener('click', () => showScreen('screen-score'));
-  document.getElementById('btn-new-game').addEventListener('click', () => {
-    players = [];
-    scores = {};
-    renderPlayerInputs();
-    showScreen('screen-setup');
-  });
-  document.getElementById('btn-reset').addEventListener('click', () => {
-    if (confirm('Alle Punkte zurücksetzen?')) {
-      for (let i = 0; i < players.length; i++) scores[i] = {};
-      buildScoreTable();
+  function buildPadHtml() {
+    let html = '<table><thead><tr><th></th>';
+    players.forEach((name, i) => {
+      html += `<th><span style="color:${PLAYER_COLORS[i]}">●</span> ${escHtml(name)}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+    for (let r = 1; r <= ROUNDS; r++) {
+      html += `<tr><td class="pad-label">${r}</td>`;
+      players.forEach((_, pi) => {
+        const v = scores[pi][`r${r}`];
+        html += `<td>${v === '' || v === undefined ? '·' : v}</td>`;
+      });
+      html += '</tr>';
     }
-  });
+    html += '<tr class="pad-sanctuary"><td class="pad-label">⛩</td>';
+    players.forEach((_, pi) => {
+      const v = scores[pi]['sanctuary'];
+      html += `<td>${v === '' || v === undefined ? '·' : v}</td>`;
+    });
+    html += '</tr>';
+    html += '<tr class="pad-total"><td class="pad-label">T</td>';
+    players.forEach((_, pi) => {
+      html += `<td><span class="pad-cell-box">${getTotal(pi)}</span></td>`;
+    });
+    html += '</tr></tbody></table>';
+    return html;
+  }
 
   function showResults() {
-    const ranked = players.map((name, i) => ({
-      name, index: i, total: getTotal(i),
-      breakdown: buildBreakdown(i)
-    })).sort((a, b) => b.total - a.total);
-
-    // assign ranks (handle ties)
+    const ranked = players.map((name, i) => ({ name, index: i, total: getTotal(i) }))
+      .sort((a, b) => b.total - a.total);
     let rank = 1;
-    for (let i = 0; i < ranked.length; i++) {
-      if (i > 0 && ranked[i].total === ranked[i-1].total) {
-        ranked[i].rank = ranked[i-1].rank;
-      } else {
-        ranked[i].rank = rank;
-      }
+    ranked.forEach((p, i) => {
+      p.rank = (i > 0 && p.total === ranked[i-1].total) ? ranked[i-1].rank : rank;
       rank++;
-    }
+    });
 
-    renderPodium(ranked);
-    renderList(ranked);
-    showScreen('screen-results');
-  }
+    const winners = ranked.filter(p => p.rank === 1).map(p => p.name);
+    document.getElementById('winner-name').textContent = winners.join(' & ');
 
-  function buildBreakdown(pi) {
-    const parts = [];
-    for (let r = 1; r <= ROUNDS; r++) {
-      const v = scores[pi]?.[`r${r}`];
-      if (v !== '' && v !== undefined) parts.push(`K${r}: ${v}`);
-    }
-    const s = scores[pi]?.['sanctuary'];
-    if (s !== '' && s !== undefined) parts.push(`⛩️: ${s}`);
-    return parts.join(' · ');
-  }
-
-  function renderPodium(ranked) {
+    // podium: 2nd, 1st, 3rd
+    const top3 = ranked.slice(0, 3);
+    const order = top3.length === 1 ? [top3[0]] : top3.length === 2 ? [top3[1], top3[0]] : [top3[1], top3[0], top3[2]];
+    const medals = ['🥇','🥈','🥉'];
     const podium = document.getElementById('podium');
     podium.innerHTML = '';
-    const top3 = ranked.slice(0, Math.min(3, ranked.length));
-    // Reorder for visual: 2nd, 1st, 3rd
-    const order = top3.length === 1 ? [top3[0]]
-      : top3.length === 2 ? [top3[1], top3[0]]
-      : [top3[1], top3[0], top3[2]];
-    const heights = {'rank-1': 'rank1', 'rank-2': 'rank2', 'rank-3': 'rank3'};
-    const medals = ['🥇','🥈','🥉'];
-
     order.forEach(p => {
-      const rankClass = p.rank <= 3 ? `rank${p.rank}` : 'rankN';
       const item = document.createElement('div');
       item.className = 'podium-item';
       item.innerHTML = `
         <div class="podium-name">${escHtml(p.name)}</div>
-        <div class="podium-score" style="color:${PLAYER_COLORS[p.index]}">${p.total}</div>
-        <div class="podium-block ${rankClass}">${p.rank <= 3 ? medals[p.rank-1] : p.rank + '.'}</div>
-      `;
+        <div class="podium-score">${p.total}</div>
+        <div class="podium-block rank${Math.min(p.rank,3)}">${p.rank <= 3 ? medals[p.rank-1] : p.rank + '.'}</div>`;
       podium.appendChild(item);
     });
+
+    document.getElementById('results-pad').innerHTML = buildPadHtml();
+    showScreen('screen-results');
   }
 
-  function renderList(ranked) {
-    const list = document.getElementById('results-list');
-    list.innerHTML = '';
-    const rankEmoji = ['🥇','🥈','🥉'];
-    ranked.forEach(p => {
-      const div = document.createElement('div');
-      div.className = `result-row${p.rank <= 3 ? ` rank-${p.rank}` : ''}`;
-      div.innerHTML = `
-        <span class="result-rank">${p.rank <= 3 ? rankEmoji[p.rank-1] : p.rank + '.'}</span>
-        <div class="result-color-dot" style="background:${PLAYER_COLORS[p.index]}"></div>
-        <div style="flex:1">
-          <div class="result-name">${escHtml(p.name)}</div>
-          <div class="result-breakdown">${p.breakdown || '–'}</div>
-        </div>
-        <span class="result-score">${p.total}</span>
-      `;
-      list.appendChild(div);
-    });
-  }
+  document.getElementById('btn-edit-scores').onclick = () => {
+    stepIndex = 0;
+    renderWizard();
+    showScreen('screen-wizard');
+  };
+  document.getElementById('btn-new-game').onclick = () => {
+    renderPlayerInputs();
+    showScreen('screen-setup');
+  };
 
-  // ── HELPERS ──
+  // ── helpers ──
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     window.scrollTo(0, 0);
   }
-
   function escHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  // ── INIT ──
   renderPlayerInputs();
 </script>
 </body>
