@@ -1,6 +1,6 @@
 {
     "name": "Faraway Punktezähler",
-    "description": "Punktezähler für das Brettspiel Faraway: 8 Runden, Karten einzeln bewerten, Heiligtümer addieren, Gesamtwertung mit Rangliste.",
+    "description": "Punktezähler für das Brettspiel Faraway: geführte Wertung von Karte 8 bis Karte 1, dann Heiligtümer – mit Rangliste im Stil des Originalspiels.",
     "category": "Spiel",
     "tags": ["Spiel", "Brettspiel"],
     "created": "2026-06-09",
