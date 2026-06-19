@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Getränke-Tracker</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --brand: #22d3ee;
+      --brand-2: #38bdf8;
+      --danger: #ef4444;
+      --ok: #10b981;
+      --border: #1f2937;
+      --card: #0b1220;
+      --focus: #f59e0b;
+      --radius: 16px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.25);
+      --grad: linear-gradient(160deg, var(--bg), #0b1020 35%, #0a0f1a 100%);
+    }
+    html[data-theme="light"] {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --muted: #475569;
+      --text: #0f172a;
+      --brand: #06b6d4;
+      --brand-2: #0ea5e9;
+      --danger: #dc2626;
+      --ok: #059669;
+      --border: #e2e8f0;
+      --card: #f1f5f9;
+      --focus: #d97706;
+      --shadow: 0 6px 18px rgba(2,6,23,0.08);
+      --grad: linear-gradient(160deg, #eef2ff, #f8fafc 40%, #ffffff 100%);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif;
+      background: var(--grad);
+      color: var(--text);
+      transition: background .3s ease, color .3s ease;
+    }
+    main { max-width: 600px; margin: 0 auto; padding: 20px; }
+    h1 { font-size: 1.6rem; margin: 6px 0 16px; letter-spacing: 0.2px; }
+
+    .card {
+      background: radial-gradient(1200px 600px at -10% -20%, rgba(34,211,238,0.08), transparent 70%),
+                  radial-gradient(900px 600px at 120% 10%, rgba(56,189,248,0.08), transparent 70%),
+                  var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+    .row { display: flex; gap: 10px; align-items: center; }
+    .spacer { flex: 1; }
+
+    button, .btn {
+      appearance: none; border: 1px solid var(--border); color: var(--text);
+      background: linear-gradient(180deg, #0f172a, #0b1220);
+      padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 600;
+      transition: transform .06s ease, border-color .2s ease, background .2s ease, opacity .2s ease;
+      font-size: 1rem;
+    }
+    html[data-theme="light"] button, html[data-theme="light"] .btn {
+      background: linear-gradient(180deg, #ffffff, #f8fafc);
+    }
+    button:hover { border-color: #23324b; }
+    html[data-theme="light"] button:hover { border-color: #cbd5e1; }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { border-color: rgba(34,211,238,0.35); background: linear-gradient(180deg, rgba(56,189,248,0.20), rgba(34,211,238,0.12)); }
+    html[data-theme="light"] .btn-primary { background: linear-gradient(180deg, rgba(14,165,233,0.10), rgba(6,182,212,0.10)); }
+    .btn-danger { border-color: rgba(239,68,68,0.35); background: linear-gradient(180deg, rgba(239,68,68,0.18), rgba(239,68,68,0.10)); }
+
+    .total-card {
+      background: radial-gradient(800px 400px at 50% 50%, rgba(34,211,238,0.10), transparent 70%), var(--card);
+      border: 1px solid rgba(34,211,238,0.25);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .total-label { font-size: 0.9rem; color: var(--muted); margin-bottom: 4px; }
+    .total-amount {
+      font-size: 2.4rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    html[data-theme="light"] .total-amount { -webkit-text-fill-color: transparent; }
+
+    .drink-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .drink-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .drink-row:first-child { padding-top: 0; }
+
+    .drink-info { flex: 1; min-width: 0; }
+    .drink-name { font-weight: 600; font-size: 0.97rem; }
+    .drink-price { font-size: 0.82rem; color: var(--muted); }
+
+    .counter { display: flex; align-items: center; gap: 6px; }
+    .counter-btn {
+      width: 36px; height: 36px; padding: 0;
+      border-radius: 50%; font-size: 1.3rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .counter-btn.minus { border-color: rgba(239,68,68,0.35); background: linear-gradient(180deg, rgba(239,68,68,0.18), rgba(239,68,68,0.10)); }
+    .counter-btn.plus { border-color: rgba(34,211,238,0.35); background: linear-gradient(180deg, rgba(56,189,248,0.20), rgba(34,211,238,0.12)); }
+    html[data-theme="light"] .counter-btn.minus { background: linear-gradient(180deg, rgba(220,38,38,0.10), rgba(220,38,38,0.07)); }
+    html[data-theme="light"] .counter-btn.plus { background: linear-gradient(180deg, rgba(14,165,233,0.10), rgba(6,182,212,0.10)); }
+
+    .count-display {
+      min-width: 32px; text-align: center; font-size: 1.15rem; font-weight: 700;
+    }
+    .count-display.nonzero { color: var(--brand); }
+
+    .subtotal {
+      min-width: 52px; text-align: right; font-size: 0.88rem;
+      color: var(--muted); font-variant-numeric: tabular-nums;
+    }
+    .subtotal.nonzero { color: var(--text); font-weight: 600; }
+
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .hint { font-size: .88rem; color: var(--muted); margin: 0; }
+    .section-title { font-size: 1rem; font-weight: 700; color: var(--muted); margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.78rem; }
+  </style>
+</head>
+<body>
+<main>
+  <header class="row" style="margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+    <h1>🥤 Getränke-Tracker</h1>
+    <span class="spacer"></span>
+    <button id="btnTheme" class="btn" title="Theme umschalten">🌙 Dark</button>
+  </header>
+
+  <div class="total-card">
+    <div class="total-label">Gesamtbetrag</div>
+    <div class="total-amount" id="totalAmount">0,00 €</div>
+    <div class="hint" style="margin-top: 6px;" id="totalHint">Noch keine Getränke ausgewählt</div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Alkoholfreie Getränke</div>
+    <div id="listSoft"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Bier & Radler</div>
+    <div id="listBeer"></div>
+  </div>
+
+  <div class="toolbar">
+    <button id="btnReset" class="btn btn-danger">Zurücksetzen</button>
+    <span class="spacer"></span>
+    <p class="hint" style="align-self: center; margin: 0;">Daten werden automatisch gespeichert</p>
+  </div>
+</main>
+
+<script>
+(() => {
+  const LS_KEY = 'getraenke-tracker-v1';
+  const THEME_KEY = 'getraenke-theme';
+
+  const DRINKS = [
+    { id: 'sinalco',   name: 'Sinalco Soft-Drinks 0,2 l', price: 2.50, group: 'soft' },
+    { id: 'wasser',    name: 'Wasser 0,2 l',               price: 2.00, group: 'soft' },
+    { id: 'spezi',     name: 'Spezi 0,33 l',               price: 3.50, group: 'soft' },
+    { id: 'fassbrause',name: 'Fassbrause 0,33 l',          price: 3.50, group: 'soft' },
+    { id: 'krombacher',          name: 'Krombacher',                     price: 3.50, group: 'beer' },
+    { id: 'reissdorf',           name: 'Reissdorf Kölsch',               price: 3.50, group: 'beer' },
+    { id: 'krombacher_alf',      name: 'Krombacher Alkoholfrei',         price: 3.50, group: 'beer' },
+    { id: 'krombacher_radler',   name: 'Krombacher Radler',              price: 3.50, group: 'beer' },
+    { id: 'krombacher_radler_af',name: 'Krombacher Radler Alk. frei',    price: 3.50, group: 'beer' },
+  ];
+
+  const fmtEur = (v) => v.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+
+  const load = () => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return {};
+      return JSON.parse(raw) || {};
+    } catch { return {}; }
+  };
+  const save = (counts) => localStorage.setItem(LS_KEY, JSON.stringify(counts));
+
+  let counts = load();
+
+  const getCount = (id) => counts[id] || 0;
+
+  const updateTotals = () => {
+    let total = 0;
+    let totalItems = 0;
+    DRINKS.forEach(d => {
+      const c = getCount(d.id);
+      total += c * d.price;
+      totalItems += c;
+      const sub = document.getElementById(`sub-${d.id}`);
+      const cnt = document.getElementById(`cnt-${d.id}`);
+      const minus = document.getElementById(`minus-${d.id}`);
+      if (sub) {
+        const subtotal = c * d.price;
+        sub.textContent = subtotal > 0 ? fmtEur(subtotal) : '';
+        sub.className = 'subtotal' + (subtotal > 0 ? ' nonzero' : '');
+      }
+      if (cnt) {
+        cnt.textContent = String(c);
+        cnt.className = 'count-display' + (c > 0 ? ' nonzero' : '');
+      }
+      if (minus) minus.disabled = c === 0;
+    });
+    document.getElementById('totalAmount').textContent = fmtEur(total);
+    const hint = document.getElementById('totalHint');
+    if (totalItems === 0) {
+      hint.textContent = 'Noch keine Getränke ausgewählt';
+    } else {
+      hint.textContent = `${totalItems} Getränk${totalItems === 1 ? '' : 'e'} ausgewählt`;
+    }
+  };
+
+  const buildRow = (drink) => {
+    const row = document.createElement('div');
+    row.className = 'drink-row';
+
+    const info = document.createElement('div');
+    info.className = 'drink-info';
+    const name = document.createElement('div');
+    name.className = 'drink-name';
+    name.textContent = drink.name;
+    const price = document.createElement('div');
+    price.className = 'drink-price';
+    price.textContent = fmtEur(drink.price) + ' / Stück';
+    info.append(name, price);
+
+    const counter = document.createElement('div');
+    counter.className = 'counter';
+
+    const minus = document.createElement('button');
+    minus.className = 'counter-btn minus';
+    minus.id = `minus-${drink.id}`;
+    minus.textContent = '−';
+    minus.setAttribute('aria-label', `${drink.name} entfernen`);
+    minus.disabled = true;
+    minus.addEventListener('click', () => {
+      if (getCount(drink.id) > 0) {
+        counts[drink.id] = getCount(drink.id) - 1;
+        save(counts);
+        updateTotals();
+      }
+    });
+
+    const cnt = document.createElement('div');
+    cnt.className = 'count-display';
+    cnt.id = `cnt-${drink.id}`;
+    cnt.textContent = '0';
+
+    const plus = document.createElement('button');
+    plus.className = 'counter-btn plus';
+    plus.setAttribute('aria-label', `${drink.name} hinzufügen`);
+    plus.textContent = '+';
+    plus.addEventListener('click', () => {
+      counts[drink.id] = getCount(drink.id) + 1;
+      save(counts);
+      updateTotals();
+    });
+
+    counter.append(minus, cnt, plus);
+
+    const sub = document.createElement('div');
+    sub.className = 'subtotal';
+    sub.id = `sub-${drink.id}`;
+
+    row.append(info, counter, sub);
+    return row;
+  };
+
+  const render = () => {
+    const softEl = document.getElementById('listSoft');
+    const beerEl = document.getElementById('listBeer');
+    softEl.innerHTML = '';
+    beerEl.innerHTML = '';
+    DRINKS.forEach(d => {
+      const row = buildRow(d);
+      (d.group === 'soft' ? softEl : beerEl).appendChild(row);
+    });
+    updateTotals();
+  };
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    if (!confirm('Alle Einträge zurücksetzen?')) return;
+    counts = {};
+    save(counts);
+    updateTotals();
+  });
+
+  // Theme
+  const applyTheme = (theme) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
+    const btn = document.getElementById('btnTheme');
+    const dark = theme !== 'light';
+    btn.setAttribute('aria-pressed', String(dark));
+    btn.textContent = dark ? '🌙 Dark' : '☀️ Light';
+    btn.title = dark ? 'Zu Light wechseln' : 'Zu Dark wechseln';
+  };
+  const initTheme = () => {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'dark' || saved === 'light') { applyTheme(saved); return; }
+    applyTheme(window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  };
+  document.getElementById('btnTheme').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  initTheme();
+  render();
+})();
+</script>
+</body>
+</html>

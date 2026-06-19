@@ -1,0 +1,8 @@
+{
+    "name": "Getränke-Tracker",
+    "description": "Tracke entnommene Getränke auf der Zimmerrechnung – mit Stückzahl und laufender Gesamtsumme, gespeichert im Browser.",
+    "category": "Sonstiges",
+    "tags": ["Getränke", "Rechner"],
+    "created": "2026-06-19",
+    "lastUpdated": "2026-06-19"
+}
