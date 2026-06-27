@@ -345,15 +345,15 @@
     .stepper {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
     }
     .stepper button {
-      width: 34px; height: 36px;
+      width: 40px; height: 40px;
       border-radius: 10px;
       border: none;
       background: var(--teal);
       color: #fff;
-      font-size: 1.2rem;
+      font-size: 0.8rem;
       font-weight: 800;
       cursor: pointer;
       box-shadow: 0 2.5px 0 var(--teal-deep);
@@ -362,7 +362,6 @@
     }
     .stepper button:active { transform: scale(0.92); }
     .stepper button.btn-step5 {
-      font-size: 0.75rem;
       background: var(--dusk);
       box-shadow: 0 2.5px 0 var(--night);
     }
@@ -528,8 +527,7 @@
     @media (max-width: 420px) {
       .app-header h1 { font-size: 2.1rem; letter-spacing: 4px; }
       .game-card-banner .step-number { font-size: 2.6rem; }
-      .stepper button { width: 30px; height: 32px; }
-      .stepper button.btn-step5 { font-size: 0.68rem; }
+      .stepper button { width: 34px; height: 36px; font-size: 0.72rem; }
       .stepper input { width: 44px; font-size: 1rem; }
       .scorepad td { font-size: 0.85rem; min-width: 34px; }
     }
@@ -735,7 +733,7 @@
       minus5.textContent = '−5';
       minus5.className = 'btn-step5';
       const minus = document.createElement('button');
-      minus.textContent = '−';
+      minus.textContent = '−1';
       const input = document.createElement('input');
       input.type = 'number';
       input.inputMode = 'numeric';
@@ -744,7 +742,7 @@
       const saved = scores[pi][key];
       if (saved !== undefined && saved !== '') input.value = saved;
       const plus = document.createElement('button');
-      plus.textContent = '+';
+      plus.textContent = '+1';
       const plus5 = document.createElement('button');
       plus5.textContent = '+5';
       plus5.className = 'btn-step5';
