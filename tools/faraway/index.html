@@ -345,15 +345,15 @@
     .stepper {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
     .stepper button {
-      width: 38px; height: 38px;
+      width: 34px; height: 36px;
       border-radius: 10px;
       border: none;
       background: var(--teal);
       color: #fff;
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 800;
       cursor: pointer;
       box-shadow: 0 2.5px 0 var(--teal-deep);
@@ -361,14 +361,19 @@
       line-height: 1;
     }
     .stepper button:active { transform: scale(0.92); }
+    .stepper button.btn-step5 {
+      font-size: 0.75rem;
+      background: var(--dusk);
+      box-shadow: 0 2.5px 0 var(--night);
+    }
     .stepper input {
-      width: 58px;
+      width: 50px;
       padding: 9px 4px;
       text-align: center;
       border: 2.5px solid var(--cream-dark);
       border-radius: 10px;
       font-family: 'Nunito', sans-serif;
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 800;
       color: var(--ink);
       background: var(--cream);
@@ -497,9 +502,9 @@
       border-bottom: none;
       box-shadow: 0 -4px 14px rgba(0,0,0,0.25);
     }
-    .podium-block.rank1 { background: linear-gradient(180deg,#ffe9a3,#f6c667); min-height: 96px; }
-    .podium-block.rank2 { background: linear-gradient(180deg,#e8e8e8,#bfbfbf); min-height: 68px; }
-    .podium-block.rank3 { background: linear-gradient(180deg,#e8b27d,#c98850); min-height: 50px; }
+    .podium-block.rank1 { background: linear-gradient(180deg,#ffe9a3,#f6c667); }
+    .podium-block.rank2 { background: linear-gradient(180deg,#e8e8e8,#bfbfbf); }
+    .podium-block.rank3 { background: linear-gradient(180deg,#e8b27d,#c98850); }
 
     .winner-banner {
       text-align: center;
@@ -523,8 +528,9 @@
     @media (max-width: 420px) {
       .app-header h1 { font-size: 2.1rem; letter-spacing: 4px; }
       .game-card-banner .step-number { font-size: 2.6rem; }
-      .stepper button { width: 34px; height: 34px; }
-      .stepper input { width: 50px; font-size: 1.05rem; }
+      .stepper button { width: 30px; height: 32px; }
+      .stepper button.btn-step5 { font-size: 0.68rem; }
+      .stepper input { width: 44px; font-size: 1rem; }
       .scorepad td { font-size: 0.85rem; min-width: 34px; }
     }
   </style>
@@ -550,7 +556,7 @@
     <h2>Wer reist mit?</h2>
     <div class="player-count-row">
       <button class="count-btn" id="btn-minus">−</button>
-      <span class="count-display" id="count-display">3</span>
+      <span class="count-display" id="count-display">2</span>
       <button class="count-btn" id="btn-plus">+</button>
     </div>
     <div class="player-inputs" id="player-inputs"></div>
@@ -623,7 +629,7 @@
   let players = [];
   let scores = {};      // scores[playerIndex][stepKey] = number | ''
   let stepIndex = 0;
-  let playerCount = 3;
+  let playerCount = 2;
 
   // ── stars in the sky ──
   (function makeStars(){
@@ -658,6 +664,7 @@
       input.placeholder = `Spieler ${i+1}`;
       input.maxLength = 16;
       if (existing[i]) input.value = existing[i];
+      else if (players[i]) input.value = players[i];
       row.append(dot, input);
       playerInputs.appendChild(row);
     }
@@ -724,6 +731,9 @@
 
       const stepper = document.createElement('div');
       stepper.className = 'stepper';
+      const minus5 = document.createElement('button');
+      minus5.textContent = '−5';
+      minus5.className = 'btn-step5';
       const minus = document.createElement('button');
       minus.textContent = '−';
       const input = document.createElement('input');
@@ -735,6 +745,9 @@
       if (saved !== undefined && saved !== '') input.value = saved;
       const plus = document.createElement('button');
       plus.textContent = '+';
+      const plus5 = document.createElement('button');
+      plus5.textContent = '+5';
+      plus5.className = 'btn-step5';
 
       const bump = (d) => {
         const v = (parseInt(input.value, 10) || 0) + d;
@@ -742,8 +755,10 @@
         scores[pi][key] = v;
         total.textContent = `Σ ${getTotal(pi)}`;
       };
+      minus5.onclick = () => bump(-5);
       minus.onclick = () => bump(-1);
       plus.onclick = () => bump(1);
+      plus5.onclick = () => bump(5);
       input.oninput = () => {
         const v = input.value.trim();
         scores[pi][key] = v === '' ? '' : (parseInt(v, 10) || 0);
@@ -758,7 +773,7 @@
         }
       };
 
-      stepper.append(minus, input, plus);
+      stepper.append(minus5, minus, input, plus, plus5);
       row.append(dot, nm, total, stepper);
       wrap.appendChild(row);
     });
@@ -788,6 +803,7 @@
 
   document.getElementById('btn-abort').onclick = () => {
     if (confirm('Neues Spiel starten? Alle Punkte gehen verloren.')) {
+      playerCount = players.length || playerCount;
       renderPlayerInputs();
       showScreen('screen-setup');
     }
@@ -860,13 +876,22 @@
     const medals = ['🥇','🥈','🥉'];
     const podium = document.getElementById('podium');
     podium.innerHTML = '';
+    const allTotals = ranked.map(p => p.total);
+    const maxTotal = Math.max(...allTotals);
+    const minTotal = Math.min(...allTotals);
+    const H_MAX = 120, H_MIN = 44;
+    const blockHeight = (total) => {
+      if (maxTotal === minTotal) return 80;
+      return Math.round(H_MIN + ((total - minTotal) / (maxTotal - minTotal)) * (H_MAX - H_MIN));
+    };
     order.forEach(p => {
       const item = document.createElement('div');
       item.className = 'podium-item';
+      const h = blockHeight(p.total);
       item.innerHTML = `
         <div class="podium-name">${escHtml(p.name)}</div>
         <div class="podium-score">${p.total}</div>
-        <div class="podium-block rank${Math.min(p.rank,3)}">${p.rank <= 3 ? medals[p.rank-1] : p.rank + '.'}</div>`;
+        <div class="podium-block rank${Math.min(p.rank,3)}" style="height:${h}px">${p.rank <= 3 ? medals[p.rank-1] : p.rank + '.'}</div>`;
       podium.appendChild(item);
     });
 
@@ -880,6 +905,7 @@
     showScreen('screen-wizard');
   };
   document.getElementById('btn-new-game').onclick = () => {
+    playerCount = players.length || playerCount;
     renderPlayerInputs();
     showScreen('screen-setup');
   };
