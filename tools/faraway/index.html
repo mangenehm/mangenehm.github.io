@@ -524,6 +524,294 @@
       text-shadow: 0 3px 0 rgba(80,20,60,0.5), 0 6px 18px rgba(0,0,0,0.45);
     }
 
+    /* ── shared bits for history & stats ── */
+    .panel + .panel { margin-top: 14px; }
+    .panel-note {
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #8a7a80;
+      margin: -10px 0 14px;
+    }
+    .empty-state {
+      text-align: center;
+      color: #7a6a72;
+      font-weight: 600;
+      font-size: 0.92rem;
+      padding: 16px 6px;
+      line-height: 1.55;
+    }
+    .btn-outline {
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 2.5px solid var(--dusk);
+      background: transparent;
+      color: var(--dusk);
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+    .btn-outline:hover { background: rgba(69,32,110,0.08); }
+    .btn-danger {
+      padding: 7px 13px;
+      border-radius: 10px;
+      border: 2px solid var(--pad-red);
+      background: transparent;
+      color: var(--pad-red);
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .btn-danger:hover { background: rgba(217,79,61,0.1); }
+    .section-title {
+      font-family: 'Yatra One', cursive;
+      font-size: 1rem;
+      color: var(--dusk);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin: 22px 0 10px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, var(--cream-dark) 0 6px, transparent 6px 12px);
+    }
+
+    /* ── history list ── */
+    .hist-list { display: flex; flex-direction: column; gap: 10px; }
+    .hist-item {
+      border: 2.5px solid var(--cream-dark);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .hist-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      cursor: pointer;
+    }
+    .hist-head:hover { background: #fffaf0; }
+    .hist-main { flex: 1; min-width: 0; }
+    .hist-date {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #9a8a90;
+    }
+    .hist-winner {
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+    .hist-winner .hw-score { color: var(--magenta); }
+    .hist-dots { display: flex; gap: 4px; margin-top: 5px; }
+    .hist-dots span {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(0,0,0,0.18);
+    }
+    .hist-chev {
+      color: var(--dusk);
+      font-weight: 800;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+      transition: transform 0.15s;
+    }
+    .hist-body { display: none; padding: 0 10px 12px; }
+    .hist-item.open .hist-body { display: block; }
+    .hist-item.open .hist-chev { transform: rotate(90deg); }
+    .hist-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+    .io-row { display: flex; gap: 9px; }
+    .io-row .btn-outline { flex: 1; }
+
+    /* ── stats ── */
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .chip {
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 2.5px solid rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.14);
+      color: var(--cream);
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    .chip.active {
+      background: var(--cream);
+      border-color: var(--cream);
+      color: var(--dusk);
+    }
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+    .stat-tile {
+      background: #fff;
+      border: 2.5px solid var(--cream-dark);
+      border-radius: 14px;
+      padding: 11px 5px;
+      text-align: center;
+    }
+    .stat-value {
+      font-family: 'Yatra One', cursive;
+      font-size: 1.45rem;
+      color: var(--magenta);
+      line-height: 1.15;
+    }
+    .stat-label {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: #8a7a80;
+      margin-top: 3px;
+    }
+    .stat-table { width: 100%; border-collapse: collapse; }
+    .stat-table th {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: #8a7a80;
+      padding: 0 4px 7px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .stat-table th:first-child, .stat-table td:first-child { text-align: left; }
+    .stat-table td {
+      padding: 8px 4px;
+      border-top: 1px dashed var(--cream-dark);
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--ink);
+      text-align: right;
+      white-space: nowrap;
+    }
+    .st-name { display: flex; align-items: center; gap: 7px; font-weight: 800; }
+    .st-name .dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1.5px solid rgba(0,0,0,0.18);
+    }
+    .bar-row { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+    .bar-key {
+      width: 30px;
+      flex-shrink: 0;
+      font-family: 'Yatra One', cursive;
+      font-size: 0.95rem;
+      color: #6e3b34;
+      text-align: center;
+    }
+    .bar-track {
+      flex: 1;
+      height: 17px;
+      background: var(--cream-dark);
+      border-radius: 9px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 9px;
+      background: linear-gradient(90deg, var(--magenta), var(--sunset));
+      min-width: 3px;
+    }
+    .bar-fill.sanctuary { background: linear-gradient(90deg, var(--teal-deep), var(--teal)); }
+    .bar-value {
+      width: 40px;
+      flex-shrink: 0;
+      text-align: right;
+      font-weight: 800;
+      font-size: 0.85rem;
+      color: var(--ink);
+    }
+    .spark-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 0;
+      border-top: 1px dashed var(--cream-dark);
+    }
+    .spark-row:first-of-type { border-top: none; }
+    .spark-name {
+      width: 88px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 800;
+      font-size: 0.82rem;
+      color: var(--ink);
+      overflow: hidden;
+    }
+    .spark-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .spark-name .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1.5px solid rgba(0,0,0,0.18);
+    }
+    .spark-svg { flex: 1; height: 32px; min-width: 0; }
+    .spark-last {
+      width: 34px;
+      flex-shrink: 0;
+      text-align: right;
+      font-weight: 800;
+      font-size: 0.88rem;
+      color: var(--magenta);
+    }
+    .h2h-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 0;
+      border-top: 1px dashed var(--cream-dark);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+    .h2h-row:first-of-type { border-top: none; }
+    .h2h-side { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .h2h-side.right { text-align: right; }
+    .h2h-score {
+      font-family: 'Yatra One', cursive;
+      font-size: 1.05rem;
+      color: var(--magenta);
+      flex-shrink: 0;
+      padding: 0 6px;
+    }
+    .rec-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 9px 0;
+      border-top: 1px dashed var(--cream-dark);
+    }
+    .rec-row:first-of-type { border-top: none; }
+    .rec-label { font-size: 0.78rem; font-weight: 800; color: #8a7a80; flex: 1; }
+    .rec-val { font-weight: 700; font-size: 0.88rem; color: var(--ink); text-align: right; }
+    .rec-val b { font-family: 'Yatra One', cursive; font-size: 1.1rem; color: var(--magenta); }
+
+    @media (max-width: 420px) {
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      .spark-name { width: 70px; }
+      .stat-table td, .stat-table th { padding-left: 2px; padding-right: 2px; }
+    }
+
     @media (max-width: 420px) {
       .app-header h1 { font-size: 2.1rem; letter-spacing: 4px; }
       .game-card-banner .step-number { font-size: 2.6rem; }
@@ -560,6 +848,9 @@
     <div class="player-inputs" id="player-inputs"></div>
     <div class="btn-row">
       <button class="btn btn-primary" id="btn-start">Wertung starten</button>
+    </div>
+    <div class="btn-row" id="setup-history-row" style="display:none">
+      <button class="btn btn-ghost" id="btn-open-history">📊 Historie &amp; Statistik</button>
     </div>
   </div>
 </section>
@@ -606,9 +897,43 @@
   <div class="scorepad" id="results-pad"></div>
   <div class="btn-row">
     <button class="btn btn-ghost" id="btn-edit-scores">✎ Korrigieren</button>
-    <button class="btn btn-primary" id="btn-new-game">Neues Spiel</button>
+    <button class="btn btn-primary" id="btn-save-game">💾 Spiel speichern</button>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-ghost" id="btn-results-history">📊 Historie</button>
+    <button class="btn btn-ghost" id="btn-new-game">Neues Spiel</button>
   </div>
 </section>
+
+<!-- HISTORY -->
+<section class="screen" id="screen-history">
+  <div class="wizard-topbar">
+    <button class="btn-small" id="btn-history-back">← Zurück</button>
+    <button class="btn-small" id="btn-goto-stats">📈 Statistik</button>
+  </div>
+  <div class="panel">
+    <h2>Vergangene Spiele</h2>
+    <div class="hist-list" id="hist-list"></div>
+    <div class="section-title">Daten</div>
+    <div class="io-row">
+      <button class="btn-outline" id="btn-export">⬇ Exportieren</button>
+      <button class="btn-outline" id="btn-import">⬆ Importieren</button>
+    </div>
+    <div class="panel-note" style="margin:10px 0 0">Die Historie liegt nur in diesem Browser. Export sichert sie und bringt sie auf ein anderes Gerät.</div>
+    <input type="file" id="import-file" accept="application/json,.json" hidden>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="screen" id="screen-stats">
+  <div class="wizard-topbar">
+    <button class="btn-small" id="btn-stats-back">← Historie</button>
+  </div>
+  <div class="chip-row" id="stats-filter"></div>
+  <div id="stats-content"></div>
+</section>
+
+<datalist id="known-players"></datalist>
 
 <script>
   const PLAYER_COLORS = ['#e8595c','#2980b9','#27ae60','#b8860b','#8e44ad','#e67e22'];
@@ -661,6 +986,7 @@
       input.type = 'text';
       input.placeholder = `Spieler ${i+1}`;
       input.maxLength = 16;
+      input.setAttribute('list', 'known-players');
       if (existing[i]) input.value = existing[i];
       else if (players[i]) input.value = players[i];
       row.append(dot, input);
@@ -677,6 +1003,7 @@
     scores = {};
     players.forEach((_, i) => scores[i] = {});
     stepIndex = 0;
+    savedGameId = null;
     renderWizard();
     showScreen('screen-wizard');
   };
@@ -810,7 +1137,7 @@
   // ── overview ──
   document.getElementById('btn-overview').onclick = () => {
     commitInputs();
-    document.getElementById('overview-pad').innerHTML = buildPadHtml();
+    document.getElementById('overview-pad').innerHTML = buildPadHtml(currentAsRecord());
     showScreen('screen-overview');
   };
   document.getElementById('btn-back-wizard').onclick = () => {
@@ -828,42 +1155,33 @@
     return sum;
   }
 
-  function buildPadHtml() {
+  // renders any game record – the live one via currentAsRecord(), or a stored one
+  function buildPadHtml(rec) {
+    const empty = (v) => (v === '' || v === null || v === undefined) ? '·' : v;
     let html = '<table><thead><tr><th></th>';
-    players.forEach((name, i) => {
-      html += `<th><span style="color:${PLAYER_COLORS[i]}">●</span> ${escHtml(name)}</th>`;
+    rec.players.forEach(p => {
+      html += `<th><span style="color:${playerColor(p.colorIndex)}">●</span> ${escHtml(p.name)}</th>`;
     });
     html += '</tr></thead><tbody>';
     for (let r = 1; r <= ROUNDS; r++) {
       html += `<tr><td class="pad-label">${r}</td>`;
-      players.forEach((_, pi) => {
-        const v = scores[pi][`r${r}`];
-        html += `<td>${v === '' || v === undefined ? '·' : v}</td>`;
-      });
+      rec.players.forEach(p => { html += `<td>${empty(p.rounds[`r${r}`])}</td>`; });
       html += '</tr>';
     }
     html += '<tr class="pad-sanctuary"><td class="pad-label">⛩</td>';
-    players.forEach((_, pi) => {
-      const v = scores[pi]['sanctuary'];
-      html += `<td>${v === '' || v === undefined ? '·' : v}</td>`;
-    });
+    rec.players.forEach(p => { html += `<td>${empty(p.sanctuary)}</td>`; });
     html += '</tr>';
     html += '<tr class="pad-total"><td class="pad-label">T</td>';
-    players.forEach((_, pi) => {
-      html += `<td><span class="pad-cell-box">${getTotal(pi)}</span></td>`;
+    rec.players.forEach(p => {
+      html += `<td><span class="pad-cell-box">${p.total}</span></td>`;
     });
     html += '</tr></tbody></table>';
     return html;
   }
 
   function showResults() {
-    const ranked = players.map((name, i) => ({ name, index: i, total: getTotal(i) }))
-      .sort((a, b) => b.total - a.total);
-    let rank = 1;
-    ranked.forEach((p, i) => {
-      p.rank = (i > 0 && p.total === ranked[i-1].total) ? ranked[i-1].rank : rank;
-      rank++;
-    });
+    const ranked = currentAsRecord().players.slice().sort((a, b) => b.total - a.total);
+    updateSaveButton();
 
     const winners = ranked.filter(p => p.rank === 1).map(p => p.name);
     document.getElementById('winner-name').textContent = winners.join(' & ');
@@ -893,7 +1211,7 @@
       podium.appendChild(item);
     });
 
-    document.getElementById('results-pad').innerHTML = buildPadHtml();
+    document.getElementById('results-pad').innerHTML = buildPadHtml(currentAsRecord());
     showScreen('screen-results');
   }
 
@@ -918,7 +1236,542 @@
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // ── game database (localStorage) ──────────────────────────────
+  // Everything goes through `store`, so swapping in a hosted backend later
+  // only means reimplementing these five methods.
+  const LS_KEY = 'faraway.games.v1';
+  const DB_VERSION = 1;
+
+  const store = {
+    read() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return emptyDb();
+        const db = JSON.parse(raw);
+        if (!db || !Array.isArray(db.games)) return emptyDb();
+        return migrate(db);
+      } catch { return emptyDb(); }
+    },
+    write(db) {
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify(db));
+        return true;
+      } catch {
+        alert('Die Historie konnte nicht gespeichert werden – der Browser-Speicher ist voll.');
+        return false;
+      }
+    },
+    // newest first, always normalized so imported or older records stay usable
+    all() {
+      return this.read().games
+        .map(normalizeGame)
+        .sort((a, b) => (a.playedAt < b.playedAt ? 1 : a.playedAt > b.playedAt ? -1 : 0));
+    },
+    add(game) {
+      const db = this.read();
+      db.games.push(game);
+      return this.write(db);
+    },
+    remove(id) {
+      const db = this.read();
+      db.games = db.games.filter(g => g.id !== id);
+      this.write(db);
+    },
+    replaceAll(games) {
+      return this.write({ version: DB_VERSION, games });
+    }
+  };
+
+  function emptyDb() { return { version: DB_VERSION, games: [] }; }
+
+  // schema changes hook in here; v1 needs no transformation yet
+  function migrate(db) {
+    db.version = DB_VERSION;
+    return db;
+  }
+
+  // players are matched across games by their normalized name
+  function normKey(name) { return String(name || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+
+  function playerColor(i) { return PLAYER_COLORS[(i || 0) % PLAYER_COLORS.length]; }
+
+  function assignRanks(list) {
+    const sorted = list.slice().sort((a, b) => b.total - a.total);
+    let rank = 1;
+    sorted.forEach((p, i) => {
+      p.rank = (i > 0 && p.total === sorted[i-1].total) ? sorted[i-1].rank : rank;
+      rank++;
+    });
+    return sorted;
+  }
+
+  function sumPlayerRecord(p) {
+    let s = 0;
+    for (let r = 1; r <= ROUNDS; r++) s += Number((p.rounds && p.rounds[`r${r}`]) || 0);
+    return s + Number(p.sanctuary || 0);
+  }
+
+  function normalizeGame(g) {
+    const players = (g.players || []).map((p, i) => {
+      const name = p.name || `Spieler ${i+1}`;
+      return {
+        name,
+        key: p.key || normKey(name),
+        colorIndex: typeof p.colorIndex === 'number' ? p.colorIndex : i,
+        rounds: p.rounds || {},
+        sanctuary: (p.sanctuary === undefined ? null : p.sanctuary),
+        total: typeof p.total === 'number' ? p.total : sumPlayerRecord(p)
+      };
+    });
+    assignRanks(players);
+    return {
+      id: g.id,
+      playedAt: g.playedAt || '',
+      playerCount: g.playerCount || players.length,
+      players
+    };
+  }
+
+  // ── converting the live wizard state into a stored record ─────
+  function cellValue(pi, key) {
+    const v = scores[pi][key];
+    return (v === '' || v === undefined || v === null) ? null : Number(v);
+  }
+
+  function currentAsRecord() {
+    const list = players.map((name, i) => {
+      const rounds = {};
+      for (let r = 1; r <= ROUNDS; r++) rounds[`r${r}`] = cellValue(i, `r${r}`);
+      return {
+        name,
+        key: normKey(name),
+        colorIndex: i,
+        rounds,
+        sanctuary: cellValue(i, 'sanctuary'),
+        total: getTotal(i)
+      };
+    });
+    assignRanks(list);
+    return { playerCount: list.length, players: list };
+  }
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+
+  function makeGameId(d) {
+    const stamp = `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}`;
+    return `${stamp}-${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  // local time with offset, so sorting stays chronological across timezones
+  function isoLocal(d) {
+    const off = -d.getTimezoneOffset();
+    const sign = off >= 0 ? '+' : '-';
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T` +
+           `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}` +
+           `${sign}${pad2(Math.floor(Math.abs(off)/60))}:${pad2(Math.abs(off)%60)}`;
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso || '—';
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+         + ' · ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // ── saving the finished game ──────────────────────────────────
+  let savedGameId = null;   // id of the current game once it is in the database
+
+  function updateSaveButton() {
+    const b = document.getElementById('btn-save-game');
+    b.disabled = false;
+    b.textContent = savedGameId ? '💾 Aktualisieren' : '💾 Spiel speichern';
+  }
+
+  function flashSaveButton(text) {
+    const b = document.getElementById('btn-save-game');
+    b.textContent = text;
+    b.disabled = true;
+    setTimeout(updateSaveButton, 1400);
+  }
+
+  document.getElementById('btn-save-game').onclick = () => {
+    const rec = currentAsRecord();
+
+    // already stored? overwrite it, so corrections do not create a duplicate
+    if (savedGameId) {
+      const db = store.read();
+      const existing = db.games.find(g => g.id === savedGameId);
+      if (existing) {
+        Object.assign(existing, rec);
+        if (store.write(db)) flashSaveButton('Aktualisiert ✓');
+        return;
+      }
+      savedGameId = null;
+    }
+
+    const now = new Date();
+    const game = Object.assign({ id: makeGameId(now), playedAt: isoLocal(now) }, rec);
+    if (store.add(game)) {
+      savedGameId = game.id;
+      flashSaveButton('Gespeichert ✓');
+      refreshHistoryAvailability();
+    }
+  };
+
+  // ── history screen ────────────────────────────────────────────
+  function renderHistory() {
+    const games = store.all();
+    const list = document.getElementById('hist-list');
+    if (!games.length) {
+      list.innerHTML = '<div class="empty-state">Noch keine Spiele gespeichert.<br>Beende eine Wertung und tippe dort auf „Spiel speichern“.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    games.forEach(g => {
+      const ranked = g.players.slice().sort((a, b) => b.total - a.total);
+      const winners = ranked.filter(p => p.rank === 1).map(p => p.name).join(' & ');
+      const dots = g.players.map(p => `<span style="background:${playerColor(p.colorIndex)}"></span>`).join('');
+
+      const item = document.createElement('div');
+      item.className = 'hist-item';
+      item.innerHTML = `
+        <div class="hist-head">
+          <div class="hist-main">
+            <div class="hist-date">${escHtml(formatDate(g.playedAt))} · ${g.playerCount} Spieler</div>
+            <div class="hist-winner">🏆 ${escHtml(winners)} <span class="hw-score">${ranked[0].total}</span></div>
+            <div class="hist-dots">${dots}</div>
+          </div>
+          <div class="hist-chev">›</div>
+        </div>
+        <div class="hist-body">
+          <div class="scorepad">${buildPadHtml(g)}</div>
+          <div class="hist-actions"><button class="btn-danger">🗑 Löschen</button></div>
+        </div>`;
+
+      item.querySelector('.hist-head').onclick = () => item.classList.toggle('open');
+      item.querySelector('.btn-danger').onclick = () => {
+        if (!confirm('Dieses Spiel aus der Historie löschen?')) return;
+        store.remove(g.id);
+        if (savedGameId === g.id) { savedGameId = null; updateSaveButton(); }
+        renderHistory();
+        refreshHistoryAvailability();
+      };
+      list.appendChild(item);
+    });
+  }
+
+  function knownPlayerNames() {
+    const seen = new Map();
+    store.all().forEach(g => g.players.forEach(p => {
+      if (!seen.has(p.key)) seen.set(p.key, p.name);
+    }));
+    return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, 'de'));
+  }
+
+  // history button only makes sense once something is stored;
+  // known names feed the setup autocomplete so typos stay rare
+  function refreshHistoryAvailability() {
+    const has = store.all().length > 0;
+    document.getElementById('setup-history-row').style.display = has ? 'flex' : 'none';
+    document.getElementById('known-players').innerHTML =
+      knownPlayerNames().map(n => `<option value="${escHtml(n)}">`).join('');
+  }
+
+  // ── statistics ────────────────────────────────────────────────
+  let statsFilter = 'all';
+
+  function aggregate(games) {
+    const map = new Map();
+    games.forEach(g => g.players.forEach(p => {
+      let a = map.get(p.key);
+      if (!a) {
+        a = { key: p.key, name: p.name, colorIndex: p.colorIndex, games: 0, wins: 0,
+              sum: 0, best: -Infinity, worst: Infinity, rankSum: 0, results: [] };
+        map.set(p.key, a);
+      }
+      a.games++;
+      if (p.rank === 1) a.wins++;
+      a.sum += p.total;
+      a.best = Math.max(a.best, p.total);
+      a.worst = Math.min(a.worst, p.total);
+      a.rankSum += p.rank;
+      a.results.push({ playedAt: g.playedAt, total: p.total, rank: p.rank });
+    }));
+    const list = Array.from(map.values());
+    list.forEach(a => {
+      a.avg = a.sum / a.games;
+      a.avgRank = a.rankSum / a.games;
+      a.winRate = a.wins / a.games;
+      a.results.sort((x, y) => (x.playedAt < y.playedAt ? -1 : 1));   // oldest first
+    });
+    list.sort((a, b) => b.wins - a.wins || b.winRate - a.winRate || b.avg - a.avg);
+    return list;
+  }
+
+  function renderStatsFilter(all) {
+    const counts = Array.from(new Set(all.map(g => g.playerCount))).sort((a, b) => a - b);
+    if (statsFilter !== 'all' && !counts.includes(Number(statsFilter))) statsFilter = 'all';
+    const row = document.getElementById('stats-filter');
+    row.innerHTML = '';
+    [['all', 'Alle']].concat(counts.map(c => [String(c), `${c} Spieler`])).forEach(([val, label]) => {
+      const b = document.createElement('button');
+      b.className = 'chip' + (statsFilter === val ? ' active' : '');
+      b.textContent = label;
+      b.onclick = () => { statsFilter = val; renderStats(); };
+      row.appendChild(b);
+    });
+  }
+
+  function renderStats() {
+    const all = store.all();
+    renderStatsFilter(all);
+    const games = statsFilter === 'all' ? all : all.filter(g => g.playerCount === Number(statsFilter));
+    const el = document.getElementById('stats-content');
+    if (!games.length) {
+      el.innerHTML = '<div class="panel"><div class="empty-state">Für diese Auswahl gibt es noch keine Spiele.</div></div>';
+      return;
+    }
+    const agg = aggregate(games);
+    el.innerHTML = overviewTilesHtml(games, agg)
+                 + playerTableHtml(agg)
+                 + cardBarsHtml(games)
+                 + trendHtml(agg)
+                 + headToHeadHtml(games)
+                 + recordsHtml(games, agg);
+  }
+
+  function shortName(n) { return n.length > 9 ? n.slice(0, 8) + '…' : n; }
+
+  function overviewTilesHtml(games, agg) {
+    const totals = games.flatMap(g => g.players.map(p => p.total));
+    const avg = totals.reduce((a, b) => a + b, 0) / totals.length;
+    const top = agg[0];
+    const tiles = [
+      [games.length, 'Spiele'],
+      [agg.length, 'Spieler'],
+      [Math.round(avg), 'Ø Punkte'],
+      [Math.max(...totals), 'Höchstwert'],
+      [Math.min(...totals), 'Tiefstwert'],
+      [top ? top.wins : 0, top ? `Siege ${escHtml(shortName(top.name))}` : 'Siege']
+    ];
+    return `<div class="panel"><h2>Überblick</h2><div class="stat-grid">`
+      + tiles.map(([v, l]) => `<div class="stat-tile"><div class="stat-value">${v}</div><div class="stat-label">${l}</div></div>`).join('')
+      + `</div></div>`;
+  }
+
+  function playerTableHtml(agg) {
+    const rows = agg.map(a => `
+      <tr>
+        <td><div class="st-name"><span class="dot" style="background:${playerColor(a.colorIndex)}"></span>${escHtml(a.name)}</div></td>
+        <td>${a.games}</td>
+        <td>${a.wins}</td>
+        <td>${Math.round(a.winRate * 100)}%</td>
+        <td>${a.avg.toFixed(1)}</td>
+        <td>${a.best}</td>
+        <td>${a.avgRank.toFixed(1)}</td>
+      </tr>`).join('');
+    return `<div class="panel"><h2>Spielerbilanz</h2><div style="overflow-x:auto">
+      <table class="stat-table">
+        <thead><tr><th>Spieler</th><th>Sp.</th><th>Siege</th><th>Quote</th><th>Ø</th><th>Best</th><th>Ø Platz</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div></div>`;
+  }
+
+  // average points scored on each card slot – only possible because the
+  // wizard records every card separately
+  function cardBarsHtml(games) {
+    const keys = [];
+    for (let r = ROUNDS; r >= 1; r--) keys.push(`r${r}`);
+    keys.push('sanctuary');
+
+    const acc = {};
+    keys.forEach(k => acc[k] = { sum: 0, n: 0 });
+    games.forEach(g => g.players.forEach(p => {
+      keys.forEach(k => {
+        const v = k === 'sanctuary' ? p.sanctuary : p.rounds[k];
+        if (v === null || v === undefined) return;
+        acc[k].sum += Number(v);
+        acc[k].n++;
+      });
+    }));
+
+    const avgOf = k => (acc[k].n ? acc[k].sum / acc[k].n : 0);
+    const max = Math.max(1, ...keys.map(avgOf));
+    const rows = keys.map(k => {
+      const v = avgOf(k);
+      return `<div class="bar-row">
+        <div class="bar-key">${k === 'sanctuary' ? '⛩' : k.slice(1)}</div>
+        <div class="bar-track"><div class="bar-fill${k === 'sanctuary' ? ' sanctuary' : ''}" style="width:${Math.max(2, (v / max) * 100).toFixed(1)}%"></div></div>
+        <div class="bar-value">${v.toFixed(1)}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="panel"><h2>Woher die Punkte kommen</h2>
+      <div class="panel-note">Ø Punkte pro Karte, über alle Spieler</div>${rows}</div>`;
+  }
+
+  function trendHtml(agg) {
+    const shown = agg.filter(a => a.results.length >= 2).slice(0, 6);
+    if (!shown.length) return '';
+    const rows = shown.map(a => {
+      const vals = a.results.map(r => r.total);
+      return `<div class="spark-row">
+        <div class="spark-name"><span class="dot" style="background:${playerColor(a.colorIndex)}"></span><b>${escHtml(a.name)}</b></div>
+        ${sparkSvg(vals, playerColor(a.colorIndex))}
+        <div class="spark-last">${vals[vals.length - 1]}</div>
+      </div>`;
+    }).join('');
+    return `<div class="panel"><h2>Punkteverlauf</h2>
+      <div class="panel-note">älteste Partie links, neueste rechts</div>${rows}</div>`;
+  }
+
+  // hand-rolled sparkline – the tool deliberately has no chart dependency
+  function sparkSvg(values, color) {
+    const w = 100, h = 30, pad = 3;
+    const max = Math.max(...values), min = Math.min(...values);
+    const span = (max - min) || 1;
+    const step = values.length > 1 ? (w - pad * 2) / (values.length - 1) : 0;
+    const pts = values.map((v, i) => [
+      pad + i * step,
+      pad + (1 - (v - min) / span) * (h - pad * 2)
+    ]);
+    const line = pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    const area = `${pad},${h - pad} ${line} ${(pad + (values.length - 1) * step).toFixed(1)},${h - pad}`;
+    return `<svg class="spark-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+      <polygon points="${area}" fill="${color}" opacity="0.16"/>
+      <polyline points="${line}" fill="none" stroke="${color}" stroke-width="2"
+        vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>`;
+  }
+
+  function headToHeadHtml(games) {
+    const pairs = new Map();
+    games.forEach(g => {
+      const ps = g.players;
+      for (let i = 0; i < ps.length; i++) {
+        for (let j = i + 1; j < ps.length; j++) {
+          // order the pair by key so the same duo always lands in one bucket
+          const [first, second] = ps[i].key <= ps[j].key ? [ps[i], ps[j]] : [ps[j], ps[i]];
+          const id = `${first.key}|${second.key}`;
+          let rec = pairs.get(id);
+          if (!rec) {
+            rec = { aName: first.name, bName: second.name, aWins: 0, bWins: 0, draws: 0, n: 0 };
+            pairs.set(id, rec);
+          }
+          rec.n++;
+          if (first.total > second.total) rec.aWins++;
+          else if (second.total > first.total) rec.bWins++;
+          else rec.draws++;
+        }
+      }
+    });
+
+    const list = Array.from(pairs.values()).filter(p => p.n >= 2).sort((a, b) => b.n - a.n).slice(0, 8);
+    if (!list.length) return '';
+    const rows = list.map(p => {
+      const tie = p.draws ? ` title="${p.draws}× punktgleich"` : '';
+      return `<div class="h2h-row"${tie}>
+        <div class="h2h-side">${escHtml(p.aName)}</div>
+        <div class="h2h-score">${p.aWins} : ${p.bWins}</div>
+        <div class="h2h-side right">${escHtml(p.bName)}</div>
+      </div>`;
+    }).join('');
+    return `<div class="panel"><h2>Direkte Duelle</h2>
+      <div class="panel-note">wer im selben Spiel mehr Punkte hatte</div>${rows}</div>`;
+  }
+
+  function recordsHtml(games, agg) {
+    let bestGame = null, bestCard = null;
+    games.forEach(g => g.players.forEach(p => {
+      if (!bestGame || p.total > bestGame.total) bestGame = { name: p.name, total: p.total };
+      for (let r = ROUNDS; r >= 1; r--) {
+        const v = p.rounds[`r${r}`];
+        if (v === null || v === undefined) continue;
+        if (!bestCard || Number(v) > bestCard.value) bestCard = { name: p.name, value: Number(v), card: r };
+      }
+    }));
+
+    let streak = null;
+    agg.forEach(a => {
+      let cur = 0, max = 0;
+      a.results.forEach(r => { cur = r.rank === 1 ? cur + 1 : 0; if (cur > max) max = cur; });
+      if (max >= 2 && (!streak || max > streak.len)) streak = { name: a.name, len: max };
+    });
+
+    const rows = [];
+    if (bestGame) rows.push(['Höchste Wertung', `<b>${bestGame.total}</b> · ${escHtml(bestGame.name)}`]);
+    if (bestCard) rows.push(['Beste Einzelkarte', `<b>${bestCard.value}</b> · ${escHtml(bestCard.name)} (Karte ${bestCard.card})`]);
+    if (streak) rows.push(['Längste Siegesserie', `<b>${streak.len}</b> · ${escHtml(streak.name)}`]);
+    if (!rows.length) return '';
+
+    return `<div class="panel"><h2>Rekorde</h2>`
+      + rows.map(([l, v]) => `<div class="rec-row"><div class="rec-label">${l}</div><div class="rec-val">${v}</div></div>`).join('')
+      + `</div>`;
+  }
+
+  // ── export / import ───────────────────────────────────────────
+  document.getElementById('btn-export').onclick = () => {
+    const blob = new Blob([JSON.stringify(store.read(), null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `faraway-historie-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  document.getElementById('btn-import').onclick = () => document.getElementById('import-file').click();
+
+  document.getElementById('import-file').onchange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const incoming = JSON.parse(reader.result);
+        const games = Array.isArray(incoming) ? incoming : (incoming && incoming.games);
+        if (!Array.isArray(games)) throw new Error('unbekanntes Format');
+
+        // merge by id, existing games win – importing twice changes nothing
+        const merged = new Map(store.read().games.map(g => [g.id, g]));
+        let added = 0;
+        games.forEach(g => {
+          if (!g || !g.id || merged.has(g.id)) return;
+          merged.set(g.id, normalizeGame(g));
+          added++;
+        });
+        store.replaceAll(Array.from(merged.values()));
+        renderHistory();
+        refreshHistoryAvailability();
+        alert(`${added} von ${games.length} Spielen importiert.` +
+              (added < games.length ? `\n${games.length - added} waren bereits vorhanden.` : ''));
+      } catch (err) {
+        alert('Die Datei konnte nicht gelesen werden: ' + err.message);
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
+  // ── navigation for the new screens ────────────────────────────
+  let historyReturnScreen = 'screen-setup';
+
+  function openHistory(from) {
+    historyReturnScreen = from;
+    renderHistory();
+    showScreen('screen-history');
+  }
+
+  document.getElementById('btn-open-history').onclick    = () => openHistory('screen-setup');
+  document.getElementById('btn-results-history').onclick = () => openHistory('screen-results');
+  document.getElementById('btn-history-back').onclick    = () => showScreen(historyReturnScreen);
+  document.getElementById('btn-goto-stats').onclick      = () => { renderStats(); showScreen('screen-stats'); };
+  document.getElementById('btn-stats-back').onclick      = () => { renderHistory(); showScreen('screen-history'); };
+
   renderPlayerInputs();
+  refreshHistoryAvailability();
 </script>
 </body>
 </html>
