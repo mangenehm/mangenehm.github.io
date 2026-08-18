@@ -1,8 +1,8 @@
 {
     "name": "Faraway Punktezähler",
-    "description": "Punktezähler für das Brettspiel Faraway: geführte Wertung von Karte 8 bis Karte 1, dann Heiligtümer – mit Rangliste im Stil des Originalspiels.",
+    "description": "Punktezähler für das Brettspiel Faraway: geführte Wertung von Karte 8 bis Karte 1, dann Heiligtümer – mit Rangliste, gespeicherter Spielhistorie und Statistik.",
     "category": "Spiel",
-    "tags": ["Spiel", "Brettspiel"],
+    "tags": ["Spiel", "Brettspiel", "Statistik"],
     "created": "2026-06-09",
-    "lastUpdated": "2026-06-09"
+    "lastUpdated": "2026-08-18"
 }
