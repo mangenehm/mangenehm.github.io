@@ -11,6 +11,7 @@ export const S = {
 
   // HUD
   cutOnly: (what) => `Schneide nur ${what}`,
+  cutOnlyPrefix: 'Schneide nur…',
   cutEverything: 'Schneide alle Früchte – nicht die Bomben!',
   cutEverythingNoBombs: 'Schneide alle Früchte!',
   lives: 'Leben',

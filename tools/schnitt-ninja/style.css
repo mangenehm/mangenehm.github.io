@@ -96,7 +96,7 @@ body { display: block; }
   margin: 10px auto 0;
   max-width: 340px;
   text-align: center;
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   line-height: 1.25;
   padding: 8px 12px;
@@ -105,6 +105,7 @@ body { display: block; }
   border: 1px solid var(--border);
   text-shadow: 0 1px 3px rgba(0, 0, 0, .9);
 }
+.banner b { color: var(--accent); }
 .banner.pulse { animation: pulse .5s ease-in-out infinite alternate; border-color: var(--accent); }
 @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.06); } }
 
@@ -143,20 +144,64 @@ body { display: block; }
 
 /* ---------------- Zentrale Meldungen ---------------- */
 
+/* Abdunkelung hinter der Regelkarte. Liegt unter .center-msg (z-index 3) und
+   über dem Canvas; der Schaden-Blitz bleibt mit z-index 4 darüber. */
+.center-dim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: rgba(5, 8, 20, 0.72);
+  backdrop-filter: blur(2px);
+}
+
 .center-msg {
   position: absolute;
   left: 0; right: 0; top: 38%;
+  z-index: 3;
   text-align: center;
   pointer-events: none;
-  font-weight: 900;
-  font-size: 34px;
   line-height: 1.15;
-  padding: 0 24px;
+  padding: 0 20px;
   text-shadow: 0 4px 18px rgba(0, 0, 0, .9);
 }
-.center-msg .sub { display: block; font-size: 17px; font-weight: 700; color: var(--muted); margin-top: 8px; }
-.center-msg.big { font-size: 92px; }
-.center-msg.warn { color: var(--accent); }
+.center-msg .kicker {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.center-msg .main {
+  display: block;
+  font-size: 40px;
+  font-weight: 900;
+  overflow-wrap: break-word;
+}
+.center-msg .note {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 10px;
+}
+/* Karte für den Regelwechsel: die Regel selbst ist das größte Element */
+.center-msg.card .main {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px 18px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, .8);
+}
+/* Countdown: Ziffer groß, Regel darunter trotzdem gut lesbar */
+.center-msg.big .main { font-size: 92px; }
+.center-msg.big .note { font-size: 22px; color: var(--text); margin-top: 14px; }
+/* Vorwarnung: klein und weiter oben, damit sie das laufende Spiel nicht verdeckt */
+.center-msg.small .main { font-size: 26px; }
+.center-msg.high { top: 22%; }
+.center-msg.warn .main { color: var(--accent); }
 .center-msg.pop { animation: pop .35s ease-out; }
 @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 

@@ -40,6 +40,7 @@ export class UI {
       timer: $('#hudTimer'),
       boosts: $('#hudBoosts'),
       center: $('#centerMsg'),
+      dim: $('#centerDim'),
       tutorialBox: $('#tutorialBox'),
       tutorialText: $('#tutorialText'),
     };
@@ -281,8 +282,9 @@ export class UI {
     this.el.hud.classList.toggle('hidden', !on);
   }
 
-  setBanner(text, pulse) {
-    this.el.banner.textContent = text;
+  setBanner(html, pulse) {
+    // nur interne Konstanten – keine Nutzereingabe
+    this.el.banner.innerHTML = html;
     this.el.banner.classList.toggle('pulse', !!pulse);
   }
 
@@ -327,11 +329,22 @@ export class UI {
     }, 30);
   }
 
-  showCenter(text, sub, opts = {}) {
+  /** Zentrale Einblendung aus drei Ebenen: kleiner Kicker, große Hauptzeile, leiser Zusatz.
+      Die Hauptzeile trägt immer die wichtigste Information – beim Regelwechsel also die Regel. */
+  showCenter(main, note, opts = {}) {
     const el = this.el.center;
-    el.className = `center-msg${opts.big ? ' big' : ''}${opts.warn ? ' warn' : ''} pop`;
-    el.innerHTML = `${text || ''}${sub ? `<span class="sub">${sub}</span>` : ''}`;
+    const mods = ['big', 'warn', 'card', 'small', 'high']
+      .filter((m) => opts[m])
+      .map((m) => ` ${m}`)
+      .join('');
+    el.className = `center-msg${mods} pop`;
+    el.innerHTML = [
+      opts.kicker ? `<span class="kicker">${opts.kicker}</span>` : '',
+      `<span class="main">${main || ''}</span>`,
+      note ? `<span class="note">${note}</span>` : '',
+    ].join('');
     el.classList.remove('hidden');
+    this.el.dim.classList.toggle('hidden', !opts.dim);
     clearTimeout(this.centerTimer);
     if (opts.duration) {
       this.centerTimer = setTimeout(() => this.hideCenter(), opts.duration * 1000);
@@ -343,6 +356,7 @@ export class UI {
   hideCenter() {
     clearTimeout(this.centerTimer);
     this.el.center.classList.add('hidden');
+    this.el.dim.classList.add('hidden');
   }
 
   showTutorial(text) {

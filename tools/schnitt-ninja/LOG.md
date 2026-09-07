@@ -71,6 +71,64 @@ Repo-Konvention: ein Ordner unter `tools/` mit `tool.json` + `index.html`; der I
 | Tagesrunde zweimal gestartet → identische Abfolge | ok |
 | Tutorial: alle drei Schritte, `tutorialDone` wird gesetzt | ok |
 
+## 2026-09-07 – Nach dem ersten Spieltest: Lesbarkeit und Rausch
+
+Zwei Rückmeldungen aus dem Test, beide behoben.
+
+### 1. Regelwechsel war zu klein zu lesen
+
+Ursache: `showCenter('Neue Regel!', rule.banner, …)` zeigte die Überschrift mit 34 px, die
+**eigentliche neue Regel** aber als 17-px-Grau darunter – die wichtige Hälfte war das kleinste und
+blasseste Element. Dasselbe Muster beim Countdown und bei der Vorwarnung („Neue Regel gleich…"
+erschien sogar mit leerer Überschrift).
+
+- Zentrale Einblendung neu aus drei Ebenen: `kicker` (18 px, gelb), `main` (40 px, weiß, fett),
+  `note` (16 px). Die **Hauptzeile trägt immer die wichtigste Information** – beim Wechsel also die
+  Regel selbst (`rule.short`), nicht die Überschrift.
+- Beim Regelwechsel liegt die Regel auf einer Karte, das Spielfeld wird über `#centerDim` abgedunkelt.
+  Kostet kein Gameplay: In diesen Sekunden pausiert das Spawnen ohnehin und der Luftraum ist leer.
+- Karte und Abdunkelung hängen an der **Spielzeit**, nicht an `setTimeout`: Sie verschwinden exakt
+  dann, wenn `spawnPause` abläuft und wieder Items starten (`ruleCardUp`). Damit passt es auch,
+  wenn zwischendurch pausiert wird oder der Browser Timer drosselt.
+- Spawn-Pause beim Wechsel von 2 s auf 2,4 s – bewusste kleine Abweichung vom Briefing zugunsten
+  der Lesezeit.
+- Vorwarnung jetzt 26 px in Gelb und weiter oben (`.small.high`), damit sie das laufende Spiel nicht verdeckt.
+- Countdown zeigt die Regel unter der Ziffer mit 22 px in voller Kontrastfarbe.
+- HUD-Banner von 17 auf 19 px, und der operative Teil ist hervorgehoben: „Schneide nur **GERADE Zahlen**".
+
+### 2. Sternfrucht-Rausch war zu chaotisch, Combos kaum erreichbar
+
+Zwei Ursachen – eine davon ein echter Bug:
+
+- **Bug:** `spawnWave()` legte `isTarget` und `allowBomb` beim *Einplanen* fest, die Items entstanden
+  aber bis zu 0,35 s später aus `pending` – und `pending` wurde beim Start des Rauschs nie geleert.
+  Eine kurz vorher eingeplante Welle spawnte deshalb **verbotene Items und Bomben mitten im Rausch**.
+  Genau das Problem „schwer, verbotene Früchte zu meiden".
+  Jetzt entscheidet die Closure zur Ausführungszeit, und `_startFrenzy()` verwirft `pending` und
+  räumt den Luftraum folgenlos (Regelmodi: alle Nichtziele, freies Spiel: alle Bomben).
+- **Design:** 0,36 s Intervall × 2–3 Items ≈ 7 Items/s an zufälligen Positionen – nichts lag je auf
+  einer Linie, ein Wisch traf fast nie zwei Items.
+  Jetzt **Salven** (`_spawnVolley`): alle 0,85 s vier Items gleichzeitig, gleichmäßig über die Breite
+  und auf einer gemeinsamen Linie – abwechselnd waagerechte Reihe (gleiches `vy`) und Fächer
+  (gestaffeltes `vy`). Ein Wisch nimmt die ganze Reihe mit.
+- Die angekündigten **Wellen** kommen aus demselben Generator als Fächer (6–7 Items). Sie behalten
+  ihre Ziel-/Nichtziel-Mischung – die Welle ist ein Regeltest, kein Geschenk –, sind aber lesbar
+  statt überfordernd.
+- Wird im Rausch doch ein Nachzügler getroffen, zerteilt er sich harmlos ohne Punkte. Vorher wurde
+  er nur als `cut` markiert und flog unverändert weiter, was sich wie ein hängender Treffer anfühlte.
+
+### Tests dazu
+
+| Prüfung | Ergebnis |
+|---|---|
+| Welle einplanen, sofort Rausch starten (alle drei Modi) | 0 verbotene Items, 0 Bomben in 5 s; 25 Items statt ~35 |
+| Luftraum-Räumung | 4 Items mit 2 Nichtzielen → 2 Items, 0 Nichtziele; Bombe im freien Spiel verschwindet |
+| Salven-Geometrie | 6 Salven à 4 Items; Reihe: identisches `vy`, Fächer: −1336…−1179; Abstand ≥ 69 px |
+| Ein waagerechter Wisch durch eine Reihe | **Combo ×4**, 4 Treffer, 8 Stücke, 66 Punkte |
+| Welle bei 40 s | Ankündigung bei 39 s, 7 Items als Fächer, x 59…326, keine Bomben |
+| Regelkarte | `.main` = Regel mit 40 px, Kicker + Notiz, Dim aktiv; verschwindet exakt mit `spawnPause` |
+| Regression | Countdown, Lernmoment (−1 Leben, −5 s, Begründung), Punkte ×Faktor, Rundenende, Highscore-Eintrag, Tutorial – alle unverändert ok |
+
 ## Entscheidungen, die vom Briefing abweichen oder es präzisieren
 
 - **Schwierigkeitsfaktor bei „Zufällig“:** +0.15 statt +0.3. Die Zufallsregel mischt leichte (gerade/ungerade) und schwere (kleiner/größer) Regeln, der halbe Aufschlag bildet das ehrlicher ab.
@@ -78,6 +136,11 @@ Repo-Konvention: ein Ordner unter `tools/` mit `tool.json` + `index.html`; der I
 - **Tagesrunde** wird nur in der Tagesbestenliste geführt, nicht zusätzlich in der Liste des freien Spiels – sonst stünden die (gleichen) Läufe doppelt.
 - **Sternfrucht im Formen-Modus** ist ein ⚡ statt ⭐, weil „Stern“ dort eine Zielform ist und ein Stern-Emoji verwechselbar wäre.
 - **Frisch entstandene Stücke** sind 0,15 s lang gegen Mehrfachschnitt gesperrt; sonst zerlegt ein einziger schneller Wischer ein Item im selben Frame in viele Splitter.
+- **Spawn-Pause beim Regelwechsel** 2,4 s statt 2 s, damit die große Regelkarte in Ruhe gelesen
+  werden kann; Karte und Abdunkelung enden exakt mit der Pause.
+- **Rausch und Wellen als Salven** statt als Zufallsstrom – das Briefing beschreibt „dichte Wellen",
+  legt die Verteilung aber nicht fest. Gleichzeitig startende Reihen sind die Voraussetzung dafür,
+  dass Combos überhaupt spielbar sind statt Glückssache.
 - **Service Worker** bewusst weggelassen (im Briefing optional): Das Spiel lädt in wenigen KB, ein Cache brächte vor allem Risiko, veraltete Versionen auszuliefern. Das Manifest allein reicht für „Zum Home-Bildschirm“.
 
 ## Offene Punkte

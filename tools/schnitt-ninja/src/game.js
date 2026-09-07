@@ -195,6 +195,7 @@ export class Game {
     this.frenzy = 0;
     this.x2 = 0;
     this.lastFrenzy = -60;
+    this.volleyIndex = 0;
     this.comboSwipe = -1;
     this.comboCount = 0;
     this.hitFlash = 0;
@@ -203,6 +204,7 @@ export class Game {
     this.sparkleT = 0;
     this.lastTickSecond = -1;
     this.pendingEnd = null;
+    this.ruleCardUp = false;
     this.over = false;
     this.running = true;
     this.countdown = 3.4;
@@ -238,7 +240,7 @@ export class Game {
     this.waveWarned = new Set();
     this.waveDone = new Set();
 
-    this.ui.setBanner(this._bannerText(), false);
+    this.ui.setBanner(this._bannerHtml(), false);
     this.ui.setHud(this._hud());
     this.ui.showCenter('3', this._bannerText(), { big: true });
   }
@@ -252,6 +254,12 @@ export class Game {
   _bannerText() {
     if (this.rule) return this.rule.banner;
     return this.cfg.bombs ? S.cutEverything : S.cutEverythingNoBombs;
+  }
+
+  /** Wie _bannerText, aber der operative Teil der Regel ist hervorgehoben. */
+  _bannerHtml() {
+    if (this.rule) return `${S.cutOnlyPrefix.replace('…', '')} <b>${this.rule.short}</b>`;
+    return this._bannerText();
   }
 
   _hud() {
@@ -338,6 +346,10 @@ export class Game {
 
     if (this.spawnPause > 0) {
       this.spawnPause -= dt;
+      if (this.spawnPause <= 0 && this.ruleCardUp) {
+        this.ruleCardUp = false;
+        this.ui.hideCenter();
+      }
     } else {
       this.spawnTimer -= dt;
       if (this.spawnTimer <= 0) {
@@ -394,8 +406,8 @@ export class Game {
       const warnKey = `w${t}`;
       if (!this.warned.has(warnKey) && this.elapsed >= t - 3) {
         this.warned.add(warnKey);
-        this.ui.setBanner(this._bannerText(), true);
-        this.ui.showCenter('', S.ruleSoon, { sticky: true });
+        this.ui.setBanner(this._bannerHtml(), true);
+        this.ui.showCenter(S.ruleSoon, null, { warn: true, small: true, high: true, sticky: true });
       }
       const doneKey = `d${t}`;
       if (!this.warned.has(doneKey) && this.elapsed >= t) {
@@ -410,13 +422,16 @@ export class Game {
     // Regel bewertet, die er noch nicht gesehen hat.
     this.items.length = 0;
     this.pending.length = 0;
-    this.spawnPause = 2;
+    this.spawnPause = 2.4;
     this.spawnTimer = 0;
     this.rule = this.cfg.mode === 'numbers'
       ? Rules.randomNumberRule(this.cfg.min, this.cfg.max, this.rule)
       : Rules.randomShapeRule(this.cfg.shapeCount, this.rule);
-    this.ui.setBanner(this._bannerText(), false);
-    this.ui.showCenter(S.ruleNew, this.rule.banner, { duration: 1.9 });
+    this.ui.setBanner(this._bannerHtml(), false);
+    this.ruleCardUp = true;
+    this.ui.showCenter(this.rule.short, S.cutOnlyPrefix, {
+      kicker: S.ruleNew, card: true, dim: true, sticky: true,
+    });
     sfx.multUp();
   }
 
@@ -431,7 +446,12 @@ export class Game {
       }
       if (!this.waveDone.has(t) && this.elapsed >= t) {
         this.waveDone.add(t);
-        if (this.spawnPause <= 0) this.spawnWave(6 + Math.floor(this.rnd() * 3), { burst: true });
+        // Als Fächer statt als Zufallsklumpen: bleibt intensiv, ist aber lesbar
+        // und damit schneidbar. Ziel-/Nichtziel-Mischung bleibt – die Welle ist
+        // ein Regeltest, kein Geschenk.
+        if (this.spawnPause <= 0) {
+          this._spawnVolley(6 + Math.floor(this.rnd() * 2), { formation: 'fan', burst: true });
+        }
       }
     }
   }
@@ -444,13 +464,14 @@ export class Game {
   }
 
   _spawnInterval() {
-    if (this.frenzy > 0) return 0.36;
+    // Im Rausch kommen Salven statt eines Dauerregens – seltener, dafür
+    // gleichzeitig und auf einer Linie, damit ein Wisch alle mitnimmt.
+    if (this.frenzy > 0) return 0.85;
     const p = this._progress();
     return 1.6 - 0.9 * p;
   }
 
   _waveSize() {
-    if (this.frenzy > 0) return 2 + Math.floor(this.rnd() * 2);
     const p = this._progress();
     const min = 1 + Math.round(p * 2);
     const max = 2 + Math.round(p * 3);
@@ -458,6 +479,12 @@ export class Game {
   }
 
   spawnWave(sizeOverride, opts = {}) {
+    if (this.frenzy > 0) {
+      // abwechselnd waagerechte Reihe und Fächer – ein Wisch, eine dicke Combo
+      const formation = this.volleyIndex++ % 2 ? 'fan' : 'row';
+      this._spawnVolley(4, { formation, frenzy: true });
+      return;
+    }
     const n = sizeOverride || this._waveSize();
     this.waveCount++;
     const trap = this.cfg.mode === 'shapes' && this.elapsed > 30 && this.waveCount % 4 === 0;
@@ -477,7 +504,9 @@ export class Game {
       this.pending.push({
         t: delay,
         fn: () => {
-          const item = this._makeItem(isTarget, {
+          // Erst hier entscheiden, nicht beim Einplanen: zwischen Planung und
+          // Ausführung liegen bis zu 0,35 s – in denen der Rausch starten kann.
+          const item = this._makeItem(this.frenzy > 0 ? true : isTarget, {
             trapColors,
             allowBomb: !opts.burst && !bombUsed && this.frenzy <= 0,
           });
@@ -489,6 +518,43 @@ export class Game {
     }
   }
 
+  /** Salve: alle Items entstehen im selben Frame, gleichmäßig über die Breite
+      verteilt und auf einer gemeinsamen Linie – dadurch nimmt ein einziger
+      Wisch sie mit, statt dass der Zufall über jede Combo entscheidet.
+      `row` = gleicher Scheitelpunkt (waagerechte Reihe),
+      `fan` = gestaffelter Scheitelpunkt (diagonale Linie). */
+  _spawnVolley(n, opts = {}) {
+    this.waveCount++;
+    const trap = this.cfg.mode === 'shapes' && this.elapsed > 30 && this.waveCount % 4 === 0;
+    if (trap) this.trapSwap = !this.trapSwap;
+    const trapColors = trap ? this._trapColors() : null;
+
+    const allTargets = opts.frenzy || this.frenzy > 0;
+    const targetRatio = allTargets ? 1 : (this.elapsed < 20 ? 0.65 : 0.5);
+    const flags = [];
+    for (let i = 0; i < n; i++) flags.push(this.rnd() < targetRatio);
+    if (this.cfg.mode !== 'free' && !flags.includes(true)) flags[Math.floor(this.rnd() * n)] = true;
+
+    // Vier Items fuellen die Breite fast aus – der Versatz bleibt klein,
+    // damit sich Nachbarn nicht ueberlappen.
+    const margin = 38;
+    const lane = (W - 2 * margin) / n;
+    const leftToRight = this.rnd() < 0.5;
+    for (let i = 0; i < n; i++) {
+      const slot = leftToRight ? i : n - 1 - i;
+      const x = margin + (slot + 0.5) * lane + (this.rnd() - 0.5) * 10;
+      const apex = opts.formation === 'fan'
+        ? 180 + (i / Math.max(1, n - 1)) * 140
+        : 230;
+      const item = this._makeItem(flags[i], {
+        trapColors,
+        allowBomb: false,                 // in Salven nie Bomben
+        launch: { x, apex, vx: (this.rnd() - 0.5) * 80 },
+      });
+      if (item) this.items.push(item);
+    }
+  }
+
   _trapColors() {
     const a = R.PALETTE[Math.floor(this.rnd() * R.PALETTE.length)];
     let b = a;
@@ -496,15 +562,22 @@ export class Game {
     return this.trapSwap ? { target: a, other: b } : { target: b, other: a };
   }
 
-  _launch(r) {
+  /** `over` erlaubt Salven, Startpunkt, Scheitelhöhe und Drift vorzugeben,
+      damit Reihe und Fächer denselben Startpfad benutzen. */
+  _launch(r, over) {
     const p = this._progress();
-    const x = 40 + this.rnd() * (W - 80);
-    const apex = 150 + this.rnd() * 250;
+    const x = over && over.x != null ? over.x : 40 + this.rnd() * (W - 80);
+    const apex = over && over.apex != null ? over.apex : 150 + this.rnd() * 250;
     let vy = -Math.sqrt(2 * GRAVITY * Math.max(120, H - apex));
-    vy *= 1 + 0.1 * p;
+    if (!over) vy *= 1 + 0.1 * p;         // Salven bleiben bewusst gleichmäßig
     const tUp = -vy / GRAVITY;
-    const targetX = 60 + this.rnd() * (W - 120);
-    const vx = ((targetX - x) / tUp) * (1 + 0.25 * p);
+    let vx;
+    if (over && over.vx != null) {
+      vx = over.vx;
+    } else {
+      const targetX = 60 + this.rnd() * (W - 120);
+      vx = ((targetX - x) / tUp) * (1 + 0.25 * p);
+    }
     return {
       x,
       y: H + r + 10,
@@ -517,7 +590,8 @@ export class Game {
 
   _makeItem(isTarget, opts) {
     const mode = this.cfg.mode;
-    const special = this._maybeSpecial(isTarget, mode);
+    const over = opts.launch || null;
+    const special = this._maybeSpecial(isTarget, mode, over);
     if (special) return special;
 
     if (mode === 'numbers') {
@@ -529,7 +603,7 @@ export class Game {
         kind: 'number', value, r, poly: circlePoly(r, 32),
         color, edge: darken(color, 0.35), flesh: lighten(color, 0.6),
         isTarget,
-      }, this._launch(r)));
+      }, this._launch(r, over)));
     }
 
     if (mode === 'shapes') {
@@ -542,7 +616,7 @@ export class Game {
         kind: 'shape', shape, r, poly: shapePoly(shape, r),
         color, edge: darken(color, 0.35), flesh: lighten(color, 0.6),
         isTarget,
-      }, this._launch(r)));
+      }, this._launch(r, over)));
       return item;
     }
 
@@ -555,18 +629,18 @@ export class Game {
       return new Item(Object.assign({
         kind: 'bomb', emoji: '💣', r, poly: circlePoly(r, 24),
         color: '#333333', flesh: '#555', isTarget: false,
-      }, this._launch(r)));
+      }, this._launch(r, over)));
     }
     const fruit = R.FRUITS[Math.floor(this.rnd() * R.FRUITS.length)];
     const r = 38;
     return new Item(Object.assign({
       kind: 'fruit', emoji: fruit.emoji, r, poly: circlePoly(r, 28),
       color: fruit.color, flesh: lighten(fruit.color, 0.55), isTarget: true,
-    }, this._launch(r)));
+    }, this._launch(r, over)));
   }
 
   /** Goldene Frucht, Sternfrucht-Rausch und ×2 (in den Regelmodi nur der Rausch). */
-  _maybeSpecial(isTarget, mode) {
+  _maybeSpecial(isTarget, mode, over) {
     if (this.frenzy > 0) return null;
     const canFrenzy = this.elapsed - this.lastFrenzy > 45;
     if (canFrenzy && this.rnd() < (mode === 'free' ? 0.025 : 0.02)) {
@@ -577,12 +651,12 @@ export class Game {
       return new Item(Object.assign({
         kind: 'frenzy', emoji, r, poly: circlePoly(r, 24),
         color: '#ffd166', flesh: '#fff3c4', isTarget: true, glow: 1,
-      }, this._launch(r)));
+      }, this._launch(r, over)));
     }
     if (mode !== 'free') return null;
     if (this.rnd() < 0.04) {
       const r = 34;
-      const l = this._launch(r);
+      const l = this._launch(r, over);
       l.vy *= 0.86;              // fliegt flacher und schneller
       l.vx *= 1.5;
       return new Item(Object.assign({
@@ -595,7 +669,7 @@ export class Game {
       return new Item(Object.assign({
         kind: 'x2', r, poly: circlePoly(r, 28),
         color: '#7b2cbf', flesh: '#e0aaff', isTarget: true, glow: 0,
-      }, this._launch(r)));
+      }, this._launch(r, over)));
     }
     return null;
   }
@@ -656,6 +730,15 @@ export class Game {
       : !item.isTarget;
 
     if (wrong) {
+      if (this.frenzy > 0) {
+        // Im Rausch gibt es keine Strafen. Sollte doch ein Nachzuegler getroffen
+        // werden, zerteilt er sich harmlos – ohne Punkte, aber sichtbar. Vorher
+        // passierte gar nichts, was sich wie ein haengender Treffer anfuehlte.
+        this._split(item, seg);
+        item.dead = true;
+        sfx.swish();
+        return;
+      }
       this._wrongCut(item);
       return;
     }
@@ -693,16 +776,38 @@ export class Game {
       sfx.goldenCut();
       this._float(item.x, item.y - 60, S.golden, '#ffd166', 20);
     } else if (item.kind === 'frenzy') {
-      this.frenzy = 5;
-      this.lastFrenzy = this.elapsed;
-      sfx.frenzyStart();
-      this.ui.showCenter(S.frenzy, '', { duration: 1.2, warn: true });
+      this._startFrenzy();
     } else if (item.kind === 'x2') {
       this.x2 = 10;
       this.ui.showCenter(S.doublePoints, '', { duration: 1.2, warn: true });
       sfx.multUp();
     }
     if (this.cfg.mode !== 'free') item.check = 0.4;
+  }
+
+  /** Der Rausch soll ein reiner Punkte-Ausbruch sein: ab hier ist garantiert
+      nichts Verbotenes mehr auf dem Feld – weder in der Luft noch eingeplant. */
+  _startFrenzy() {
+    this.frenzy = 5;
+    this.lastFrenzy = this.elapsed;
+    this.volleyIndex = 0;
+
+    // bereits eingeplante Mischwellen verwerfen
+    this.pending.length = 0;
+
+    // und den Luftraum folgenlos raeumen
+    for (const it of this.items) {
+      const forbidden = this.cfg.mode === 'free' ? it.kind === 'bomb' : !it.isTarget;
+      if (forbidden && !it.cut) {
+        it.dead = true;
+        this._burst(it.x, it.y, it.color, 8);
+      }
+    }
+    this.items = this.items.filter((it) => !it.dead);
+
+    this.spawnTimer = 0.15;               // erste Salve kommt sofort
+    sfx.frenzyStart();
+    this.ui.showCenter(S.frenzy, '', { duration: 1.2, warn: true });
   }
 
   _wrongCut(item) {
