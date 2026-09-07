@@ -1,0 +1,16 @@
+{
+  "name": "Schnitt-Ninja",
+  "short_name": "Schnitt-Ninja",
+  "description": "Früchte schnippeln, Zahlen und Formen üben – ein Touch-Spiel für den Browser.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

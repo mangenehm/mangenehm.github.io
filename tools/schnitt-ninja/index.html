@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="description" content="Schnitt-Ninja – Früchte schnippeln, Zahlen und Formen lernen. Ein Browserspiel für den Touchscreen.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Schnitt-Ninja">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+<title>Schnitt-Ninja</title>
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- ============ HUD ============ -->
+  <div id="hud" class="hidden">
+    <div class="hud-row">
+      <div class="hud-left">
+        <div id="hudScore" class="score">0</div>
+        <div id="hudMult" class="mult">×1</div>
+      </div>
+      <div class="hud-right">
+        <div id="hudHearts" class="hearts"></div>
+      </div>
+    </div>
+    <div id="hudBanner" class="banner"></div>
+    <div id="hudTimerWrap" class="timer-wrap"><div id="hudTimer" class="timer-bar"></div></div>
+    <div id="hudBoosts" class="boosts"></div>
+    <button id="btnPause" class="pause-btn" aria-label="Pause">❚❚</button>
+  </div>
+
+  <!-- ============ Zentrale Einblendungen ============ -->
+  <div id="centerMsg" class="center-msg hidden"></div>
+  <div id="tutorialBox" class="tutorial-box hidden">
+    <p id="tutorialText"></p>
+    <button id="btnTutorialSkip" class="btn tiny ghost">Überspringen</button>
+  </div>
+
+  <!-- ============ Hauptmenü ============ -->
+  <section id="screen-menu" class="screen">
+    <div class="logo">
+      <div class="logo-main">Schnitt</div>
+      <div class="logo-sub">Ninja</div>
+      <div class="logo-fruits">🍉 🍋 🍓</div>
+    </div>
+    <div class="stack">
+      <button class="btn primary" data-goto="setup-numbers">🔢 Zahlen</button>
+      <button class="btn primary" data-goto="setup-shapes">🔺 Formen</button>
+      <button class="btn primary" data-goto="setup-free">🍉 Freies Spiel</button>
+      <button class="btn ghost" data-goto="highscores">🏆 Highscores</button>
+      <button class="btn ghost" data-goto="settings">⚙️ Einstellungen</button>
+    </div>
+    <p class="hint">Wische mit dem Finger, um zu schneiden.</p>
+  </section>
+
+  <!-- ============ Setup: Zahlen ============ -->
+  <section id="screen-setup-numbers" class="screen hidden">
+    <h2>Zahlen-Modus</h2>
+    <div class="scroll">
+      <div class="group">
+        <h3>Zahlenraum</h3>
+        <div class="chips" id="numRangePresets">
+          <button class="chip" data-min="1" data-max="10">1–10</button>
+          <button class="chip active" data-min="1" data-max="20">1–20</button>
+          <button class="chip" data-min="1" data-max="50">1–50</button>
+          <button class="chip" data-min="1" data-max="99">1–99</button>
+        </div>
+        <div class="row">
+          <label>von <input type="number" id="numMin" min="0" max="99" value="1" inputmode="numeric"></label>
+          <label>bis <input type="number" id="numMax" min="1" max="99" value="20" inputmode="numeric"></label>
+        </div>
+      </div>
+      <div class="group">
+        <h3>Regel</h3>
+        <div class="chips" id="numRules">
+          <button class="chip active" data-rule="random">Zufällig + Wechsel</button>
+          <button class="chip" data-rule="even">Nur GERADE</button>
+          <button class="chip" data-rule="odd">Nur UNGERADE</button>
+          <button class="chip" data-rule="less">KLEINER als X</button>
+          <button class="chip" data-rule="greater">GRÖSSER als X</button>
+        </div>
+        <div class="row hidden" id="numThresholdRow">
+          <label>X = <input type="number" id="numThreshold" min="1" max="99" placeholder="zufällig" inputmode="numeric"></label>
+        </div>
+      </div>
+      <div class="group">
+        <h3>Rundenlänge</h3>
+        <div class="chips" id="numSeconds">
+          <button class="chip active" data-sec="90">90 s</button>
+          <button class="chip" data-sec="60">60 s</button>
+        </div>
+      </div>
+      <div class="factor">Punkte <b id="numFactor">×1.2</b></div>
+    </div>
+    <div class="stack bottom">
+      <button class="btn primary" id="startNumbers">Start</button>
+      <button class="btn ghost" data-goto="menu">Zurück</button>
+    </div>
+  </section>
+
+  <!-- ============ Setup: Formen ============ -->
+  <section id="screen-setup-shapes" class="screen hidden">
+    <h2>Formen-Modus</h2>
+    <div class="scroll">
+      <div class="group">
+        <h3>Wie viele Zielformen?</h3>
+        <div class="chips" id="shapeCount">
+          <button class="chip active" data-count="1">1 Form</button>
+          <button class="chip" data-count="2">2 Formen (schwer)</button>
+        </div>
+      </div>
+      <div class="group">
+        <h3>Zielform</h3>
+        <div class="chips" id="shapePick">
+          <button class="chip active" data-shape="random">Zufällig + Wechsel</button>
+          <button class="chip" data-shape="circle">Kreis</button>
+          <button class="chip" data-shape="square">Quadrat</button>
+          <button class="chip" data-shape="triangle">Dreieck</button>
+          <button class="chip" data-shape="star">Stern</button>
+          <button class="chip" data-shape="hexagon">Sechseck</button>
+        </div>
+        <p class="mini">Die Farben sind egal – achte nur auf die Form!</p>
+      </div>
+      <div class="group">
+        <h3>Rundenlänge</h3>
+        <div class="chips" id="shapeSeconds">
+          <button class="chip active" data-sec="90">90 s</button>
+          <button class="chip" data-sec="60">60 s</button>
+        </div>
+      </div>
+      <div class="factor">Punkte <b id="shapeFactor">×1.0</b></div>
+    </div>
+    <div class="stack bottom">
+      <button class="btn primary" id="startShapes">Start</button>
+      <button class="btn ghost" data-goto="menu">Zurück</button>
+    </div>
+  </section>
+
+  <!-- ============ Setup: Freies Spiel ============ -->
+  <section id="screen-setup-free" class="screen hidden">
+    <h2>Freies Spiel</h2>
+    <div class="scroll">
+      <div class="group">
+        <p class="mini">Schneide alle Früchte. Bomben kosten ein Leben, drei Fehler beenden die Runde.</p>
+        <label class="switch"><input type="checkbox" id="freeBombs" checked> <span>Bomben 💣</span></label>
+        <p class="mini">Ohne Bomben läuft die Runde endlos – beende sie über die Pause.</p>
+      </div>
+      <div class="group">
+        <h3>Tagesrunde</h3>
+        <p class="mini">Jeden Tag dieselbe Abfolge für alle – perfekt zum Vergleichen. Eigene Bestenliste, nur für heute.</p>
+      </div>
+    </div>
+    <div class="stack bottom">
+      <button class="btn primary" id="startFree">Start</button>
+      <button class="btn secondary" id="startDaily">📅 Tagesrunde</button>
+      <button class="btn ghost" data-goto="menu">Zurück</button>
+    </div>
+  </section>
+
+  <!-- ============ Pause ============ -->
+  <section id="screen-pause" class="screen dim hidden">
+    <h2>Pause</h2>
+    <div class="stack">
+      <button class="btn primary" id="btnResume">Weiter</button>
+      <button class="btn secondary" id="btnRestart">Neustart</button>
+      <button class="btn ghost" id="btnQuit">Runde beenden</button>
+    </div>
+  </section>
+
+  <!-- ============ Game Over ============ -->
+  <section id="screen-over" class="screen dim hidden">
+    <h2 id="overTitle">Runde vorbei</h2>
+    <div id="overRecord" class="record hidden">Neuer Rekord!</div>
+    <div class="score-big" id="overScore">0</div>
+    <div class="mini" id="overBest"></div>
+    <div class="stats" id="overStats"></div>
+    <div class="group hidden" id="nameRow">
+      <label>Name eingeben
+        <input type="text" id="overName" maxlength="3" autocomplete="off" spellcheck="false" placeholder="ABC">
+      </label>
+    </div>
+    <div class="stack bottom">
+      <button class="btn primary" id="btnAgain">Nochmal spielen</button>
+      <button class="btn ghost" id="btnOverMenu">Menü</button>
+    </div>
+  </section>
+
+  <!-- ============ Highscores ============ -->
+  <section id="screen-highscores" class="screen hidden">
+    <h2>Highscores</h2>
+    <div class="tabs" id="hsTabs">
+      <button class="tab active" data-tab="numbers">Zahlen</button>
+      <button class="tab" data-tab="shapes">Formen</button>
+      <button class="tab" data-tab="free">Frei</button>
+      <button class="tab" data-tab="daily">Heute</button>
+    </div>
+    <div class="scroll"><ol id="hsList" class="hs-list"></ol></div>
+    <div class="stack bottom">
+      <button class="btn secondary" id="btnResetScores">Zurücksetzen</button>
+      <button class="btn ghost" data-goto="menu">Zurück</button>
+    </div>
+  </section>
+
+  <!-- ============ Einstellungen ============ -->
+  <section id="screen-settings" class="screen hidden">
+    <h2>Einstellungen</h2>
+    <div class="scroll">
+      <label class="switch"><input type="checkbox" id="setSound" checked> <span>Ton</span></label>
+      <label class="switch"><input type="checkbox" id="setHaptics" checked> <span>Vibration</span></label>
+      <label class="switch"><input type="checkbox" id="setBombs" checked> <span>Bomben im freien Spiel</span></label>
+      <div class="stack">
+        <button class="btn secondary" id="btnShowTutorial">Tutorial erneut zeigen</button>
+        <button class="btn danger" id="btnWipe">Alle Daten löschen</button>
+      </div>
+      <p class="mini" id="storageNote"></p>
+      <p class="mini">Schnitt-Ninja · läuft komplett im Browser, nichts wird hochgeladen.</p>
+    </div>
+    <div class="stack bottom">
+      <button class="btn ghost" data-goto="menu">Zurück</button>
+    </div>
+  </section>
+
+  <!-- ============ Bestätigung ============ -->
+  <section id="screen-confirm" class="screen dim hidden">
+    <h2 id="confirmTitle">Wirklich löschen?</h2>
+    <div class="stack">
+      <button class="btn danger" id="confirmYes">Ja, löschen</button>
+      <button class="btn ghost" id="confirmNo">Abbrechen</button>
+    </div>
+  </section>
+</div>
+
+<div id="rotate" class="rotate hidden"><div>📱 ↻<br>Bitte Gerät drehen</div></div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
