@@ -318,6 +318,33 @@ Dazu erklären die Einstellungs-Bildschirme den Faktor jetzt in einem Satz, stat
 | Regression | Punkte 10×Faktor, Combo ×4, Regelwechsel bei 30 s mit leerem Luftraum, Lernmoment, grünes Häkchen, Rundenende, Tagesrunde weiterhin geseedet – alle ok |
 | Browser | Menü, Hilfe-Bildschirm, freies Setup und beide Regelmodi ohne Konsolenfehler |
 
+## 2026-09-08 – Zahlen überschlagen sich nicht mehr
+
+Gemeldet als „6 und 9 sind im Zahlen-Modus nicht unterscheidbar“. Ursache ist allgemeiner:
+`_launch()` gab jedem Item einen zufälligen Startwinkel (0–360°) und bis zu 2,5 rad/s Drall.
+Für Früchte und Formen ist das genau richtig, für Zahlen nicht – eine 6 stand regelmäßig als 9
+da, eine 9 als 6, und eine 16 auf dem Kopf las sich als „9L“. Der Spieler verlor ein Leben und
+5 Sekunden für einen Lesefehler, den das Spiel selbst verursacht hat. Das widerspricht dem
+Kern des Briefings (§1): die Aufgabe muss jederzeit unmissverständlich sein.
+
+Zahlen starten jetzt aufrecht (`angle = 0`) und behalten nur einen stark gedämpften Drall
+(`va *= 0.07`, also höchstens ~0,18 rad/s). Über einen ganzen Flug kippen sie damit unter 30°
+– genug Leben in der Bewegung, nie missverständlich. Der Drall hängt weiter an derselben
+Zufallszahl wie vorher, es wird also keine zusätzliche gezogen.
+
+Bewusst nicht gewählt: die Zahlen zu unterstreichen (6̲/9̲). Die Konvention muss man kennen, und
+ein um 180° gedrehtes „6̲“ wird zu einem 9 mit Strich darüber – das löst das Problem nicht,
+sondern verschiebt es. Formen und Früchte drehen sich unverändert frei; bei ihnen ist die
+Drehung kein Informationsverlust.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Zahlen-Modus 1–99, volle 90-s-Runde, 181 Zahlen | größter Startwinkel 0,2°, größte Neigung im Flug 19,8°, kein Frame über 90° |
+| Formen und freies Spiel | drehen sich weiterhin frei (>360° gemessen) |
+| Direktvergleich im Browser | 6/9/16 aufrecht lesbar; dieselben Werte um 180° gedreht lesen sich als 9/6/„9L“ |
+| Schnitt auf gekippter Zahl (diagonaler Wisch) | zwei Stücke, Schnittkante auf der Wischlinie |
+| Regression | Punkte 10×Faktor, grünes Häkchen, Lernmoment mit Begründung, Combo ×4, Rundenende – alle ok |
+
 ## Entscheidungen, die vom Briefing abweichen oder es präzisieren
 
 - **Schwierigkeitsfaktor bei „Zufällig“:** +0.15 statt +0.3. Die Zufallsregel mischt leichte (gerade/ungerade) und schwere (kleiner/größer) Regeln, der halbe Aufschlag bildet das ehrlicher ab.

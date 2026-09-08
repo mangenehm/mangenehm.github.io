@@ -622,11 +622,19 @@ export class Game {
       if (value == null) return null;
       const r = 40;
       const color = R.PALETTE[Math.floor(this.rnd() * R.PALETTE.length)];
+      const l = this._launch(r, over);
+      // Zahlen starten aufrecht und kippen nur leicht. Ueberschlagen sie sich,
+      // steht eine 6 als 9 da (und eine 17 auf dem Kopf) – der Spieler wuerde
+      // fuer einen Lesefehler bestraft, den das Spiel verursacht hat.
+      // Der Drall bleibt an derselben Zufallszahl haengen, nur stark gedaempft:
+      // hoechstens ~0,18 rad/s, also unter 30 Grad ueber einen ganzen Flug.
+      l.angle = 0;
+      l.va *= 0.07;
       return new Item(Object.assign({
         kind: 'number', value, r, poly: circlePoly(r, 32),
         color, edge: darken(color, 0.35), flesh: lighten(color, 0.6),
         isTarget,
-      }, this._launch(r, over)));
+      }, l));
     }
 
     if (mode === 'shapes') {
