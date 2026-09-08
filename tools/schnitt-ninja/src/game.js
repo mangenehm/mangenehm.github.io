@@ -2,7 +2,8 @@
 
 import {
   W, H, GRAVITY, Item, Piece, Particle, Pool,
-  circlePoly, shapePoly, clipHalf, chordPoints, polyArea, polyCentroid, segCircleHit, rotate,
+  circlePoly, shapePoly, clipHalf, chordPoints, polyArea, polyCentroid,
+  segCircleHit, segPolyHit, rotate,
 } from './entities.js';
 import * as R from './render.js';
 import { sfx } from './audio.js';
@@ -61,7 +62,9 @@ function vibrate(ms) {
 }
 
 /** Teilt ein Item exakt entlang der Wischlinie in zwei Polygone.
-    `world` liefert Pools und Zufall – so nutzen Spiel und Tutorial denselben Code. */
+    `world` liefert Pools und Zufall – so nutzen Spiel und Tutorial denselben Code.
+    Der Zufall kommt aus `world.fx`, nicht aus `world.rnd`: wie oft geschnitten wird,
+    entscheidet der Spieler, und das darf den geseedeten Spielstrom nicht verschieben. */
 export function sliceInto(world, item, seg) {
   const toLocal = (p) => rotate({ x: p.x - item.x, y: p.y - item.y }, -item.angle);
   let a = toLocal(seg.a);
@@ -109,7 +112,7 @@ export function sliceInto(world, item, seg) {
       item,
       item.vx + nWorld.x * push * sign + swipe.x * swipePush,
       item.vy + nWorld.y * push * sign + swipe.y * swipePush,
-      item.va + (2 + world.rnd() * 2) * sign,
+      item.va + (2 + world.fx() * 2) * sign,
     );
   };
   build(side1, 1, area1);
@@ -119,26 +122,26 @@ export function sliceInto(world, item, seg) {
   if (chord.length >= 2) {
     const p1 = rotate(chord[0], item.angle);
     const p2 = rotate(chord[1], item.angle);
-    const count = reducedMotion ? 5 : 12 + Math.floor(world.rnd() * 8);
+    const count = reducedMotion ? 5 : 12 + Math.floor(world.fx() * 8);
     for (let i = 0; i < count; i++) {
-      const t = world.rnd();
+      const t = world.fx();
       const px = item.x + p1.x + (p2.x - p1.x) * t;
       const py = item.y + p1.y + (p2.y - p1.y) * t;
-      const s = world.rnd() < 0.5 ? 1 : -1;
-      const sp = 90 + world.rnd() * 220;
+      const s = world.fx() < 0.5 ? 1 : -1;
+      const sp = 90 + world.fx() * 220;
       world.particles.obtain().init(
         px, py,
-        nWorld.x * sp * s + swipe.x * swipePush * 1.4 + (world.rnd() - 0.5) * 60,
-        nWorld.y * sp * s + swipe.y * swipePush * 1.4 + (world.rnd() - 0.5) * 60,
+        nWorld.x * sp * s + swipe.x * swipePush * 1.4 + (world.fx() - 0.5) * 60,
+        nWorld.y * sp * s + swipe.y * swipePush * 1.4 + (world.fx() - 0.5) * 60,
         item.flesh || item.color,
-        3 + world.rnd() * 4,
-        0.35 + world.rnd() * 0.3,
+        3 + world.fx() * 4,
+        0.35 + world.fx() * 0.3,
       );
     }
   }
   if (!reducedMotion) {
     world.splats.push({
-      x: item.x, y: item.y, r: 26 + world.rnd() * 22, rot: world.rnd() * Math.PI,
+      x: item.x, y: item.y, r: 26 + world.fx() * 22, rot: world.fx() * Math.PI,
       color: item.color, life: 1.5, maxLife: 1.5,
     });
     if (world.splats.length > 24) world.splats.shift();
@@ -158,6 +161,7 @@ export class Game {
     this.items = [];
     this.splats = [];
     this.floats = [];
+    this.checks = [];
     this.pending = [];
     this.running = false;
     this.over = true;
@@ -168,10 +172,15 @@ export class Game {
   start(cfg) {
     this.cfg = cfg;
     this.rnd = cfg.seed != null ? mulberry32(hashString(String(cfg.seed))) : Math.random;
+    // Getrennter Strom fuer alles rein Optische (Saft, Flecken, Funken). Sonst
+    // haengt die Wurffolge davon ab, wie oft der Spieler schneidet – und die
+    // Tagesrunde waere fuer zwei Spieler nicht dieselbe.
+    this.fx = Math.random;
 
     this.items.length = 0;
     this.splats.length = 0;
     this.floats.length = 0;
+    this.checks.length = 0;
     this.pending.length = 0;
     this.pieces.clear();
     this.particles.clear();
@@ -185,7 +194,9 @@ export class Game {
     this.wrong = 0;
     this.bestStreak = 0;
     this.elapsed = 0;
-    this.timed = cfg.mode !== 'free';
+    // Die Rundenlaenge entscheidet, nicht der Modus: das freie Spiel kann jetzt
+    // ebenfalls auf Zeit laufen (und ist damit ueberhaupt erst vergleichbar).
+    this.timed = cfg.seconds > 0;
     this.timeLeft = this.timed ? cfg.seconds : Infinity;
     this.spawnTimer = 0.6;
     this.spawnPause = 0;
@@ -214,14 +225,14 @@ export class Game {
     this.switchTimes = [];
     if (cfg.mode === 'numbers') {
       this.rule = cfg.ruleChoice === 'random'
-        ? Rules.randomNumberRule(cfg.min, cfg.max, null)
+        ? Rules.randomNumberRule(cfg.min, cfg.max, null, this.rnd)
         : Rules.makeNumberRule(cfg.ruleChoice, cfg.min, cfg.max,
-            cfg.threshold != null ? cfg.threshold : Rules.pickThreshold(cfg.min, cfg.max));
+            cfg.threshold != null ? cfg.threshold : Rules.pickThreshold(cfg.min, cfg.max, this.rnd));
       this.factor = Rules.numbersFactor(cfg.min, cfg.max, cfg.ruleChoice);
       if (cfg.ruleChoice === 'random') this.switchTimes = this._switchSchedule();
     } else if (cfg.mode === 'shapes') {
       this.rule = cfg.shapeChoice === 'random'
-        ? Rules.randomShapeRule(cfg.shapeCount, null)
+        ? Rules.randomShapeRule(cfg.shapeCount, null, this.rnd)
         : Rules.makeShapeRule(cfg.shapeTargets);
       this.factor = Rules.shapesFactor(cfg.shapeCount);
       if (cfg.shapeChoice === 'random') this.switchTimes = this._switchSchedule();
@@ -230,12 +241,17 @@ export class Game {
     }
     this.warned = new Set();
 
-    // Wellen (Briefing §5): angekuendigte Bursts statt Zufallsspitzen
-    if (cfg.mode === 'free') {
-      this.waveTimes = [45, 90, 150, 195, 240, 285, 330, 375];
-    } else {
+    // Wellen (Briefing §5): angekuendigte Bursts statt Zufallsspitzen – aber nur
+    // im freien Spiel. In den Regelmodi ist ein dichter Schwung eine Einladung,
+    // blind durchzuwischen; das Risiko, dabei ein verbotenes Item zu erwischen,
+    // wiegt schwerer als der Nervenkitzel.
+    if (cfg.mode !== 'free') {
+      this.waveTimes = [];
+    } else if (this.timed) {
       const k = cfg.seconds / 90;
-      this.waveTimes = [Math.round(40 * k), Math.round(70 * k)];
+      this.waveTimes = [Math.round(45 * k), Math.round(75 * k)];
+    } else {
+      this.waveTimes = [45, 90, 150, 195, 240, 285, 330, 375];
     }
     this.waveWarned = new Set();
     this.waveDone = new Set();
@@ -367,10 +383,11 @@ export class Game {
     for (let i = this.items.length - 1; i >= 0; i--) {
       const it = this.items[i];
       it.update(dt);
-      if (it.check > 0) it.check -= dt;
       if (it.dead) {
-        // verpasstes Ziel: kein Leben, aber der Multiplikator faellt zurueck
-        if (!it.cut && it.isTarget && this.cfg.mode !== 'free'
+        // Verpasstes Ziel: kein Leben, aber der Multiplikator faellt zurueck.
+        // Nur was unten hinausfaellt zaehlt – seitlich abgetriebene Items waren
+        // nie erreichbar.
+        if (!it.cut && it.isTarget && it.y > H && this.cfg.mode !== 'free'
             && this.spawnPause <= 0 && this.frenzy <= 0) {
           this._resetMultiplier(true);
           this._float(it.x, H - 60, S.missed, '#9aa6c7', 20);
@@ -393,6 +410,10 @@ export class Game {
       f.y += f.vy * dt;
       f.life -= dt;
       if (f.life <= 0) this.floats.splice(i, 1);
+    }
+    for (let i = this.checks.length - 1; i >= 0; i--) {
+      this.checks[i].t -= dt;
+      if (this.checks[i].t <= 0) this.checks.splice(i, 1);
     }
     if (this.hitFlash > 0) this.hitFlash -= dt;
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 3);
@@ -419,14 +440,16 @@ export class Game {
 
   _switchRule() {
     // Alles in der Luft verschwindet folgenlos – niemand wird nach einer
-    // Regel bewertet, die er noch nicht gesehen hat.
+    // Regel bewertet, die er noch nicht gesehen hat. Sichtbar zerstaeuben statt
+    // wegblinken, damit der Wechsel als Ereignis gelesen wird.
+    for (const it of this.items) if (!it.cut) this._burst(it.x, it.y, it.color, 6);
     this.items.length = 0;
     this.pending.length = 0;
     this.spawnPause = 2.4;
     this.spawnTimer = 0;
     this.rule = this.cfg.mode === 'numbers'
-      ? Rules.randomNumberRule(this.cfg.min, this.cfg.max, this.rule)
-      : Rules.randomShapeRule(this.cfg.shapeCount, this.rule);
+      ? Rules.randomNumberRule(this.cfg.min, this.cfg.max, this.rule, this.rnd)
+      : Rules.randomShapeRule(this.cfg.shapeCount, this.rule, this.rnd);
     this.ui.setBanner(this._bannerHtml(), false);
     this.ruleCardUp = true;
     this.ui.showCenter(this.rule.short, S.cutOnlyPrefix, {
@@ -639,21 +662,22 @@ export class Game {
     }, this._launch(r, over)));
   }
 
-  /** Goldene Frucht, Sternfrucht-Rausch und ×2 (in den Regelmodi nur der Rausch). */
+  /** Goldene Frucht, Sternfrucht-Rausch und ×2 – ausschliesslich im freien Spiel.
+      In den Regelmodi hat kein Bonus-Item etwas zu suchen: es steht entweder im
+      Widerspruch zum Banner ("Schneide nur GERADE Zahlen"), oder es belohnt
+      schnelles Draufloswischen – genau die Haltung, die die Regel verbietet. */
   _maybeSpecial(isTarget, mode, over) {
+    if (mode !== 'free') return null;
     if (this.frenzy > 0) return null;
     const canFrenzy = this.elapsed - this.lastFrenzy > 45;
-    if (canFrenzy && this.rnd() < (mode === 'free' ? 0.025 : 0.02)) {
+    if (canFrenzy && this.rnd() < 0.025) {
       this.lastFrenzy = this.elapsed;
       const r = 36;
-      // Im Formen-Modus waere ein Stern-Emoji mit der Zielform "Stern" verwechselbar.
-      const emoji = mode === 'shapes' ? '⚡' : '⭐';
       return new Item(Object.assign({
-        kind: 'frenzy', emoji, r, poly: circlePoly(r, 24),
+        kind: 'frenzy', emoji: '⭐', r, poly: circlePoly(r, 24),
         color: '#ffd166', flesh: '#fff3c4', isTarget: true, glow: 1,
       }, this._launch(r, over)));
     }
-    if (mode !== 'free') return null;
     if (this.rnd() < 0.04) {
       const r = 34;
       const l = this._launch(r, over);
@@ -705,10 +729,13 @@ export class Game {
       for (let i = this.items.length - 1; i >= 0; i--) {
         const it = this.items[i];
         if (it.cut || it.frozen > 0) continue;
-        if (segCircleHit(seg.a, seg.b, it.x, it.y, it.r * 0.95)) {
-          this._sliceItem(it, seg);
-          hitSomething = true;
-        }
+        // Kreis als Grobphase; bei Formen entscheidet danach das echte Polygon.
+        // Ein Dreieck fuellt seinen Trefferkreis nur zu ~41 % – ohne Feinpruefung
+        // kostet ein sichtbar danebengegangener Wisch ein Leben und 5 Sekunden.
+        if (!segCircleHit(seg.a, seg.b, it.x, it.y, it.r * 0.95)) continue;
+        if (it.kind === 'shape' && !segPolyHit(seg.a, seg.b, it.x, it.y, it.angle, it.poly)) continue;
+        this._sliceItem(it, seg);
+        hitSomething = true;
       }
       this.pieces.forEachActive((p) => {
         // frisch entstandene Stuecke ueberspringen: sonst zerlegt ein einziger
@@ -782,7 +809,9 @@ export class Game {
       this.ui.showCenter(S.doublePoints, '', { duration: 1.2, warn: true });
       sfx.multUp();
     }
-    if (this.cfg.mode !== 'free') item.check = 0.4;
+    // Das Item ist ab hier tot und aus `items` verschwunden, bevor gezeichnet
+    // wird – die Bestaetigung braucht deshalb einen eigenen Marker.
+    if (this.cfg.mode !== 'free') this.checks.push({ x: item.x, y: item.y, t: 0.4 });
   }
 
   /** Der Rausch soll ein reiner Punkte-Ausbruch sein: ab hier ist garantiert
@@ -826,7 +855,10 @@ export class Game {
     else if (this.cfg.mode === 'shapes') item.reason = this.rule.reason(item.shape);
     this.reasonItem = item;
 
-    if (this.timed) this.timeLeft = Math.max(0, this.timeLeft - 5);
+    // Zeitstrafe bleibt den Regelmodi vorbehalten (Briefing §2). Im freien Spiel
+    // kostet die Bombe ein Leben – jetzt, wo auch dort die Uhr laeuft, waere die
+    // zusaetzliche Strafe eine stille Verschaerfung.
+    if (this.timed && this.cfg.mode !== 'free') this.timeLeft = Math.max(0, this.timeLeft - 5);
     this._resetMultiplier(false);
 
     if (item.kind === 'bomb') {
@@ -905,10 +937,10 @@ export class Game {
   _burst(x, y, color, n) {
     const count = reducedMotion ? Math.round(n / 3) : n;
     for (let i = 0; i < count; i++) {
-      const a = this.rnd() * Math.PI * 2;
-      const sp = 120 + this.rnd() * 320;
+      const a = this.fx() * Math.PI * 2;
+      const sp = 120 + this.fx() * 320;
       this.particles.obtain().init(
-        x, y, Math.cos(a) * sp, Math.sin(a) * sp, color, 3 + this.rnd() * 5, 0.4 + this.rnd() * 0.4,
+        x, y, Math.cos(a) * sp, Math.sin(a) * sp, color, 3 + this.fx() * 5, 0.4 + this.fx() * 0.4,
       );
     }
   }
@@ -959,10 +991,8 @@ export class Game {
     }
 
     this.pieces.forEachActive((p) => R.drawPiece(ctx, p));
-    for (const it of this.items) {
-      R.drawItem(ctx, it);
-      if (it.check > 0) R.drawCheck(ctx, it.x, it.y, it.check);
-    }
+    for (const it of this.items) R.drawItem(ctx, it);
+    for (const c of this.checks) R.drawCheck(ctx, c.x, c.y, c.t);
     R.drawParticles(ctx, this.particles);
     for (const it of this.items) R.drawReason(ctx, it);
     R.drawFloats(ctx, this.floats);

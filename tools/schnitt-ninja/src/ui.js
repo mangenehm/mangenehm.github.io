@@ -10,8 +10,15 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 const SCREENS = [
   'menu', 'setup-numbers', 'setup-shapes', 'setup-free',
-  'pause', 'over', 'highscores', 'settings', 'confirm',
+  'pause', 'over', 'highscores', 'help', 'settings', 'confirm',
 ];
+
+/** Highscore-Namen kommen aus einem Eingabefeld: `<B>` ist ein gueltiger
+    Drei-Zeichen-Name und wuerde die Liste sonst zerlegen. */
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"]/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
 
 function ruleLabel(choice, threshold) {
   switch (choice) {
@@ -240,18 +247,28 @@ export class UI {
   /* ---------------- Setup: Freies Spiel ---------------- */
 
   _wireFree() {
+    this.freeSeconds = 90;
     $('#freeBombs').addEventListener('change', (e) => {
       store.setSetting('bombs', e.target.checked);
       $('#setBombs').checked = e.target.checked;
     });
+    $$('#freeSeconds .chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        $$('#freeSeconds .chip').forEach((c) => c.classList.remove('active'));
+        chip.classList.add('active');
+        this.freeSeconds = +chip.dataset.sec;
+      });
+    });
     $('#startFree').addEventListener('click', () => {
-      this.hooks.onStart({ mode: 'free', bombs: $('#freeBombs').checked, seconds: 0 });
+      this.hooks.onStart({ mode: 'free', bombs: $('#freeBombs').checked, seconds: this.freeSeconds });
     });
     $('#startDaily').addEventListener('click', () => {
       this.hooks.onStart({
         mode: 'free',
         bombs: true,
-        seconds: 0,
+        // Feste Laenge: eine Tagesrunde ist nur vergleichbar, wenn alle
+        // dieselbe Zeit haben – unabhaengig von der Einstellung daneben.
+        seconds: 90,
         daily: true,
         seed: store.todayKey(),
       });
@@ -274,6 +291,8 @@ export class UI {
       this.hooks.onMenu();
     });
     $('#btnTutorialSkip').addEventListener('click', () => this.hooks.onSkipTutorial());
+    // Der Eintrag steht schon in der Liste (siehe gameOver); Tippen benennt ihn um.
+    $('#overName').addEventListener('input', () => this._renameScore());
   }
 
   /* ---------------- HUD ---------------- */
@@ -388,7 +407,11 @@ export class UI {
     $('#nameRow').classList.toggle('hidden', !qualifies);
     if (qualifies) {
       $('#overName').value = store.lastName();
-      this.pendingScore = { list, result };
+      // Sofort eintragen statt erst beim Knopfdruck: sonst ist der Lauf weg,
+      // wenn der Screen anders verlassen wird – Neuladen, Zuruecktaste,
+      // Tab schliessen. Der Name wird danach im Eintrag selbst gepflegt.
+      this.pendingScore = store.addScore(list, this._entryFor(result));
+      this._renameScore();
     } else {
       this.pendingScore = null;
     }
@@ -396,14 +419,12 @@ export class UI {
     return isRecord;
   }
 
-  _commitScore() {
-    if (!this.pendingScore) return;
-    const { list, result } = this.pendingScore;
-    this.pendingScore = null;
-    const raw = ($('#overName').value || '').trim().toUpperCase().slice(0, 3);
-    const name = raw || '???';
-    const entry = { name, score: result.score };
-    if (result.mode === 'numbers' && !result.daily) {
+  /** Baut den Highscore-Eintrag aus dem Rundenergebnis. */
+  _entryFor(result) {
+    const entry = { name: store.lastName() || '???', score: result.score };
+    if (result.mode === 'free') {
+      entry.seconds = result.cfg.seconds;
+    } else if (result.mode === 'numbers' && !result.daily) {
       entry.range = `${result.cfg.min}-${result.cfg.max}`;
       entry.rule = result.cfg.ruleChoice;
       entry.threshold = result.cfg.threshold;
@@ -413,7 +434,21 @@ export class UI {
       entry.count = result.cfg.shapeCount;
       entry.seconds = result.cfg.seconds;
     }
-    store.addScore(list, entry);
+    return entry;
+  }
+
+  /** Uebernimmt das Namensfeld in den bereits gespeicherten Eintrag. */
+  _renameScore() {
+    if (!this.pendingScore) return;
+    const raw = ($('#overName').value || '')
+      .toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+    this.pendingScore.name = raw || '???';
+    store.save();
+  }
+
+  _commitScore() {
+    this._renameScore();
+    this.pendingScore = null;
   }
 
   /* ---------------- Highscores ---------------- */
@@ -451,13 +486,15 @@ export class UI {
       } else if (this.hsTab === 'shapes') {
         const names = (e.targets || []).map((t) => (t === 'random' ? 'Wechsel' : SHAPE_LABEL[t] ? SHAPE_LABEL[t].many : t));
         meta = `${names.join(' + ') || '–'} · ${e.seconds || 90} s`;
+      } else if (this.hsTab === 'free' && e.seconds != null) {
+        meta = e.seconds > 0 ? `${e.seconds} s` : 'ohne Limit';
       }
       const date = e.date ? e.date.split('-').reverse().join('.') : '';
       return `<li>
         <span class="rank">${i + 1}.</span>
-        <span class="who">${e.name || '???'}</span>
-        <span class="pts">${e.score}</span>
-        <span class="meta">${meta}${meta && date ? ' · ' : ''}${date}</span>
+        <span class="who">${esc(e.name || '???')}</span>
+        <span class="pts">${esc(e.score)}</span>
+        <span class="meta">${esc(meta)}${meta && date ? ' · ' : ''}${esc(date)}</span>
       </li>`;
     }).join('');
   }

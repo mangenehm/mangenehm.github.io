@@ -20,6 +20,7 @@ export class Tutorial {
     this.splats = [];
     this.floats = [];
     this.rnd = Math.random;
+    this.fx = Math.random;     // `sliceInto` zieht die Optik aus diesem Strom
     this.item = null;
   }
 

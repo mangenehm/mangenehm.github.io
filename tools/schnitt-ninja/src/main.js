@@ -31,16 +31,19 @@ function viewport() {
 function resize() {
   const { w: vw, h: vh } = viewport();
   const scale = Math.min(vw / W, vh / H);
-  const w = Math.max(1, Math.round(W * scale));
-  const h = Math.max(1, Math.round(H * scale));
-  stage.style.width = `${w}px`;
-  stage.style.height = `${h}px`;
+  // Die Buehne bleibt buchstaeblich 390x844 und wird als *eine* Ebene skaliert.
+  // Sonst waechst nur die Canvas-Grafik mit dem Bildschirm, waehrend HUD,
+  // Regelbanner und Regelkarte in Design-Groesse zurueckbleiben – auf einem
+  // grossen Geraet also relativ immer kleiner werden.
+  stage.style.setProperty('--s', String(scale));
   const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-  canvas.width = Math.round(w * dpr);
-  canvas.height = Math.round(h * dpr);
+  const bw = Math.max(1, Math.round(W * scale * dpr));
+  const bh = Math.max(1, Math.round(H * scale * dpr));
+  canvas.width = bw;
+  canvas.height = bh;
   // Ein einziger, gleichmaessiger Maßstab: sichtbare Klinge, Trefferpruefung
   // und Schnittkante liegen dadurch auf jedem Bildschirm exakt uebereinander.
-  ctx.setTransform((w * dpr) / W, 0, 0, (h * dpr) / H, 0, 0);
+  ctx.setTransform(bw / W, 0, 0, bh / H, 0, 0);
   checkOrientation();
 }
 

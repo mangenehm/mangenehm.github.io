@@ -106,7 +106,9 @@ export function qualifies(mode, score) {
   return score > list[list.length - 1].score;
 }
 
-/** Traegt einen Eintrag ein und liefert den Rang (0-basiert) oder -1. */
+/** Traegt einen Eintrag ein und liefert den gespeicherten Datensatz zurueck –
+    so laesst sich der Name nachtraeglich aendern, ohne neu einzutragen.
+    Faellt der Eintrag sofort aus den Top 10, ist der Rueckgabewert `null`. */
 export function addScore(mode, entry) {
   const list = mode === 'daily' ? freshDaily().entries : (state.scores[mode] = state.scores[mode] || []);
   const record = Object.assign({ date: todayKey() }, entry);
@@ -114,7 +116,7 @@ export function addScore(mode, entry) {
   list.sort((a, b) => b.score - a.score || String(a.date).localeCompare(String(b.date)));
   if (list.length > MAX_ENTRIES) list.length = MAX_ENTRIES;
   save();
-  return list.indexOf(record);
+  return list.includes(record) ? record : null;
 }
 
 export function resetScores() {

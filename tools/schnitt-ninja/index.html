@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
 <meta name="description" content="Schnitt-Ninja – Früchte schnippeln, Zahlen und Formen lernen. Ein Browserspiel für den Touchscreen.">
 <meta name="mobile-web-app-capable" content="yes">
@@ -11,7 +11,9 @@
 <meta name="apple-mobile-web-app-title" content="Schnitt-Ninja">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon-180.png" sizes="180x180" type="image/png">
+<!-- iOS ignoriert SVG als Homescreen-Icon und zeigt sonst einen Screenshot -->
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <link rel="stylesheet" href="style.css">
 <title>Schnitt-Ninja</title>
 </head>
@@ -56,6 +58,7 @@
       <button class="btn primary" data-goto="setup-numbers">🔢 Zahlen</button>
       <button class="btn primary" data-goto="setup-shapes">🔺 Formen</button>
       <button class="btn primary" data-goto="setup-free">🍉 Freies Spiel</button>
+      <button class="btn ghost" data-goto="help">❓ Punkte &amp; Regeln</button>
       <button class="btn ghost" data-goto="highscores">🏆 Highscores</button>
       <button class="btn ghost" data-goto="settings">⚙️ Einstellungen</button>
     </div>
@@ -99,7 +102,10 @@
           <button class="chip" data-sec="60">60 s</button>
         </div>
       </div>
-      <div class="factor">Punkte <b id="numFactor">×1.2</b></div>
+      <div class="factor">
+        Punkte je Treffer <b id="numFactor">×1.2</b>
+        <p class="mini">Grundwert 10 × Faktor. Ein größerer Zahlenraum zählt mehr, „kleiner/größer als X“ noch einmal +0.3.</p>
+      </div>
     </div>
     <div class="stack bottom">
       <button class="btn primary" id="startNumbers">Start</button>
@@ -137,7 +143,10 @@
           <button class="chip" data-sec="60">60 s</button>
         </div>
       </div>
-      <div class="factor">Punkte <b id="shapeFactor">×1.0</b></div>
+      <div class="factor">
+        Punkte je Treffer <b id="shapeFactor">×1.0</b>
+        <p class="mini">Grundwert 10 × Faktor. Zwei Zielformen gleichzeitig zählen ×1.5.</p>
+      </div>
     </div>
     <div class="stack bottom">
       <button class="btn primary" id="startShapes">Start</button>
@@ -152,11 +161,19 @@
       <div class="group">
         <p class="mini">Schneide alle Früchte. Bomben kosten ein Leben, drei Fehler beenden die Runde.</p>
         <label class="switch"><input type="checkbox" id="freeBombs" checked> <span>Bomben 💣</span></label>
-        <p class="mini">Ohne Bomben läuft die Runde endlos – beende sie über die Pause.</p>
+      </div>
+      <div class="group">
+        <h3>Rundenlänge</h3>
+        <div class="chips" id="freeSeconds">
+          <button class="chip active" data-sec="90">90 s</button>
+          <button class="chip" data-sec="60">60 s</button>
+          <button class="chip" data-sec="0">Ohne Limit</button>
+        </div>
+        <p class="mini">Mit Zeitlimit sind die Punkte vergleichbar. Ohne Limit endet die Runde erst nach drei Fehlern – ohne Bomben also gar nicht; beende sie dann über die Pause.</p>
       </div>
       <div class="group">
         <h3>Tagesrunde</h3>
-        <p class="mini">Jeden Tag dieselbe Abfolge für alle – perfekt zum Vergleichen. Eigene Bestenliste, nur für heute.</p>
+        <p class="mini">Jeden Tag dieselbe Abfolge für alle, immer 90 Sekunden – perfekt zum Vergleichen. Eigene Bestenliste, nur für heute.</p>
       </div>
     </div>
     <div class="stack bottom">
@@ -206,6 +223,98 @@
     <div class="scroll"><ol id="hsList" class="hs-list"></ol></div>
     <div class="stack bottom">
       <button class="btn secondary" id="btnResetScores">Zurücksetzen</button>
+      <button class="btn ghost" data-goto="menu">Zurück</button>
+    </div>
+  </section>
+
+  <!-- ============ Punkte & Regeln ============ -->
+  <section id="screen-help" class="screen hidden">
+    <h2>Punkte &amp; Regeln</h2>
+    <div class="scroll">
+      <div class="group">
+        <h3>So wird gespielt</h3>
+        <p class="mini">Wische mit dem Finger quer durch ein Objekt, um es zu zerschneiden. Tippen
+          reicht nicht – die Bewegung muss schnell genug sein. Geschnitten wird genau entlang der
+          Linie, die dein Finger zieht. Alles, was du in <b>einem</b> Wisch triffst, zählt zusammen.</p>
+      </div>
+
+      <div class="group">
+        <h3>Die drei Modi</h3>
+        <dl class="rules">
+          <dt>🔢 Zahlen</dt>
+          <dd>Oben steht die Regel, zum Beispiel „Schneide nur GERADE Zahlen“. Alles andere fliegen lassen.</dd>
+          <dt>🔺 Formen</dt>
+          <dd>Dasselbe mit Formen. Die Farben wechseln absichtlich und bedeuten nichts – achte allein auf die Form.</dd>
+          <dt>🍉 Frei</dt>
+          <dd>Alle Früchte schneiden, Bomben&nbsp;💣 auslassen.</dd>
+        </dl>
+        <p class="mini">Bei „Zufällig + Wechsel“ ändert sich die Regel alle 30 Sekunden. Der Wechsel
+          wird 3 Sekunden vorher angekündigt, danach ist das Feld kurz leer: Bewertet wird nie nach
+          einer Regel, die du noch nicht gesehen hast.</p>
+      </div>
+
+      <div class="group">
+        <h3>Punkte</h3>
+        <dl class="rules">
+          <dt>Treffer</dt>
+          <dd>10 Punkte × Schwierigkeitsfaktor</dd>
+          <dt>Combo</dt>
+          <dd>jedes weitere Objekt im selben Wisch zusätzlich +5 × Faktor</dd>
+          <dt>Serie</dt>
+          <dd>ab 10 Treffern ohne Fehler ×2, ab 20 ×3, ab 30 ×4 – gilt auf Treffer und Combo zusammen</dd>
+        </dl>
+        <p class="mini"><b>Beispiel:</b> Zahlenraum 1–20 (Faktor ×1.2), drei richtige Zahlen in einem
+          Wisch, Serie ×1 → 12 + 18 + 18 = <b>48 Punkte</b>. Dieselbe Combo bei Serie ×2 wären 96.</p>
+      </div>
+
+      <div class="group">
+        <h3>Der Schwierigkeitsfaktor</h3>
+        <dl class="rules">
+          <dt>Zahlen</dt>
+          <dd>1–10 ×1.0 · 1–20 ×1.2 · 1–50 ×1.5 · 1–99 ×2.0</dd>
+          <dt>+0.3</dt>
+          <dd>für „KLEINER/GRÖSSER als X“ – Vergleichen ist schwerer als gerade/ungerade</dd>
+          <dt>+0.15</dt>
+          <dd>für „Zufällig + Wechsel“, weil leichte und schwere Regeln gemischt kommen</dd>
+          <dt>Formen</dt>
+          <dd>eine Zielform ×1.0 · zwei Zielformen ×1.5</dd>
+        </dl>
+        <p class="mini">Der Faktor steht vor dem Start auf dem Einstellungs-Bildschirm. Die schwerere
+          Einstellung ist also eine bewusste Wette auf mehr Punkte.</p>
+      </div>
+
+      <div class="group">
+        <h3>Leben, Zeit und Rundenende</h3>
+        <dl class="rules">
+          <dt>Fehler</dt>
+          <dd>−1 Leben (von 3), die Serie beginnt von vorn. In Zahlen und Formen zusätzlich −5 Sekunden.</dd>
+          <dt>Verpasst</dt>
+          <dd>kostet nie ein Leben. In Zahlen und Formen beginnt aber die Serie von vorn.</dd>
+          <dt>Rundenende</dt>
+          <dd>wenn die Zeit abläuft oder drei Fehler passiert sind</dd>
+        </dl>
+        <p class="mini">Nach einem falschen Schnitt bleibt das Objekt kurz rot stehen und sagt, warum
+          es nicht passte – „15 ist ungerade“. Ein richtiger Schnitt bekommt ein grünes Häkchen.</p>
+      </div>
+
+      <div class="group">
+        <h3>Nur im freien Spiel</h3>
+        <dl class="rules">
+          <dt>🍋 Golden</dt>
+          <dd>+50 Punkte, fliegt flacher und schneller</dd>
+          <dt>⭐ Rausch</dt>
+          <dd>5 Sekunden nur Früchte, keine Bomben, keine Strafen</dd>
+          <dt>×2</dt>
+          <dd>10 Sekunden doppelte Punkte, zusätzlich zur Serie</dd>
+          <dt>WELLE!</dt>
+          <dd>angekündigter Schwung, alle Früchte auf einer Linie – ein Wisch nimmt sie mit</dd>
+        </dl>
+        <p class="mini">In den Regelmodi gibt es das alles bewusst nicht: Bonusfrüchte und dichte
+          Wellen belohnen schnelles Draufloswischen – und genau dabei erwischt man die Objekte, die
+          man nach der Regel hätte stehen lassen müssen.</p>
+      </div>
+    </div>
+    <div class="stack bottom">
       <button class="btn ghost" data-goto="menu">Zurück</button>
     </div>
   </section>

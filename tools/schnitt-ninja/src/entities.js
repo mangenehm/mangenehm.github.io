@@ -137,6 +137,39 @@ export function segCircleHit(p1, p2, cx, cy, r) {
   return px * px + py * py <= r * r;
 }
 
+function pointInPoly(p, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    if ((a.y > p.y) !== (b.y > p.y)
+        && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
+
+function segSegHit(p1, p2, q1, q2) {
+  const d1 = side(q1, q2, p1);
+  const d2 = side(q1, q2, p2);
+  const d3 = side(p1, p2, q1);
+  const d4 = side(p1, p2, q2);
+  return (d1 > 0) !== (d2 > 0) && (d3 > 0) !== (d4 > 0);
+}
+
+/** Trifft die Strecke p1-p2 das Polygon eines Items? Feinpruefung nach dem
+    Kreistest: nur so kostet ein Wisch, der neben einem Dreieck oder zwischen
+    zwei Sternzacken hindurchgeht, kein Leben. */
+export function segPolyHit(p1, p2, cx, cy, angle, poly) {
+  const toLocal = (p) => rotate({ x: p.x - cx, y: p.y - cy }, -angle);
+  const a = toLocal(p1);
+  const b = toLocal(p2);
+  if (pointInPoly(a, poly) || pointInPoly(b, poly)) return true;
+  for (let i = 0, n = poly.length; i < n; i++) {
+    if (segSegHit(a, b, poly[i], poly[(i + 1) % n])) return true;
+  }
+  return false;
+}
+
 export function rotate(p, ang) {
   const c = Math.cos(ang);
   const s = Math.sin(ang);
@@ -171,7 +204,6 @@ export class Item {
     this.frozen = 0;      // Restzeit des "Lernmoment"-Stopps
     this.flash = 0;       // weisser Blitz nach dem Treffer
     this.reason = null;   // Text beim falschen Schnitt
-    this.check = 0;       // gruenes Haekchen nach richtigem Schnitt
     this.glow = opts.glow || 0;
     this.spawnT = 0;
   }

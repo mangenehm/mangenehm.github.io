@@ -46,13 +46,14 @@ export function makeNumberRule(type, min, max, threshold) {
   return rule;
 }
 
-/** Schwelle so waehlen, dass Ziel- und Nichtziel-Menge beide gross genug sind (25–75 % der Spanne). */
-export function pickThreshold(min, max) {
+/** Schwelle so waehlen, dass Ziel- und Nichtziel-Menge beide gross genug sind (25–75 % der Spanne).
+    `rnd` durchreichen, damit eine geseedete Runde auch geseedete Regeln bekommt. */
+export function pickThreshold(min, max, rnd = Math.random) {
   const span = max - min;
   const lo = min + Math.max(1, Math.round(span * 0.25));
   const hi = min + Math.max(1, Math.round(span * 0.75));
   if (hi <= lo) return Math.min(max, lo);
-  return lo + Math.floor(Math.random() * (hi - lo + 1));
+  return lo + Math.floor(rnd() * (hi - lo + 1));
 }
 
 /** Welche Regeltypen sind in diesem Zahlenraum sinnvoll? */
@@ -66,15 +67,15 @@ export function availableNumberRules(min, max) {
   return types.length ? types : ['even', 'odd'];
 }
 
-export function randomNumberRule(min, max, previous) {
+export function randomNumberRule(min, max, previous, rnd = Math.random) {
   const types = availableNumberRules(min, max);
   for (let attempt = 0; attempt < 40; attempt++) {
-    const type = types[Math.floor(Math.random() * types.length)];
-    const threshold = type === 'less' || type === 'greater' ? pickThreshold(min, max) : null;
+    const type = types[Math.floor(rnd() * types.length)];
+    const threshold = type === 'less' || type === 'greater' ? pickThreshold(min, max, rnd) : null;
     const rule = makeNumberRule(type, min, max, threshold);
     if (!previous || rule.id !== previous.id) return rule;
   }
-  return makeNumberRule(types[0], min, max, pickThreshold(min, max));
+  return makeNumberRule(types[0], min, max, pickThreshold(min, max, rnd));
 }
 
 /* ---------------- Formen ---------------- */
@@ -95,12 +96,12 @@ export function makeShapeRule(targets) {
   };
 }
 
-export function randomShapeRule(count, previous) {
+export function randomShapeRule(count, previous, rnd = Math.random) {
   for (let attempt = 0; attempt < 40; attempt++) {
     const pool = SHAPES.slice();
     const targets = [];
     while (targets.length < count && pool.length) {
-      targets.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+      targets.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
     }
     const rule = makeShapeRule(targets);
     if (!previous || rule.id !== previous.id) return rule;

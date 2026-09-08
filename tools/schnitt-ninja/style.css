@@ -1,6 +1,7 @@
 /* Schnitt-Ninja – UI-Styles.
-   Das Spielfeld ist ein fixes 390x844-Design, per JS auf die Bildschirmgroesse
-   skaliert und zentriert (Letterbox). Alle Overlays liegen in #stage. */
+   Das Spielfeld ist ein fixes 390x844-Design. #stage behaelt diese Groesse und
+   wird als eine Ebene per transform auf den Bildschirm skaliert (Letterbox) –
+   Canvas und Overlays damit immer im selben Verhaeltnis. Alles liegt in #stage. */
 
 :root {
   --bg: #070b18;
@@ -37,12 +38,16 @@ html, body {
 body { display: block; }
 
 #stage {
+  --s: 1;
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%);
+  /* Feste Design-Groesse, als Ganzes skaliert: die DOM-Overlays wachsen damit
+     im selben Verhaeltnis wie das Spielfeld. `--s` setzt resize() in main.js. */
   width: 390px;
   height: 844px;
+  transform: translate(-50%, -50%) scale(var(--s));
+  transform-origin: center center;
   background: var(--stage-bg);
   overflow: hidden;
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
@@ -298,8 +303,15 @@ input[type="text"] { text-transform: uppercase; letter-spacing: .25em; width: 5e
 
 .factor { text-align: center; font-size: 17px; color: var(--muted); }
 .factor b { color: var(--accent); font-size: 21px; }
+.factor .mini { text-align: left; margin-top: 6px; }
 
 .mini { font-size: 14px; color: var(--muted); line-height: 1.4; margin: 8px 0 0; }
+.mini b { color: var(--text); }
+
+/* Begriff/Erklaerung-Paare in "Punkte & Regeln" */
+.rules { margin: 0; display: grid; grid-template-columns: minmax(64px, 30%) 1fr; gap: 8px 12px; align-items: baseline; }
+.rules dt { font-size: 15px; font-weight: 800; color: var(--accent); }
+.rules dd { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.4; }
 .hint { text-align: center; color: var(--muted); font-size: 14px; margin: 0; }
 
 .logo { text-align: center; margin-top: 12px; }
