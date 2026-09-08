@@ -9,7 +9,7 @@ export let storageOk = true;
 function defaultState() {
   return {
     version: 2,
-    settings: { sound: true, haptics: true, bombs: true, tutorialDone: false },
+    settings: { sound: true, haptics: true, tutorialDone: false },
     scores: {
       numbers: [],
       shapes: [],

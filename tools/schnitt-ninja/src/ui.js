@@ -9,9 +9,13 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 const SCREENS = [
-  'menu', 'setup-numbers', 'setup-shapes', 'setup-free',
+  'menu', 'setup-numbers', 'setup-shapes', 'setup-free', 'setup-daily',
   'pause', 'over', 'highscores', 'help', 'settings', 'confirm',
 ];
+
+/** Jede Runde dauert gleich lang. Eine Wahl weniger vor dem Start, und die
+    Bestenlisten vergleichen endlich Gleiches mit Gleichem. */
+const ROUND_SECONDS = 60;
 
 /** Highscore-Namen kommen aus einem Eingabefeld: `<B>` ist ein gueltiger
     Drei-Zeichen-Name und wuerde die Liste sonst zerlegen. */
@@ -78,7 +82,7 @@ export class UI {
     }
     this.current = name;
     if (name === 'highscores') this.renderScores();
-    if (name === 'setup-free') $('#freeBombs').checked = store.getSettings().bombs;
+    if (name === 'setup-daily') this.renderDaily();
   }
 
   hideAll() {
@@ -98,7 +102,7 @@ export class UI {
   /* ---------------- Setup: Zahlen ---------------- */
 
   _wireNumbers() {
-    this.num = { min: 1, max: 20, rule: 'random', threshold: null, seconds: 90 };
+    this.num = { min: 1, max: 20, rule: 'random', threshold: null };
 
     const sync = () => {
       $('#numMin').value = this.num.min;
@@ -146,14 +150,6 @@ export class UI {
       const v = parseInt($('#numThreshold').value, 10);
       this.num.threshold = Number.isFinite(v) ? v : null;
     });
-    $$('#numSeconds .chip').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        $$('#numSeconds .chip').forEach((c) => c.classList.remove('active'));
-        chip.classList.add('active');
-        this.num.seconds = +chip.dataset.sec;
-      });
-    });
-
     $('#startNumbers').addEventListener('click', () => {
       clampInputs();
       const types = Rules.availableNumberRules(this.num.min, this.num.max);
@@ -173,7 +169,7 @@ export class UI {
         max: this.num.max,
         ruleChoice: rule,
         threshold,
-        seconds: this.num.seconds,
+        seconds: ROUND_SECONDS,
       });
     });
     sync();
@@ -181,14 +177,14 @@ export class UI {
 
   /* ---------------- Setup: Formen ---------------- */
 
+  /** Nur noch die Anzahl der Zielformen. Die Formen selbst würfelt das Spiel und
+      wechselt sie alle 30 s – das ist der Kern des Modus. Die frühere Handauswahl
+      war zudem irreführend: die zweite Form verdrängte stillschweigend die erste,
+      solange „1 Form“ eingestellt war. */
   _wireShapes() {
-    this.shp = { count: 1, random: true, targets: [], seconds: 90 };
+    this.shp = { count: 1 };
 
     const sync = () => {
-      $$('#shapePick .chip').forEach((c) => {
-        if (c.dataset.shape === 'random') c.classList.toggle('active', this.shp.random);
-        else c.classList.toggle('active', !this.shp.random && this.shp.targets.includes(c.dataset.shape));
-      });
       $$('#shapeCount .chip').forEach((c) => c.classList.toggle('active', +c.dataset.count === this.shp.count));
       $('#shapeFactor').textContent = Rules.formatFactor(Rules.shapesFactor(this.shp.count));
     };
@@ -196,49 +192,17 @@ export class UI {
     $$('#shapeCount .chip').forEach((chip) => {
       chip.addEventListener('click', () => {
         this.shp.count = +chip.dataset.count;
-        if (this.shp.targets.length > this.shp.count) this.shp.targets.length = this.shp.count;
         sync();
-      });
-    });
-
-    $$('#shapePick .chip').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        const s = chip.dataset.shape;
-        if (s === 'random') {
-          this.shp.random = true;
-          this.shp.targets = [];
-        } else {
-          this.shp.random = false;
-          const i = this.shp.targets.indexOf(s);
-          if (i >= 0) this.shp.targets.splice(i, 1);
-          else {
-            this.shp.targets.push(s);
-            if (this.shp.targets.length > this.shp.count) this.shp.targets.shift();
-          }
-          if (!this.shp.targets.length) this.shp.random = true;
-        }
-        sync();
-      });
-    });
-
-    $$('#shapeSeconds .chip').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        $$('#shapeSeconds .chip').forEach((c) => c.classList.remove('active'));
-        chip.classList.add('active');
-        this.shp.seconds = +chip.dataset.sec;
       });
     });
 
     $('#startShapes').addEventListener('click', () => {
-      let targets = this.shp.targets.slice();
-      const random = this.shp.random || targets.length < this.shp.count;
-      if (!random) targets = targets.slice(0, this.shp.count);
       this.hooks.onStart({
         mode: 'shapes',
         shapeCount: this.shp.count,
-        shapeChoice: random ? 'random' : 'fixed',
-        shapeTargets: targets,
-        seconds: this.shp.seconds,
+        shapeChoice: 'random',
+        shapeTargets: [],
+        seconds: ROUND_SECONDS,
       });
     });
     sync();
@@ -247,32 +211,32 @@ export class UI {
   /* ---------------- Setup: Freies Spiel ---------------- */
 
   _wireFree() {
-    this.freeSeconds = 90;
-    $('#freeBombs').addEventListener('change', (e) => {
-      store.setSetting('bombs', e.target.checked);
-      $('#setBombs').checked = e.target.checked;
-    });
-    $$('#freeSeconds .chip').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        $$('#freeSeconds .chip').forEach((c) => c.classList.remove('active'));
-        chip.classList.add('active');
-        this.freeSeconds = +chip.dataset.sec;
-      });
-    });
+    // Bomben gehoeren zum freien Spiel – ohne sie gibt es keinen Fehler und
+    // damit keinen Einsatz. Deshalb keine Wahl mehr, sondern immer an.
     $('#startFree').addEventListener('click', () => {
-      this.hooks.onStart({ mode: 'free', bombs: $('#freeBombs').checked, seconds: this.freeSeconds });
+      this.hooks.onStart({ mode: 'free', bombs: true, seconds: ROUND_SECONDS });
     });
     $('#startDaily').addEventListener('click', () => {
       this.hooks.onStart({
         mode: 'free',
         bombs: true,
-        // Feste Laenge: eine Tagesrunde ist nur vergleichbar, wenn alle
-        // dieselbe Zeit haben – unabhaengig von der Einstellung daneben.
-        seconds: 90,
+        seconds: ROUND_SECONDS,
         daily: true,
         seed: store.todayKey(),
       });
     });
+  }
+
+  /** Datum und eigener Tagesbestwert auf dem Tagesrunden-Screen. */
+  renderDaily() {
+    const heute = new Date();
+    $('#dailyDate').textContent = heute.toLocaleDateString('de-DE',
+      { weekday: 'long', day: 'numeric', month: 'long' });
+    const eintraege = store.getScores('daily');
+    const best = eintraege.length ? eintraege[0].score : 0;
+    $('#dailyBest').textContent = best
+      ? S.dailyPlayed(eintraege.length, best)
+      : S.dailyFresh;
   }
 
   /* ---------------- Spiel-Buttons ---------------- */
@@ -481,13 +445,17 @@ export class UI {
     }
     ol.innerHTML = list.map((e, i) => {
       let meta = '';
+      // Alle Runden dauern gleich lang; die Laenge steht nur noch an aelteren
+      // Eintraegen, damit die nicht faelschlich vergleichbar aussehen.
+      const laenge = e.seconds != null && e.seconds !== ROUND_SECONDS
+        ? ` · ${e.seconds > 0 ? `${e.seconds} s` : 'ohne Limit'}`
+        : '';
       if (this.hsTab === 'numbers') {
-        meta = `${e.range || ''} · ${ruleLabel(e.rule, e.threshold)} · ${e.seconds || 90} s`;
+        meta = `${e.range || ''} · ${ruleLabel(e.rule, e.threshold)}${laenge}`;
       } else if (this.hsTab === 'shapes') {
-        const names = (e.targets || []).map((t) => (t === 'random' ? 'Wechsel' : SHAPE_LABEL[t] ? SHAPE_LABEL[t].many : t));
-        meta = `${names.join(' + ') || '–'} · ${e.seconds || 90} s`;
-      } else if (this.hsTab === 'free' && e.seconds != null) {
-        meta = e.seconds > 0 ? `${e.seconds} s` : 'ohne Limit';
+        meta = `${e.count === 2 ? '2 Formen' : '1 Form'}${laenge}`;
+      } else if (this.hsTab === 'free') {
+        meta = laenge.replace(' · ', '');
       }
       const date = e.date ? e.date.split('-').reverse().join('.') : '';
       return `<li>
@@ -505,7 +473,6 @@ export class UI {
     const s = store.getSettings();
     $('#setSound').checked = s.sound;
     $('#setHaptics').checked = s.haptics;
-    $('#setBombs').checked = s.bombs;
     if (!store.storageOk) $('#storageNote').textContent = S.storageFail;
 
     $('#setSound').addEventListener('change', (e) => {
@@ -513,17 +480,12 @@ export class UI {
       this.hooks.onSound(e.target.checked);
     });
     $('#setHaptics').addEventListener('change', (e) => store.setSetting('haptics', e.target.checked));
-    $('#setBombs').addEventListener('change', (e) => {
-      store.setSetting('bombs', e.target.checked);
-      $('#freeBombs').checked = e.target.checked;
-    });
     $('#btnShowTutorial').addEventListener('click', () => this.hooks.onTutorial());
     $('#btnWipe').addEventListener('click', () => {
       this.confirm('Wirklich alle Daten löschen?', () => {
         store.wipeAll();
         $('#setSound').checked = true;
         $('#setHaptics').checked = true;
-        $('#setBombs').checked = true;
         this.show('settings');
       });
     });

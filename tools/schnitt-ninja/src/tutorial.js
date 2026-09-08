@@ -158,7 +158,7 @@ export class Tutorial {
     } else if (step === 2) {
       this.item = null;
       this.ui.showHud(true);
-      this.ui.setHud({ score: 0, mult: 1, lives: 3, timed: false, timeLeft: 0, seconds: 90, frenzy: 0, x2: 0 });
+      this.ui.setHud({ score: 0, mult: 1, lives: 3, timed: false, timeLeft: 0, seconds: 60, frenzy: 0, x2: 0 });
       this.ui.setBanner(S.cutOnly('GERADE Zahlen'), true);
       this.ui.showTutorial(S.tut3);
       this.next = { t: 3, go: 3 };

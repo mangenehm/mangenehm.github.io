@@ -62,6 +62,12 @@ export const S = {
   tut3: 'Lies immer die Regel oben!',
   tutDone: 'Los geht’s!',
 
+  // Tagesrunde
+  dailyFresh: 'Heute noch nicht gespielt.',
+  dailyPlayed: (n, best) => (n === 1
+    ? `Heute 1 Runde gespielt, bester Wert ${best} Punkte.`
+    : `Heute ${n} Runden gespielt, bester Wert ${best} Punkte.`),
+
   // Statistik
   statsLine: (ok, bad, streak) => `${ok} richtig · ${bad} falsch · längste Serie ${streak}`,
   best: (n) => `Bestwert: ${n}`,

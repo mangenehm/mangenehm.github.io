@@ -58,6 +58,7 @@
       <button class="btn primary" data-goto="setup-numbers">🔢 Zahlen</button>
       <button class="btn primary" data-goto="setup-shapes">🔺 Formen</button>
       <button class="btn primary" data-goto="setup-free">🍉 Freies Spiel</button>
+      <button class="btn secondary" data-goto="setup-daily">📅 Tagesrunde</button>
       <button class="btn ghost" data-goto="help">❓ Punkte &amp; Regeln</button>
       <button class="btn ghost" data-goto="highscores">🏆 Highscores</button>
       <button class="btn ghost" data-goto="settings">⚙️ Einstellungen</button>
@@ -95,13 +96,6 @@
           <label>X = <input type="number" id="numThreshold" min="1" max="99" placeholder="zufällig" inputmode="numeric"></label>
         </div>
       </div>
-      <div class="group">
-        <h3>Rundenlänge</h3>
-        <div class="chips" id="numSeconds">
-          <button class="chip active" data-sec="90">90 s</button>
-          <button class="chip" data-sec="60">60 s</button>
-        </div>
-      </div>
       <div class="factor">
         Punkte je Treffer <b id="numFactor">×1.2</b>
         <p class="mini">Grundwert 10 × Faktor. Ein größerer Zahlenraum zählt mehr, „kleiner/größer als X“ noch einmal +0.3.</p>
@@ -123,25 +117,8 @@
           <button class="chip active" data-count="1">1 Form</button>
           <button class="chip" data-count="2">2 Formen (schwer)</button>
         </div>
-      </div>
-      <div class="group">
-        <h3>Zielform</h3>
-        <div class="chips" id="shapePick">
-          <button class="chip active" data-shape="random">Zufällig + Wechsel</button>
-          <button class="chip" data-shape="circle">Kreis</button>
-          <button class="chip" data-shape="square">Quadrat</button>
-          <button class="chip" data-shape="triangle">Dreieck</button>
-          <button class="chip" data-shape="star">Stern</button>
-          <button class="chip" data-shape="hexagon">Sechseck</button>
-        </div>
-        <p class="mini">Die Farben sind egal – achte nur auf die Form!</p>
-      </div>
-      <div class="group">
-        <h3>Rundenlänge</h3>
-        <div class="chips" id="shapeSeconds">
-          <button class="chip active" data-sec="90">90 s</button>
-          <button class="chip" data-sec="60">60 s</button>
-        </div>
+        <p class="mini">Welche Form gesucht ist, verrät das Banner oben im Spiel – und es wechselt
+          alle 30 Sekunden. Die Farben sind egal, achte nur auf die Form!</p>
       </div>
       <div class="factor">
         Punkte je Treffer <b id="shapeFactor">×1.0</b>
@@ -159,26 +136,52 @@
     <h2>Freies Spiel</h2>
     <div class="scroll">
       <div class="group">
-        <p class="mini">Schneide alle Früchte. Bomben kosten ein Leben, drei Fehler beenden die Runde.</p>
-        <label class="switch"><input type="checkbox" id="freeBombs" checked> <span>Bomben 💣</span></label>
+        <h3>Worum es geht</h3>
+        <p class="mini">Schneide alles, was fliegt – nur die Bomben 💣 nicht. Keine Regel, kein Lesen,
+          einfach Tempo. 60 Sekunden, drei Bomben beenden die Runde früher.</p>
       </div>
       <div class="group">
-        <h3>Rundenlänge</h3>
-        <div class="chips" id="freeSeconds">
-          <button class="chip active" data-sec="90">90 s</button>
-          <button class="chip" data-sec="60">60 s</button>
-          <button class="chip" data-sec="0">Ohne Limit</button>
-        </div>
-        <p class="mini">Mit Zeitlimit sind die Punkte vergleichbar. Ohne Limit endet die Runde erst nach drei Fehlern – ohne Bomben also gar nicht; beende sie dann über die Pause.</p>
-      </div>
-      <div class="group">
-        <h3>Tagesrunde</h3>
-        <p class="mini">Jeden Tag dieselbe Abfolge für alle, immer 90 Sekunden – perfekt zum Vergleichen. Eigene Bestenliste, nur für heute.</p>
+        <h3>Jede Runde ist neu</h3>
+        <p class="mini">Die Abfolge wird jedes Mal neu gewürfelt – zwei Runden sind nie gleich.
+          Punkte landen in der Bestenliste <b>„Frei“</b> und bleiben dort stehen.</p>
+        <p class="mini">Zum Vergleichen mit anderen ist die <b>Tagesrunde</b> gedacht: dort bekommt
+          heute jeder dieselbe Abfolge.</p>
       </div>
     </div>
     <div class="stack bottom">
       <button class="btn primary" id="startFree">Start</button>
-      <button class="btn secondary" id="startDaily">📅 Tagesrunde</button>
+      <button class="btn ghost" data-goto="menu">Zurück</button>
+    </div>
+  </section>
+
+  <!-- ============ Tagesrunde ============ -->
+  <section id="screen-setup-daily" class="screen hidden">
+    <h2>📅 Tagesrunde</h2>
+    <div class="scroll">
+      <div class="group">
+        <h3>Für alle dieselbe Runde</h3>
+        <p class="mini">Am <b id="dailyDate">heutigen Tag</b> bekommt jeder genau dieselbe Abfolge:
+          dieselben Früchte, dieselben Bomben, in derselben Reihenfolge. Wer mehr Punkte holt, war
+          also wirklich besser – nicht nur glücklicher.</p>
+      </div>
+      <div class="group">
+        <h3>Unterschied zum freien Spiel</h3>
+        <dl class="rules">
+          <dt>🍉 Frei</dt>
+          <dd>jedes Mal neu gewürfelt · Bestenliste „Frei“ · bleibt dauerhaft stehen</dd>
+          <dt>📅 Heute</dt>
+          <dd>für alle gleich · eigene Bestenliste „Heute“ · beginnt morgen wieder von vorn</dd>
+        </dl>
+        <p class="mini">Gespielt wird sonst genau wie im freien Spiel: alle Früchte schneiden,
+          Bomben auslassen, 60 Sekunden.</p>
+      </div>
+      <div class="group" id="dailyStatusBox">
+        <h3>Dein Stand heute</h3>
+        <p class="mini" id="dailyBest">Noch nicht gespielt.</p>
+      </div>
+    </div>
+    <div class="stack bottom">
+      <button class="btn secondary" id="startDaily">Tagesrunde starten</button>
       <button class="btn ghost" data-goto="menu">Zurück</button>
     </div>
   </section>
@@ -246,8 +249,11 @@
           <dt>🔺 Formen</dt>
           <dd>Dasselbe mit Formen. Die Farben wechseln absichtlich und bedeuten nichts – achte allein auf die Form.</dd>
           <dt>🍉 Frei</dt>
-          <dd>Alle Früchte schneiden, Bomben&nbsp;💣 auslassen.</dd>
+          <dd>Alle Früchte schneiden, Bomben&nbsp;💣 auslassen. Keine Regel, nur Tempo.</dd>
+          <dt>📅 Heute</dt>
+          <dd>Freies Spiel, aber für alle mit derselben Abfolge – mit eigener Bestenliste, die morgen von vorn beginnt.</dd>
         </dl>
+        <p class="mini">Jede Runde dauert 60 Sekunden.</p>
         <p class="mini">Bei „Zufällig + Wechsel“ ändert sich die Regel alle 30 Sekunden. Der Wechsel
           wird 3 Sekunden vorher angekündigt, danach ist das Feld kurz leer: Bewertet wird nie nach
           einer Regel, die du noch nicht gesehen hast.</p>
@@ -291,7 +297,7 @@
           <dt>Verpasst</dt>
           <dd>kostet nie ein Leben. In Zahlen und Formen beginnt aber die Serie von vorn.</dd>
           <dt>Rundenende</dt>
-          <dd>wenn die Zeit abläuft oder drei Fehler passiert sind</dd>
+          <dd>nach 60 Sekunden – oder früher, wenn drei Fehler passiert sind</dd>
         </dl>
         <p class="mini">Nach einem falschen Schnitt bleibt das Objekt kurz rot stehen und sagt, warum
           es nicht passte – „15 ist ungerade“. Ein richtiger Schnitt bekommt ein grünes Häkchen.</p>
@@ -325,7 +331,6 @@
     <div class="scroll">
       <label class="switch"><input type="checkbox" id="setSound" checked> <span>Ton</span></label>
       <label class="switch"><input type="checkbox" id="setHaptics" checked> <span>Vibration</span></label>
-      <label class="switch"><input type="checkbox" id="setBombs" checked> <span>Bomben im freien Spiel</span></label>
       <div class="stack">
         <button class="btn secondary" id="btnShowTutorial">Tutorial erneut zeigen</button>
         <button class="btn danger" id="btnWipe">Alle Daten löschen</button>

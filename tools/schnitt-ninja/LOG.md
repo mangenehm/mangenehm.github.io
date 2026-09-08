@@ -345,11 +345,87 @@ Drehung kein Informationsverlust.
 | Schnitt auf gekippter Zahl (diagonaler Wisch) | zwei Stücke, Schnittkante auf der Wischlinie |
 | Regression | Punkte 10×Faktor, grünes Häkchen, Lernmoment mit Begründung, Combo ×4, Rundenende – alle ok |
 
+## 2026-09-08 – Weniger Auswahl vor dem Start, Tagesrunde als eigener Modus
+
+Rückmeldung: zu viele Auswahlmöglichkeiten, und der Unterschied zwischen Tagesrunde und freiem
+Spiel war nicht zu erkennen. Vier Änderungen.
+
+### Rundenlänge fest bei 60 Sekunden
+
+Die Auswahl 90/60 s (Zahlen, Formen) und 90/60/ohne Limit (frei) ist ersatzlos weg; `seconds`
+kommt aus einer Konstanten `ROUND_SECONDS` in `ui.js`. Das nimmt nicht nur eine Entscheidung vor
+jedem Start, es macht auch die Bestenlisten erst ehrlich – vorher konnte ein Lauf ohne Limit
+neben einem 60-Sekunden-Lauf stehen. `timed` hängt weiterhin an der Rundenlänge, das endlose
+freie Spiel ist damit aus der Oberfläche verschwunden.
+
+Die Rundenlänge wird weiter im Highscore-Eintrag gespeichert, aber nur noch **angezeigt, wenn
+sie von 60 s abweicht**. Ältere Einträge behalten so ihr „90 s“ und sehen nicht fälschlich
+vergleichbar aus; neue Einträge wiederholen die Konstante nicht.
+
+### Bomben im freien Spiel immer an
+
+Die Checkbox im Setup und der Schalter in den Einstellungen sind weg, `bombs` entfällt als
+gespeicherte Einstellung. Ohne Bomben gibt es im freien Spiel keinen Fehler und damit keinen
+Einsatz – das war nie eine echte Wahl, sondern nur eine Möglichkeit, sich das Spiel wegzustellen.
+
+### Manuelle Formenauswahl entfernt
+
+Gemeldet als „ich kann nur eine Form auswählen, obwohl zwei zur Auswahl stehen sollen“. Die
+Ursache lag in `_wireShapes()`: `shapePick` ließ nur `count` Formen zu, und die zweite Auswahl
+warf per `targets.shift()` **stillschweigend die erste hinaus**. Mit der Vorgabe „1 Form“ – und
+nichts auf dem Bildschirm verband „Wie viele Zielformen?“ mit „Zielform“ – wirkte das exakt wie
+„es geht nur eine“. Dazu eine zweite Falle: wer bei „2 Formen“ nur eine anklickte, bekam beim
+Start `random = true` und damit zwei zufällige statt der gewählten.
+
+Beides fällt weg. Es bleibt nur noch „1 Form“ oder „2 Formen“; welche Formen gesucht sind,
+würfelt das Spiel und wechselt sie alle 30 s – das ist ohnehin der Kern des Modus. Geprüft, dass
+die verbleibende Wahl trägt: bei „2 Formen“ sind auch wirklich zwei verschiedene Formen Ziel,
+und der Regelwechsel behält die Anzahl bei.
+
+### Tagesrunde als eigener Modus
+
+Die Tagesrunde war ein zweiter Knopf unten auf dem Setup-Bildschirm des freien Spiels – als
+Variante desselben Modus lesbar, nicht als etwas anderes. Sie hat jetzt einen eigenen Eintrag im
+Hauptmenü und einen eigenen Bildschirm, der den Unterschied ausspricht:
+
+| | Frei | Heute |
+|---|---|---|
+| Abfolge | jedes Mal neu gewürfelt | heute für alle gleich |
+| Bestenliste | „Frei“, bleibt stehen | „Heute“, beginnt morgen von vorn |
+
+Dazu auf dem Tagesrunden-Bildschirm das Datum ausgeschrieben und der eigene Stand von heute
+(„Heute 2 Runden gespielt, bester Wert 640 Punkte.“). Der Bildschirm des freien Spiels sagt im
+Gegenzug, dass dort jede Runde neu gewürfelt wird, und verweist für den Vergleich auf die
+Tagesrunde.
+
+### Tests dazu
+
+Die Oberfläche wurde diesmal in **jsdom** gefahren – `index.html` laden, `UI` verdrahten, echte
+Klicks auslösen und prüfen, welche Konfiguration beim Start herauskommt. Damit ist die
+Verdrahtung geprüft, nicht nur der Quelltext.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Statisch: jede `$('#…')`-Referenz zeigt auf ein existierendes Element | keine Verwaisten (der Konstruktor würde sonst werfen und das Spiel tot starten) |
+| Zahlen: Zahlenraum 1–50, Regel „ungerade“ | `{min:1, max:50, ruleChoice:'odd', seconds:60}` |
+| Formen: „2 Formen“ | `{shapeCount:2, shapeChoice:'random', seconds:60}`, Faktor ×1.5 |
+| Formen im Spiel: 1 bzw. 2 Zielformen über 25 s | genau eine bzw. genau zwei verschiedene Zielformen |
+| Regelwechsel bei 2 Zielformen | wieder zwei, und eine andere Kombination |
+| Frei | `{bombs:true, seconds:60}`, 7 Bomben in einer 60-s-Runde |
+| Tagesrunde | eigener Screen, Datum „Dienstag, 8. September“, `{daily:true, seed:'2026-09-08', seconds:60}` |
+| Rundenlänge in allen vier Modi | 60 s, Uhr läuft; Regelwechsel bei 30 s, Wellen im freien Spiel bei 30/50 s |
+| Bestenliste | „2 Formen“ ohne Längenangabe, alter Eintrag weiterhin „1 Form · 90 s“ |
+| Entfernte Bedienelemente | `freeBombs`, `setBombs`, `numSeconds`, `shapeSeconds`, `freeSeconds`, `shapePick` – weder im HTML noch im Quelltext |
+
+Offen: Die Sichtprüfung im echten Browser fehlt für diesen Schritt – die Chrome-Anbindung war
+nicht verfügbar. Das Hauptmenü hat jetzt sieben Einträge (rechnerisch ~650 px von 844 px),
+sollte also passen, ist aber nicht am Gerät gesehen.
+
 ## Entscheidungen, die vom Briefing abweichen oder es präzisieren
 
 - **Schwierigkeitsfaktor bei „Zufällig“:** +0.15 statt +0.3. Die Zufallsregel mischt leichte (gerade/ungerade) und schwere (kleiner/größer) Regeln, der halbe Aufschlag bildet das ehrlicher ab.
-- **Pause-Menü:** dritter Knopf heißt „Runde beenden“ statt „Zum Menü“ und führt in den Game-Over-Screen. Weiterhin nötig für „Ohne Limit“ ohne Bomben – mit Zeitlimit (seit 08.09. Vorgabe) endet die Runde von selbst (Briefing §12).
-- **Tagesrunde** wird nur in der Tagesbestenliste geführt, nicht zusätzlich in der Liste des freien Spiels – sonst stünden die (gleichen) Läufe doppelt.
+- **Pause-Menü:** dritter Knopf heißt „Runde beenden“ statt „Zum Menü“ und führt in den Game-Over-Screen. Seit alle Runden 60 s dauern, endet jede Runde ohnehin von selbst; der Knopf bleibt als Abbruch mit gültigem Punktestand.
+- **Tagesrunde** wird nur in der Tagesbestenliste geführt, nicht zusätzlich in der Liste des freien Spiels – sonst stünden die (gleichen) Läufe doppelt. Seit 08.09. ein eigener Menüpunkt mit eigenem Bildschirm, damit der Unterschied zum freien Spiel sichtbar wird.
 - **Sternfrucht, goldene Frucht, ×2 und Wellen gibt es nur im freien Spiel** (seit 08.09.). Der frühere ⚡-Ersatz im Formen-Modus ist damit hinfällig – dort kommt gar kein Bonus-Item mehr vor.
 - **Frisch entstandene Stücke** sind 0,15 s lang gegen Mehrfachschnitt gesperrt; sonst zerlegt ein einziger schneller Wischer ein Item im selben Frame in viele Splitter.
 - **Spawn-Pause beim Regelwechsel** 2,4 s statt 2 s, damit die große Regelkarte in Ruhe gelesen
