@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jobwechsel-Countdown</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --brand: #22d3ee;
+      --brand-2: #38bdf8;
+      --danger: #ef4444;
+      --ok: #10b981;
+      --border: #1f2937;
+      --card: #0b1220;
+      --radius: 16px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.25);
+      --grad: linear-gradient(160deg, var(--bg), #0b1020 35%, #0a0f1a 100%);
+    }
+    html[data-theme="light"] {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --muted: #475569;
+      --text: #0f172a;
+      --brand: #06b6d4;
+      --brand-2: #0ea5e9;
+      --danger: #dc2626;
+      --ok: #059669;
+      --border: #e2e8f0;
+      --card: #f1f5f9;
+      --shadow: 0 6px 18px rgba(2,6,23,0.08);
+      --grad: linear-gradient(160deg, #eef2ff, #f8fafc 40%, #ffffff 100%);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif;
+      background: var(--grad);
+      color: var(--text);
+      transition: background .3s ease, color .3s ease;
+    }
+    main { max-width: 640px; margin: 0 auto; padding: 20px; }
+    h1 { font-size: 1.6rem; margin: 6px 0 16px; letter-spacing: 0.2px; }
+
+    .card {
+      background: radial-gradient(1200px 600px at -10% -20%, rgba(34,211,238,0.08), transparent 70%),
+                  radial-gradient(900px 600px at 120% 10%, rgba(56,189,248,0.08), transparent 70%),
+                  var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+    .row { display: flex; gap: 10px; align-items: center; }
+    .spacer { flex: 1; }
+
+    button, .btn {
+      appearance: none; border: 1px solid var(--border); color: var(--text);
+      background: linear-gradient(180deg, #0f172a, #0b1220);
+      padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 600;
+      transition: transform .06s ease, border-color .2s ease, background .2s ease, opacity .2s ease;
+      font-size: 1rem;
+    }
+    html[data-theme="light"] button, html[data-theme="light"] .btn {
+      background: linear-gradient(180deg, #ffffff, #f8fafc);
+    }
+    button:hover { border-color: #23324b; }
+    html[data-theme="light"] button:hover { border-color: #cbd5e1; }
+    button:active { transform: translateY(1px); }
+    .btn-danger { border-color: rgba(239,68,68,0.35); background: linear-gradient(180deg, rgba(239,68,68,0.18), rgba(239,68,68,0.10)); }
+    html[data-theme="light"] .btn-danger { background: linear-gradient(180deg, rgba(220,38,38,0.10), rgba(220,38,38,0.07)); }
+
+    .hero {
+      background: radial-gradient(800px 400px at 50% 50%, rgba(34,211,238,0.12), transparent 70%), var(--card);
+      border: 1px solid rgba(34,211,238,0.25);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .hero-label { font-size: 0.9rem; color: var(--muted); }
+    .hero-number {
+      font-size: 4rem; font-weight: 800; line-height: 1.05; margin: 4px 0;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-variant-numeric: tabular-nums;
+    }
+    .hero-unit { font-size: 1.05rem; font-weight: 700; color: var(--muted); }
+    .hero-sub { font-size: .92rem; color: var(--muted); margin-top: 8px; }
+
+    .bar {
+      height: 12px; border-radius: 999px; overflow: hidden;
+      background: rgba(148,163,184,0.20); border: 1px solid var(--border);
+      margin-top: 14px;
+    }
+    .bar > div {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--brand), var(--brand-2));
+      transition: width .4s ease;
+    }
+    .bar-label { font-size: .82rem; color: var(--muted); margin-top: 6px; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .stat {
+      background: rgba(148,163,184,0.08);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 12px;
+    }
+    .stat.accent { border-color: rgba(34,211,238,0.35); background: linear-gradient(180deg, rgba(56,189,248,0.14), rgba(34,211,238,0.07)); }
+    .stat-value { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .stat-label { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+
+    .section-title { font-weight: 700; color: var(--muted); margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.78rem; }
+
+    .field { margin-bottom: 12px; }
+    .field:last-child { margin-bottom: 0; }
+    label.lbl { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 5px; }
+    input[type="date"], input[type="number"] {
+      width: 100%; padding: 10px 12px; font-size: 1rem; font-family: inherit;
+      color: var(--text); background: var(--panel);
+      border: 1px solid var(--border); border-radius: 12px;
+    }
+    input:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+    .days { display: flex; gap: 6px; flex-wrap: wrap; }
+    .day-toggle {
+      padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border);
+      cursor: pointer; font-weight: 600; font-size: .9rem; user-select: none;
+      background: rgba(148,163,184,0.08);
+    }
+    .day-toggle.on { border-color: rgba(34,211,238,0.45); background: linear-gradient(180deg, rgba(56,189,248,0.20), rgba(34,211,238,0.12)); color: var(--text); }
+    .check { display: flex; align-items: center; gap: 8px; font-size: .95rem; cursor: pointer; }
+    .check input { width: 18px; height: 18px; accent-color: var(--brand); }
+
+    ul.hol { list-style: none; margin: 0; padding: 0; }
+    ul.hol li { padding: 7px 0; border-bottom: 1px solid var(--border); font-size: .92rem; }
+    ul.hol li:last-child { border-bottom: none; }
+    .hol-date { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 10px; }
+    .hol-note { display: block; color: var(--muted); font-size: .82rem; margin-top: 2px; }
+    .hint { font-size: .88rem; color: var(--muted); margin: 0; }
+    .ok { color: var(--ok); font-weight: 700; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    @media (max-width: 460px) {
+      main { padding: 16px 14px; }
+      h1 { font-size: 1.3rem; }
+      .hero-number { font-size: 3.2rem; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header class="row" style="margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+    <h1>🎉 Jobwechsel-Countdown</h1>
+    <span class="spacer"></span>
+    <button id="btnTheme" class="btn" title="Theme umschalten">🌙 Dark</button>
+  </header>
+
+  <div class="hero">
+    <div class="hero-label" id="heroLabel">Verbleibende Anwesenheitstage</div>
+    <div class="hero-number" id="heroNumber">–</div>
+    <div class="hero-unit" id="heroUnit">Tage im Büro</div>
+    <div class="hero-sub" id="heroSub"></div>
+    <div class="bar"><div id="barFill"></div></div>
+    <div class="bar-label" id="barLabel"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Rechnung</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-value" id="stCal">–</div><div class="stat-label">Kalendertage</div></div>
+      <div class="stat"><div class="stat-value" id="stWork">–</div><div class="stat-label">Arbeitstage</div></div>
+      <div class="stat"><div class="stat-value" id="stVac">–</div><div class="stat-label">Resturlaub</div></div>
+      <div class="stat accent"><div class="stat-value" id="stOffice">–</div><div class="stat-label">Anwesenheitstage</div></div>
+    </div>
+    <p class="hint" id="lastOffice" style="margin-top: 12px;"></p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Feiertage in NRW im Zeitraum</div>
+    <ul class="hol" id="holList"></ul>
+    <p class="hint" id="holEmpty" hidden>Keine Feiertage mehr in diesem Zeitraum.</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Einstellungen</div>
+    <div class="field">
+      <label class="lbl" for="inStart">Countdown-Start (z. B. Tag der Kündigung)</label>
+      <input type="date" id="inStart" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="inNewJob">Erster Tag im neuen Job</label>
+      <input type="date" id="inNewJob" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="inVac">Resturlaub in Tagen</label>
+      <input type="number" id="inVac" min="0" max="365" step="0.5" />
+    </div>
+    <div class="field">
+      <label class="lbl">Arbeitstage pro Woche</label>
+      <div class="days" id="dayToggles"></div>
+    </div>
+    <div class="field">
+      <label class="check"><input type="checkbox" id="inToday" /> Heutigen Tag mitzählen</label>
+    </div>
+    <div class="toolbar" style="margin-top: 14px;">
+      <button id="btnReset" class="btn btn-danger">Zurücksetzen</button>
+      <span class="spacer"></span>
+      <p class="hint">Wird im Browser gespeichert</p>
+    </div>
+  </div>
+</main>
+
+<script>
+(() => {
+  const LS_KEY = 'jobwechsel-countdown-v1';
+  const THEME_KEY = 'jobwechsel-countdown-theme';
+
+  const DEFAULTS = {
+    startDate: null, // wird beim ersten Start auf das heutige Datum gesetzt
+    newJobDate: '2026-12-01',
+    vacation: 13.5,
+    workdays: [1, 2, 3, 4, 5], // Mo–Fr (0 = Sonntag)
+    countToday: true,
+  };
+
+  const DAY_NAMES = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+  /* ---------- Datums-Helfer (alles lokale Daten, ohne Zeitzonen-Ärger) ---------- */
+  const mkDate = (y, m, d) => new Date(y, m - 1, d);
+  const addDays = (date, n) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + n);
+  const ymd = (date) => {
+    const p = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+  };
+  const parseYmd = (s) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+    if (!m) return null;
+    const d = mkDate(+m[1], +m[2], +m[3]);
+    return isNaN(d) ? null : d;
+  };
+  const today = () => { const n = new Date(); return mkDate(n.getFullYear(), n.getMonth() + 1, n.getDate()); };
+  const diffDays = (a, b) => Math.round((b - a) / 86400000);
+  const fmtLong = (date) => date.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+  const fmtShort = (date) => date.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const fmtNum = (n) => n.toLocaleString('de-DE', { maximumFractionDigits: 1 });
+
+  /* ---------- Feiertage NRW ---------- */
+  // Osterdatum nach Gauß/Meeus
+  const easter = (year) => {
+    const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+    const d = Math.floor(b / 4), e = b % 4;
+    const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31);
+    const day = ((h + l - 7 * m + 114) % 31) + 1;
+    return mkDate(year, month, day);
+  };
+
+  const holidaysNRW = (year) => {
+    const e = easter(year);
+    const list = [
+      [mkDate(year, 1, 1), 'Neujahr'],
+      [addDays(e, -2), 'Karfreitag'],
+      [addDays(e, 1), 'Ostermontag'],
+      [mkDate(year, 5, 1), 'Tag der Arbeit'],
+      [addDays(e, 39), 'Christi Himmelfahrt'],
+      [addDays(e, 50), 'Pfingstmontag'],
+      [addDays(e, 60), 'Fronleichnam'],
+      [mkDate(year, 10, 3), 'Tag der Deutschen Einheit'],
+      [mkDate(year, 11, 1), 'Allerheiligen'],
+      [mkDate(year, 12, 25), '1. Weihnachtstag'],
+      [mkDate(year, 12, 26), '2. Weihnachtstag'],
+    ];
+    const map = new Map();
+    list.forEach(([d, name]) => map.set(ymd(d), name));
+    return map;
+  };
+
+  const holidayCache = new Map();
+  const holidayName = (date) => {
+    const y = date.getFullYear();
+    if (!holidayCache.has(y)) holidayCache.set(y, holidaysNRW(y));
+    return holidayCache.get(y).get(ymd(date)) || null;
+  };
+
+  /* ---------- State ---------- */
+  const loadState = () => {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}') || {}; } catch { saved = {}; }
+    const st = Object.assign({}, DEFAULTS, saved);
+    if (!parseYmd(st.startDate)) st.startDate = ymd(today());
+    if (!parseYmd(st.newJobDate)) st.newJobDate = DEFAULTS.newJobDate;
+    st.vacation = Math.max(0, Number(st.vacation) || 0);
+    if (!Array.isArray(st.workdays) || st.workdays.length === 0) st.workdays = DEFAULTS.workdays.slice();
+    st.workdays = st.workdays.map(Number).filter((d) => d >= 0 && d <= 6);
+    if (st.workdays.length === 0) st.workdays = DEFAULTS.workdays.slice();
+    st.countToday = st.countToday !== false;
+    return st;
+  };
+  const saveState = () => localStorage.setItem(LS_KEY, JSON.stringify(state));
+
+  let state = loadState();
+
+  /* ---------- Berechnung ---------- */
+  const calc = () => {
+    const newJob = parseYmd(state.newJobDate);
+    const lastCalDay = addDays(newJob, -1);          // letzter Kalendertag im alten Job
+    const from = state.countToday ? today() : addDays(today(), 1);
+    const isWorkday = (d) => state.workdays.includes(d.getDay()) && !holidayName(d);
+
+    // Arbeitstage ab heute
+    const remaining = [];
+    let cursor = from;
+    let guard = 0;
+    while (cursor <= lastCalDay && guard++ < 20000) {
+      if (isWorkday(cursor)) remaining.push(cursor);
+      cursor = addDays(cursor, 1);
+    }
+
+    // Arbeitstage ab Countdown-Start (für den Fortschrittsbalken)
+    const start = parseYmd(state.startDate);
+    let total = 0;
+    cursor = start;
+    guard = 0;
+    while (cursor <= lastCalDay && guard++ < 20000) {
+      if (isWorkday(cursor)) total++;
+      cursor = addDays(cursor, 1);
+    }
+
+    // Feiertage im verbleibenden Zeitraum
+    const holidays = [];
+    cursor = from;
+    guard = 0;
+    while (cursor <= lastCalDay && guard++ < 20000) {
+      const name = holidayName(cursor);
+      if (name) holidays.push({ date: cursor, name, free: state.workdays.includes(cursor.getDay()) });
+      cursor = addDays(cursor, 1);
+    }
+
+    // letzter Arbeitstag im alten Job
+    let lastWorkday = null;
+    cursor = lastCalDay;
+    guard = 0;
+    while (guard++ < 400) {
+      if (isWorkday(cursor)) { lastWorkday = cursor; break; }
+      cursor = addDays(cursor, -1);
+    }
+
+    const workdays = remaining.length;
+    const vacation = Math.min(state.vacation, workdays);
+    const office = Math.max(0, workdays - vacation);
+
+    // letzter Bürotag, wenn der Resturlaub am Stück ans Ende gelegt wird
+    let lastOffice = null, lastOfficeHalf = false;
+    if (office > 0) {
+      const idx = Math.ceil(office) - 1;
+      lastOffice = remaining[idx] || null;
+      lastOfficeHalf = Math.abs(office - Math.floor(office)) > 0.001;
+    }
+
+    return {
+      newJob, lastCalDay, from, lastWorkday, lastOffice, lastOfficeHalf,
+      calendarDays: Math.max(0, diffDays(today(), lastCalDay) + 1),
+      workdays, vacation, office, holidays,
+      totalWorkdays: total,
+      doneWorkdays: Math.max(0, total - workdays),
+      done: today() >= newJob,
+    };
+  };
+
+  /* ---------- Anzeige ---------- */
+  const render = () => {
+    const r = calc();
+    const $ = (id) => document.getElementById(id);
+
+    if (r.done) {
+      $('heroLabel').textContent = 'Der alte Job ist Geschichte';
+      $('heroNumber').textContent = '0';
+      $('heroUnit').textContent = 'Tage im alten Job';
+      $('heroSub').innerHTML = `<span class="ok">Geschafft!</span> Der neue Job hat am ${fmtLong(r.newJob)} begonnen.`;
+    } else {
+      $('heroLabel').textContent = 'Verbleibende Anwesenheitstage';
+      $('heroNumber').textContent = fmtNum(r.office);
+      $('heroUnit').textContent = r.office === 1 ? 'Tag im Büro' : 'Tage im Büro';
+      const weeks = r.office / Math.max(1, state.workdays.length);
+      $('heroSub').textContent =
+        `${fmtNum(r.workdays)} Arbeitstage − ${fmtNum(r.vacation)} Urlaubstage · rund ${fmtNum(Math.round(weeks * 10) / 10)} Arbeitswochen · `
+        + `letzter Arbeitstag: ${r.lastWorkday ? fmtShort(r.lastWorkday) : '–'}`;
+    }
+
+    const pct = r.totalWorkdays > 0 ? Math.min(100, Math.max(0, (r.doneWorkdays / r.totalWorkdays) * 100)) : 0;
+    $('barFill').style.width = pct.toFixed(1) + '%';
+    $('barLabel').textContent = r.totalWorkdays > 0
+      ? `${fmtNum(r.doneWorkdays)} von ${fmtNum(r.totalWorkdays)} Arbeitstagen geschafft (${Math.round(pct)} %)`
+      : 'Kein Zeitraum zum Anzeigen';
+
+    $('stCal').textContent = fmtNum(r.calendarDays);
+    $('stWork').textContent = fmtNum(r.workdays);
+    $('stVac').textContent = fmtNum(r.vacation);
+    $('stOffice').textContent = fmtNum(r.office);
+
+    if (r.done) {
+      $('lastOffice').textContent = '';
+    } else if (r.office <= 0) {
+      $('lastOffice').innerHTML = '<span class="ok">Der Resturlaub deckt alle verbleibenden Arbeitstage ab</span> – ab sofort frei.';
+    } else if (r.lastOffice) {
+      $('lastOffice').textContent =
+        `Wenn du den Resturlaub am Stück ans Ende legst, ist dein letzter Bürotag der ${fmtLong(r.lastOffice)}`
+        + (r.lastOfficeHalf ? ' (nur ein halber Tag).' : '.');
+    } else {
+      $('lastOffice').textContent = '';
+    }
+
+    const list = $('holList');
+    list.innerHTML = '';
+    r.holidays.forEach((h) => {
+      const li = document.createElement('li');
+      const d = document.createElement('span');
+      d.className = 'hol-date';
+      d.textContent = fmtShort(h.date);
+      const n = document.createElement('span');
+      n.textContent = h.name;
+      li.append(d, n);
+      if (!h.free) {
+        const note = document.createElement('span');
+        note.className = 'hol-note';
+        const wd = h.date.toLocaleDateString('de-DE', { weekday: 'long' });
+        note.textContent = `(fällt auf einen ${wd} – bringt keinen freien Arbeitstag)`;
+        li.appendChild(note);
+      }
+      list.appendChild(li);
+    });
+    $('holEmpty').hidden = r.holidays.length > 0;
+  };
+
+  /* ---------- Formular ---------- */
+  const buildDayToggles = () => {
+    const wrap = document.getElementById('dayToggles');
+    wrap.innerHTML = '';
+    DAY_ORDER.forEach((d) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'day-toggle' + (state.workdays.includes(d) ? ' on' : '');
+      btn.textContent = DAY_NAMES[d];
+      btn.setAttribute('aria-pressed', String(state.workdays.includes(d)));
+      btn.addEventListener('click', () => {
+        const on = state.workdays.includes(d);
+        let next = on ? state.workdays.filter((x) => x !== d) : state.workdays.concat(d);
+        if (next.length === 0) return; // mindestens ein Arbeitstag
+        state.workdays = next.sort((a, b) => a - b);
+        saveState();
+        buildDayToggles();
+        render();
+      });
+      wrap.appendChild(btn);
+    });
+  };
+
+  const syncForm = () => {
+    document.getElementById('inStart').value = state.startDate;
+    document.getElementById('inNewJob').value = state.newJobDate;
+    document.getElementById('inVac').value = String(state.vacation);
+    document.getElementById('inToday').checked = state.countToday;
+    buildDayToggles();
+  };
+
+  document.getElementById('inStart').addEventListener('change', (e) => {
+    const d = parseYmd(e.target.value);
+    if (!d) { e.target.value = state.startDate; return; }
+    state.startDate = e.target.value;
+    saveState(); render();
+  });
+  document.getElementById('inNewJob').addEventListener('change', (e) => {
+    const d = parseYmd(e.target.value);
+    if (!d) { e.target.value = state.newJobDate; return; }
+    state.newJobDate = e.target.value;
+    saveState(); render();
+  });
+  document.getElementById('inVac').addEventListener('input', (e) => {
+    const v = Math.max(0, Math.min(365, Number(e.target.value)));
+    state.vacation = isNaN(v) ? 0 : v;
+    saveState(); render();
+  });
+  document.getElementById('inToday').addEventListener('change', (e) => {
+    state.countToday = e.target.checked;
+    saveState(); render();
+  });
+  document.getElementById('btnReset').addEventListener('click', () => {
+    if (!confirm('Alle Einstellungen auf die Standardwerte zurücksetzen?')) return;
+    state = Object.assign({}, DEFAULTS, { startDate: ymd(today()), workdays: DEFAULTS.workdays.slice() });
+    saveState(); syncForm(); render();
+  });
+
+  /* ---------- Theme ---------- */
+  const applyTheme = (theme) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
+    const btn = document.getElementById('btnTheme');
+    const dark = theme !== 'light';
+    btn.setAttribute('aria-pressed', String(dark));
+    btn.textContent = dark ? '🌙 Dark' : '☀️ Light';
+    btn.title = dark ? 'Zu Light wechseln' : 'Zu Dark wechseln';
+  };
+  const initTheme = () => {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'dark' || saved === 'light') { applyTheme(saved); return; }
+    applyTheme(window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  };
+  document.getElementById('btnTheme').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  // Über Mitternacht hinweg aktuell halten
+  let lastRenderDay = ymd(today());
+  setInterval(() => {
+    const now = ymd(today());
+    if (now !== lastRenderDay) { lastRenderDay = now; render(); }
+  }, 60000);
+
+  initTheme();
+  syncForm();
+  render();
+})();
+</script>
+</body>
+</html>
