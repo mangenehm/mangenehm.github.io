@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a0f2e" />
+  <meta name="description" content="Gruselsarg – ein kindgerechtes Halloween-Soundboard: Knöpfe drücken, gruseln, lachen." />
+  <title>Gruselsarg</title>
+  <style>
+    :root {
+      --night: #120a22;
+      --night-2: #2a1748;
+      --coffin-edge: #8a5fd0;
+      --coffin: #5b2f9e;
+      --coffin-dark: #3a1a6b;
+      --pad: #2c1056;
+      --glow: #f2f8e6;
+      --glow-hot: #c8ff8a;
+      --ink: #111;
+      --slime: #c9e67a;
+      --text: #ece6f7;
+      --muted: #b7a8d6;
+      --w: min(94vw, 440px);
+      --b: calc(var(--w) * 0.165);
+      --gap: calc(var(--w) * 0.032);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    html { background: var(--night); }
+    body {
+      background:
+        radial-gradient(circle at 82% 10%, rgba(255,247,214,0.9) 0 28px, rgba(255,240,190,0.18) 29px 60px, transparent 61px),
+        radial-gradient(ellipse at 50% 0%, var(--night-2), var(--night) 70%);
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* ---------- Hintergrund-Szene ---------- */
+    .scene {
+      position: fixed; inset: auto 0 0 0; height: 46vh;
+      pointer-events: none; z-index: 0;
+    }
+    .scene svg { width: 100%; height: 100%; display: block; }
+    .stars {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        radial-gradient(1.5px 1.5px at 12% 18%, #fff8, transparent),
+        radial-gradient(1px 1px at 30% 8%, #fff9, transparent),
+        radial-gradient(1.5px 1.5px at 55% 22%, #fff6, transparent),
+        radial-gradient(1px 1px at 70% 35%, #fff7, transparent),
+        radial-gradient(1.5px 1.5px at 8% 40%, #fff6, transparent),
+        radial-gradient(1px 1px at 92% 28%, #fff8, transparent),
+        radial-gradient(1px 1px at 40% 30%, #fff5, transparent);
+    }
+
+    main {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+      gap: 14px;
+    }
+    .back {
+      align-self: flex-start;
+      color: var(--muted); text-decoration: none; font-size: 14px;
+    }
+    .back:hover { color: var(--text); }
+
+    /* ---------- Sarg ---------- */
+    .coffin {
+      width: var(--w);
+      position: relative;
+      background: linear-gradient(180deg, var(--coffin-edge), #6b3fb8);
+      clip-path: polygon(24% 0, 76% 0, 100% 17%, 84% 100%, 16% 100%, 0 17%);
+      padding: calc(var(--w) * 0.025);
+      filter: drop-shadow(0 18px 30px rgba(0,0,0,0.55));
+    }
+    .coffin-inner {
+      clip-path: polygon(23.5% 0, 76.5% 0, 100% 17%, 84% 100%, 16% 100%, 0 17%);
+      background:
+        repeating-linear-gradient(115deg, rgba(255,255,255,0.03) 0 14px, transparent 14px 28px),
+        linear-gradient(180deg, var(--coffin), var(--coffin-dark));
+      display: flex; flex-direction: column; align-items: center;
+      padding-bottom: calc(var(--w) * 0.09);
+    }
+
+    .crypt {
+      margin-top: calc(var(--w) * 0.03);
+      width: 50%;
+      aspect-ratio: 200 / 118;
+      background: radial-gradient(ellipse at 50% 30%, #2a2433, #0d0a12 75%);
+      border-radius: 6px 6px 0 0;
+      box-shadow: inset 0 6px 14px rgba(0,0,0,0.8);
+      position: relative;
+    }
+    .skull {
+      position: absolute; inset: -6% -16% -14% -16%;
+      background: none; border: 0; padding: 0; cursor: pointer;
+    }
+    .skull svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .skull:focus-visible { outline: 3px dashed var(--glow-hot); outline-offset: 2px; border-radius: 12px; }
+    .skull .head { transform-origin: 100px 70px; transition: transform .15s; }
+    .skull:active .head { transform: scale(0.96); }
+    .skull.laughing .head { animation: wobble .28s ease-in-out infinite; }
+    .skull.laughing #jaw { animation: chatter .14s ease-in-out infinite; }
+    .skull.laughing .eye-glow { opacity: 1; }
+    .eye-glow { opacity: 0; transition: opacity .2s; }
+    @keyframes wobble { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+    @keyframes chatter { 0%,100% { transform: translateY(0); } 50% { transform: translateY(7px); } }
+
+    .title {
+      margin: calc(var(--w) * 0.035) 0 calc(var(--w) * 0.03);
+      font-family: "Chiller", "Creepster", "Comic Sans MS", "Trebuchet MS", cursive;
+      font-weight: 900;
+      font-size: calc(var(--w) * 0.12);
+      letter-spacing: 0.08em;
+      color: var(--slime);
+      text-shadow: 0 2px 0 #556b1f, 0 0 14px rgba(201,230,122,0.45);
+      line-height: 1;
+    }
+
+    .pad {
+      width: 86%;
+      background: linear-gradient(180deg, #33135f, var(--pad));
+      clip-path: polygon(0 0, 100% 0, 88% 100%, 12% 100%);
+      border-radius: 18px 18px 0 0;
+      padding: calc(var(--w) * 0.04) 0 calc(var(--w) * 0.06);
+      display: flex; flex-direction: column; align-items: center;
+      gap: var(--gap);
+    }
+    .row { display: flex; gap: var(--gap); justify-content: center; }
+
+    .key {
+      width: var(--b); height: var(--b);
+      border-radius: 50%;
+      border: 0; padding: 0; cursor: pointer;
+      background: radial-gradient(circle at 38% 32%, #ffffff, var(--glow) 55%, #cfd8c2 100%);
+      box-shadow: 0 5px 0 #8f9a83, 0 8px 12px rgba(0,0,0,0.45), 0 0 10px rgba(220,255,190,0.25);
+      color: var(--ink);
+      position: relative;
+      transition: transform .06s, box-shadow .06s, background .2s;
+    }
+    .key svg { width: 58%; height: 58%; display: block; margin: auto; }
+    .key:active, .key.pressed {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #8f9a83, 0 3px 6px rgba(0,0,0,0.45), 0 0 10px rgba(220,255,190,0.25);
+    }
+    .key.on {
+      background: radial-gradient(circle at 38% 32%, #ffffff, var(--glow-hot) 60%, #9bd45a 100%);
+      box-shadow: 0 5px 0 #6c9a3c, 0 0 22px 6px rgba(200,255,138,0.7);
+      animation: pulse .5s ease-in-out infinite alternate;
+    }
+    .key.on:active, .key.on.pressed { transform: translateY(4px); }
+    @keyframes pulse { from { filter: brightness(1); } to { filter: brightness(1.12); } }
+    .key:focus-visible { outline: 3px dashed var(--glow-hot); outline-offset: 4px; }
+
+    .bubble {
+      position: absolute; left: 50%; bottom: calc(100% + 8px);
+      transform: translateX(-50%) scale(0.6);
+      background: #fffbe8; color: #2a1748;
+      font-size: 14px; font-weight: 700; white-space: nowrap;
+      padding: 4px 10px; border-radius: 12px;
+      opacity: 0; pointer-events: none; z-index: 5;
+      transition: opacity .15s, transform .15s;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    }
+    .bubble::after {
+      content: ""; position: absolute; left: 50%; top: 100%;
+      border: 6px solid transparent; border-top-color: #fffbe8; transform: translateX(-50%);
+    }
+    .key.show-name .bubble { opacity: 1; transform: translateX(-50%) scale(1); }
+
+    /* ---------- Steuerleiste ---------- */
+    .controls {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(20,10,40,0.92);
+      border: 1px solid rgba(138,95,208,0.5);
+      padding: 10px 14px; border-radius: 999px;
+      width: min(100%, 440px);
+    }
+    .controls label { font-size: 22px; line-height: 1; }
+    .controls input[type=range] { flex: 1; accent-color: var(--glow-hot); min-width: 0; height: 28px; }
+    .stop {
+      border: 0; border-radius: 999px; cursor: pointer;
+      background: #e9e2f7; color: #2a1748;
+      font: inherit; font-weight: 800; font-size: 16px;
+      padding: 10px 16px; white-space: nowrap;
+      box-shadow: 0 3px 0 #9a8bb8;
+    }
+    .stop:active { transform: translateY(2px); box-shadow: 0 1px 0 #9a8bb8; }
+    .hint { margin: 0; font-size: 13px; color: var(--muted); text-align: center; max-width: 440px; }
+
+    /* ---------- Effekte ---------- */
+    .flash {
+      position: fixed; inset: 0; background: #eef3ff; opacity: 0;
+      pointer-events: none; z-index: 20;
+    }
+    .flash.go { animation: flash 1.1s ease-out; }
+    @keyframes flash {
+      0% { opacity: 0; } 6% { opacity: .85; } 12% { opacity: .1; }
+      20% { opacity: .7; } 40% { opacity: 0; } 100% { opacity: 0; }
+    }
+    .flyer {
+      position: fixed; z-index: 15; pointer-events: none;
+      font-size: 54px; line-height: 1;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+    }
+    .flyer.across { animation: across 2.6s ease-in-out both; }
+    .flyer.rise { animation: rise 2.8s ease-in-out both; }
+    @keyframes across {
+      0% { transform: translate(-15vw, 0) rotate(-8deg); opacity: 0; }
+      10% { opacity: 1; }
+      25% { transform: translate(20vw, -6vh) rotate(8deg); }
+      50% { transform: translate(50vw, 3vh) rotate(-8deg); }
+      75% { transform: translate(80vw, -5vh) rotate(8deg); }
+      90% { opacity: 1; }
+      100% { transform: translate(115vw, 0) rotate(-8deg); opacity: 0; }
+    }
+    @keyframes rise {
+      0% { transform: translate(0, 0) scale(.6); opacity: 0; }
+      20% { opacity: .95; }
+      50% { transform: translate(-6vw, -30vh) scale(1.1); }
+      80% { opacity: .9; }
+      100% { transform: translate(6vw, -65vh) scale(1.3); opacity: 0; }
+    }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .skull.laughing .head, .skull.laughing #jaw, .key.on, .flyer { animation: none !important; }
+      .flyer { display: none; }
+      .flash.go { animation-duration: 0.01s; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="scene" aria-hidden="true">
+    <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMax slice">
+      <path d="M0 150 Q100 120 200 145 T400 135 V200 H0Z" fill="#1d1033"/>
+      <!-- kahler Baum -->
+      <g fill="#140b24">
+        <path d="M330 150 C332 120 326 100 334 80 L338 80 C334 100 340 120 342 150Z"/>
+        <path d="M334 100 C320 90 312 84 300 70 L303 68 C314 80 324 86 336 95Z"/>
+        <path d="M338 88 C350 76 356 66 372 58 L373 61 C360 69 352 80 340 92Z"/>
+        <path d="M334 82 C330 70 322 60 324 46 L327 46 C327 58 334 68 338 80Z"/>
+        <path d="M312 78 C306 72 296 70 290 72 L291 69 C298 67 308 70 314 75Z"/>
+      </g>
+      <!-- Grabsteine -->
+      <g fill="#24143d">
+        <path d="M40 160 V138 a14 14 0 0 1 28 0 V160Z"/>
+        <path d="M80 158 V144 a10 10 0 0 1 20 0 V158Z"/>
+        <path d="M250 152 V132 h4 v-8 h6 v8 h4 v4 h-4 v16Z"/>
+        <path d="M280 156 V140 a11 11 0 0 1 22 0 V156Z"/>
+      </g>
+      <!-- Spukhaus -->
+      <g fill="#180d2b">
+        <path d="M150 150 V112 l20 -18 20 18 V150Z"/>
+        <path d="M184 118 l14 -26 14 26 V150 H184Z"/>
+      </g>
+      <g fill="#f5d77a" opacity="0.8">
+        <rect x="163" y="120" width="6" height="8" rx="1"/>
+        <rect x="196" y="122" width="5" height="7" rx="1"/>
+        <rect x="174" y="134" width="6" height="16" rx="3"/>
+      </g>
+    </svg>
+  </div>
+
+  <main>
+    <a class="back" href="../../">← Alle Tools</a>
+    <h1 class="sr-only">Gruselsarg – Grusel-Soundboard</h1>
+
+    <div class="coffin">
+      <div class="coffin-inner">
+        <div class="crypt">
+          <button class="skull" id="skull" aria-label="Skelett: lacht">
+            <svg viewBox="0 0 200 118" aria-hidden="true">
+              <!-- Kapuze -->
+              <path d="M38 118 C30 60 55 8 100 8 C145 8 170 60 162 118Z" fill="#3b3540"/>
+              <path d="M48 118 C44 70 66 22 100 22 C134 22 156 70 152 118Z" fill="#1c1820"/>
+              <g class="head">
+                <!-- Schädel -->
+                <path d="M100 18 C130 18 146 38 146 62 C146 78 138 86 132 90 L68 90 C62 86 54 78 54 62 C54 38 70 18 100 18Z" fill="#f4f1ea"/>
+                <ellipse cx="80" cy="60" rx="15" ry="17" fill="#121014"/>
+                <ellipse cx="120" cy="60" rx="15" ry="17" fill="#121014"/>
+                <circle class="eye-glow" cx="80" cy="60" r="7" fill="#c8ff8a"/>
+                <circle class="eye-glow" cx="120" cy="60" r="7" fill="#c8ff8a"/>
+                <circle cx="74" cy="54" r="4" fill="#fff"/>
+                <circle cx="114" cy="54" r="4" fill="#fff"/>
+                <path d="M100 72 l-5 9 h10Z" fill="#121014"/>
+                <g id="jaw">
+                  <path d="M70 88 H130 V104 C130 110 124 112 118 112 H82 C76 112 70 110 70 104Z" fill="#f4f1ea"/>
+                  <g stroke="#121014" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="85" y1="90" x2="85" y2="107"/>
+                    <line x1="95" y1="90" x2="95" y2="108"/>
+                    <line x1="105" y1="90" x2="105" y2="108"/>
+                    <line x1="115" y1="90" x2="115" y2="107"/>
+                  </g>
+                </g>
+              </g>
+              <!-- Hände auf dem Sargrand -->
+              <g fill="#f4f1ea" stroke="#b9b3a8" stroke-width="1">
+                <path d="M8 118 c0-8 4-12 8-12 h22 c5 0 7 4 7 8 v4Z"/>
+                <rect x="10" y="100" width="7" height="14" rx="3.5"/>
+                <rect x="19" y="97" width="7" height="16" rx="3.5"/>
+                <rect x="28" y="98" width="7" height="15" rx="3.5"/>
+                <rect x="37" y="102" width="6" height="12" rx="3"/>
+                <path d="M192 118 c0-8 -4-12 -8-12 h-22 c-5 0 -7 4 -7 8 v4Z"/>
+                <rect x="183" y="100" width="7" height="14" rx="3.5"/>
+                <rect x="174" y="97" width="7" height="16" rx="3.5"/>
+                <rect x="165" y="98" width="7" height="15" rx="3.5"/>
+                <rect x="157" y="102" width="6" height="12" rx="3"/>
+              </g>
+            </svg>
+          </button>
+        </div>
+
+        <div class="title" aria-hidden="true">Buuuh!</div>
+        <div class="pad" id="pad"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <label for="vol" title="Lautstärke">🔊</label>
+      <input type="range" id="vol" min="0" max="100" value="60" aria-label="Lautstärke" />
+      <button class="stop" id="stop">🤫 Stille!</button>
+    </div>
+    <p class="hint">Tipp auf die Knöpfe – oder auf das Skelett!<br>Kein Ton? Lautlos-Schalter am Handy prüfen.</p>
+  </main>
+
+  <div class="flash" id="flash"></div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    /* ================= Symbole (schwarz auf leuchtendem Knopf) ================= */
+    const BG = '#f2f8e6';
+    const ICONS = {
+      bat: `<path fill="currentColor" d="M12 8.6c-.5-.9-.9-1.4-.9-1.4l-.5 1.5C9 8.4 6.6 6.7 3.6 7c1.4 1 1.8 2.6 1.5 3.7-1.2-.5-2.8-.3-3.6.5 2.6.3 4.8 1.9 6.2 4 .6-.9 1.7-1.3 2.7-1 .6.5 1 1.4 1.6 2.4.6-1 1-1.9 1.6-2.4 1-.3 2.1.1 2.7 1 1.4-2.1 3.6-3.7 6.2-4-.8-.8-2.4-1-3.6-.5-.3-1.1.1-2.7 1.5-3.7-3-.3-5.4 1.4-7 1.7l-.5-1.5s-.4.5-.9 1.4z"/>`,
+      axe: `<path fill="currentColor" d="M4.2 21.2 3 20l9.3-9.3 1.2 1.2z"/><path fill="currentColor" d="M11 7.5 15.5 3c2.7 1 4.6 2.9 5.5 5.5L16.5 13z"/>`,
+      ghost: `<path fill="currentColor" d="M12 2.5a7.5 7.5 0 0 0-7.5 7.5v11.2l2.5-1.7 2.5 1.7 2.5-1.7 2.5 1.7 2.5-1.7 2.5 1.7V10A7.5 7.5 0 0 0 12 2.5z"/><ellipse cx="9.3" cy="9.5" rx="1.4" ry="1.9" fill="${BG}"/><ellipse cx="14.7" cy="9.5" rx="1.4" ry="1.9" fill="${BG}"/><ellipse cx="12" cy="14.2" rx="1.6" ry="2.1" fill="${BG}"/>`,
+      raven: `<path fill="currentColor" d="M2.5 15.5c2.5-.3 4.8-1.3 6.8-3l3.4-4.2c1.1-1.4 3.2-1.6 4.4-.5l2.9.5-2 1.3c.4 2.4-.8 4.7-3 6l-1 3.9h-1.1l.7-3.3-1.9.5-1.4 2.8H9.2l.9-2.5c-2.9.1-5.6-.4-7.6-1.5z"/><circle cx="15.6" cy="8.6" r=".7" fill="${BG}"/>`,
+      door: `<path fill="none" stroke="currentColor" stroke-width="1.8" d="M5.5 3h13v18h-13z"/><path fill="currentColor" d="M5.5 3 13 5v16l-7.5 0z"/><circle cx="11.2" cy="13" r=".9" fill="${BG}"/>`,
+      hat: `<path fill="currentColor" d="M2.5 18.6c3.5-2 15.5-2 19 0-3.5 1.9-15.5 1.9-19 0z"/><path fill="currentColor" d="M7.6 17 11 5.5c.7-2.3 3.6-3.4 6.2-2.4-1.7.7-2.7 1.8-2.7 3.6L16.6 17z"/><path fill="${BG}" d="M8.5 14.5h7.4l.4 1.5H8.1z"/>`,
+      chainsaw: `<path fill="currentColor" d="M2.5 9.5h5.5a2.5 2.5 0 0 1 2.5 2.5v5a2.5 2.5 0 0 1-2.5 2.5H5a2.5 2.5 0 0 1-2.5-2.5z"/><path fill="currentColor" d="M10.5 11h9a2.3 2.3 0 0 1 0 4.6h-9z"/><path fill="none" stroke="currentColor" stroke-width="1.3" d="M11 10.2l1-1.2 1 1.2 1-1.2 1 1.2 1-1.2 1 1.2 1-1.2 1 1.2 1-1"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M3.5 9.5V7.2h4"/>`,
+      vampire: `<path fill="currentColor" d="M3 21.5 6 14l6 3 6-3 3 7.5z"/><path fill="currentColor" d="M12 4c3 0 5 2 5 5.5 0 3.3-2.2 6-5 6s-5-2.7-5-6C7 6 9 4 12 4z"/><path fill="${BG}" d="M8.6 9.2 12 7.3l3.4 1.9c.2 2.8-1.4 5-3.4 5s-3.6-2.2-3.4-5z"/><circle cx="10.6" cy="10" r=".8" fill="currentColor"/><circle cx="13.4" cy="10" r=".8" fill="currentColor"/><path fill="currentColor" d="M10.3 12.2h3.4l-.5.6-.3 1-.3-.8h-.7l-.3.8-.3-1z"/><path fill="currentColor" d="M6 14l2.5 1.2L10 18 6.8 16.5zM18 14l-2.5 1.2L14 18l3.2-1.5z"/>`,
+      piano: `<path fill="currentColor" d="M3 11c0-3.6 2.6-6 6.5-6 3.2 0 4.4 2.2 6.6 3.3 2.2 1.1 4.9 1 4.9 3.7v2.5H3z"/><path fill="currentColor" d="M3 15.5h18v2H3z"/><path fill="${BG}" d="M4.5 15.8h1.4v1.4H4.5zm2.4 0h1.4v1.4H6.9zm2.4 0h1.4v1.4H9.3zm2.4 0h1.4v1.4h-1.4zm2.4 0h1.4v1.4h-1.4zm2.4 0h1.4v1.4h-1.4zm2.4 0h1.4v1.4h-1.4z"/><path fill="currentColor" d="M4.5 17.5h1.6v4H4.5zm13.4 0h1.6v4h-1.6zM11.3 17.5h1.4v3h-1.4z"/>`,
+      steps: `<ellipse cx="8" cy="7.5" rx="2.4" ry="3.6" fill="currentColor" transform="rotate(-12 8 7.5)"/><ellipse cx="8.8" cy="13.4" rx="1.7" ry="1.6" fill="currentColor"/><ellipse cx="15.6" cy="11.5" rx="2.4" ry="3.6" fill="currentColor" transform="rotate(12 15.6 11.5)"/><ellipse cx="14.9" cy="17.4" rx="1.7" ry="1.6" fill="currentColor"/>`,
+      bell: `<path fill="currentColor" d="M12 3a1.4 1.4 0 0 1 1.4 1.4v.4a6 6 0 0 1 4.4 5.8V15l2 2.6H4.2l2-2.6v-4.4a6 6 0 0 1 4.4-5.8v-.4A1.4 1.4 0 0 1 12 3z"/><circle cx="12" cy="19.4" r="1.8" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M19.5 5.5c1 1 1.6 2.3 1.8 3.7M17.9 3.5c.5.3 1 .7 1.3 1.1"/>`,
+      sword: `<path fill="currentColor" d="M20.5 3.5 20 7.3 10.6 16.7 7.3 13.4 16.7 4z"/><path fill="currentColor" d="M5.4 12.6l6 6-1.2 1.2-6-6z"/><path fill="currentColor" d="M7.6 17.6l-1.2-1.2-3.4 3.4a.9.9 0 0 0 1.2 1.2z"/>`,
+      scream: `<path fill="currentColor" d="M12 2.2c4.4 0 7 3.6 7 8.3 0 5.6-3.1 11.3-7 11.3s-7-5.7-7-11.3c0-4.7 2.6-8.3 7-8.3z"/><path fill="${BG}" d="M8 8.6c.6-1.4 2.6-1.3 2.8.5.2 1.6-.6 3.4-1.6 3.4S7.4 10 8 8.6zm8 0c-.6-1.4-2.6-1.3-2.8.5-.2 1.6.6 3.4 1.6 3.4s1.8-2.5 1.2-3.9z"/><ellipse cx="12" cy="16.3" rx="1.6" ry="3.1" fill="${BG}"/>`,
+      keys: `<rect x="2.8" y="5" width="18.4" height="14" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="currentColor" d="M6.3 5h2.2v8.2H6.3zm4.6 0h2.2v8.2h-2.2zm4.6 0h2.2v8.2h-2.2z"/><path stroke="currentColor" stroke-width="1.2" d="M7.4 13v6M12 13v6M16.6 13v6"/>`,
+      storm: `<path fill="currentColor" d="M7 15.5a4.5 4.5 0 0 1-.6-9 5.7 5.7 0 0 1 10.9 1.6A3.8 3.8 0 0 1 17.6 15.5z"/><path fill="${BG}" d="M12.8 9.8 9.5 14.4h2.4l-1 4.1 3.6-5.1h-2.5z"/><path fill="currentColor" d="M13.6 14.8l-3 5.2 0.4-3.4H9.4l2-1.8z"/>`,
+      clock: `<circle cx="12" cy="13" r="8" fill="none" stroke="currentColor" stroke-width="1.9"/><path stroke="currentColor" stroke-width="1.9" stroke-linecap="round" d="M12 13V8.5M12 13l3 2"/><path fill="currentColor" d="M5 3.5 8.2 5 5.8 7.6 4 5.8zM19 3.5 15.8 5l2.4 2.6L20 5.8z"/><path stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M7 20.2 5.8 21.6M17 20.2l1.2 1.4"/>`
+    };
+
+    /* ================= Audio-Grundlagen ================= */
+    let ctx = null, master = null, reverb = null, noiseBuf = null;
+    const VOL_KEY = 'gruselsarg-volume';
+
+    function ensure() {
+      if (ctx) return ctx;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try {
+        ctx = new AC();
+        // Kompressor schützt kleine Ohren vor Lautstärkespitzen
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 6;
+        comp.attack.value = 0.004; comp.release.value = 0.25;
+        comp.connect(ctx.destination);
+        master = ctx.createGain();
+        master.gain.value = volume();
+        master.connect(comp);
+        reverb = ctx.createConvolver();
+        reverb.buffer = impulse(2.6, 2.4);
+        reverb.connect(master);
+        noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      } catch (err) {
+        ctx = null;
+      }
+      return ctx;
+    }
+
+    function impulse(seconds, decay) {
+      const len = Math.floor(ctx.sampleRate * seconds);
+      const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const d = buf.getChannelData(c);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      }
+      return buf;
+    }
+
+    function unlock() {
+      const c = ensure();
+      if (c && c.state === 'suspended') c.resume().catch(() => {});
+    }
+
+    function volume() {
+      let v = 60;
+      try { const s = localStorage.getItem(VOL_KEY); if (s !== null) v = Number(s); } catch (e) {}
+      if (!Number.isFinite(v)) v = 60;
+      return Math.max(0, Math.min(100, v)) / 100;
+    }
+
+    const rand = (a, b) => a + Math.random() * (b - a);
+
+    function envelope(param, t, dur, peak, attack, release, sustain) {
+      param.setValueAtTime(0.0001, t);
+      param.exponentialRampToValueAtTime(Math.max(peak, 0.0002), t + attack);
+      if (sustain) param.setValueAtTime(Math.max(peak, 0.0002), t + Math.max(attack, dur - release));
+      param.exponentialRampToValueAtTime(0.0001, t + dur);
+    }
+
+    function lfo(target, t, dur, rate, depth, type) {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = rate;
+      g.gain.value = depth;
+      o.connect(g).connect(target);
+      o.start(t); o.stop(t + dur + 0.1);
+    }
+
+    /** Oszillator-Ton mit Hüllkurve, optional Filter, Formanten, Vibrato, Tremolo. */
+    function tone(out, o) {
+      const t = o.t, dur = o.dur;
+      const osc = ctx.createOscillator();
+      osc.type = o.type || 'sine';
+      osc.frequency.setValueAtTime(o.freq, t);
+      if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + dur);
+      if (o.pts) o.pts.forEach(([dt, f]) => osc.frequency.linearRampToValueAtTime(f, t + dt));
+      if (o.detune) osc.detune.value = o.detune;
+      if (o.vib) lfo(osc.frequency, t, dur, o.vib[0], o.vib[1]);
+
+      const g = ctx.createGain();
+      envelope(g.gain, t, dur, o.gain ?? 0.2, o.attack ?? 0.005, o.release ?? 0.1, o.sustain);
+
+      let last = g;
+      if (o.trem) {
+        const tg = ctx.createGain();
+        tg.gain.value = 1 - o.trem[1];
+        lfo(tg.gain, t, dur, o.trem[0], o.trem[1], o.trem[2]);
+        g.connect(tg); last = tg;
+      }
+      last.connect(out);
+
+      if (o.formants) {
+        o.formants.forEach(([f, q, amp]) => {
+          const bp = ctx.createBiquadFilter();
+          bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q;
+          const fg = ctx.createGain(); fg.gain.value = amp ?? 3;
+          osc.connect(bp).connect(fg).connect(g);
+        });
+      } else if (o.filter) {
+        const f = ctx.createBiquadFilter();
+        f.type = o.filter[0]; f.frequency.setValueAtTime(o.filter[1], t); f.Q.value = o.filter[2] ?? 1;
+        if (o.filter[3]) f.frequency.exponentialRampToValueAtTime(o.filter[3], t + dur);
+        osc.connect(f).connect(g);
+      } else {
+        osc.connect(g);
+      }
+      osc.start(t); osc.stop(t + dur + 0.05);
+    }
+
+    /** Gefiltertes Rauschen mit Hüllkurve. */
+    function noise(out, o) {
+      const t = o.t, dur = o.dur;
+      const src = ctx.createBufferSource();
+      src.buffer = noiseBuf; src.loop = true;
+      const f = ctx.createBiquadFilter();
+      f.type = o.ft || 'bandpass';
+      f.frequency.setValueAtTime(o.f || 1000, t);
+      f.Q.value = o.q ?? 1;
+      if (o.fTo) f.frequency.exponentialRampToValueAtTime(o.fTo, t + dur);
+      const g = ctx.createGain();
+      envelope(g.gain, t, dur, o.gain ?? 0.2, o.attack ?? 0.005, o.release ?? 0.1, o.sustain);
+      let last = g;
+      if (o.trem) {
+        const tg = ctx.createGain();
+        tg.gain.value = 1 - o.trem[1];
+        lfo(tg.gain, t, dur, o.trem[0], o.trem[1], o.trem[2]);
+        g.connect(tg); last = tg;
+      }
+      src.connect(f).connect(g); last.connect(out);
+      src.start(t, Math.random()); src.stop(t + dur + 0.05);
+    }
+
+    /** Eine gesungene Silbe („ha“, „hi“, „huu“) über Formantfilter. */
+    function syllable(out, t, f0, f1, dur, formants, gain, breath) {
+      if (breath) noise(out, { t, dur: 0.06, f: 1800, q: 0.8, gain: gain * 0.5, attack: 0.01 });
+      tone(out, { t: t + (breath ? 0.03 : 0), dur, type: 'sawtooth', freq: f0, to: f1,
+        formants, gain, attack: 0.02, release: 0.07, sustain: true, vib: [6, f0 * 0.02] });
+    }
+
+    const VOWEL_A = [[750, 6, 4], [1200, 7, 3], [2600, 8, 1.2]];
+    const VOWEL_U = [[350, 6, 4], [800, 7, 2]];
+    const VOWEL_I = [[1300, 3, 2], [2600, 5, 2.5], [3300, 6, 1.5]];
+
+    /* ================= Die Sounds ================= */
+    // Jede Funktion bekommt den Ausgang und die Startzeit und liefert die Dauer in Sekunden.
+    const SFX = {
+      laugh(out, t) {
+        const base = rand(115, 175), step = rand(0.19, 0.25), n = 4 + Math.floor(Math.random() * 2);
+        syllable(out, t, base * 0.85, base * 1.35, 0.42, VOWEL_A, 0.22, false);
+        for (let i = 0; i < n; i++) {
+          const f = base * 1.4 * (1 - i * 0.07);
+          syllable(out, t + 0.5 + i * step, f, f * 0.9, step * 0.7, VOWEL_A, 0.2, true);
+        }
+        const tail = t + 0.5 + n * step;
+        syllable(out, tail, base * 1.1, base * 0.7, 0.6, VOWEL_A, 0.18, true);
+        return tail - t + 0.7;
+      },
+
+      bat(out, t) {
+        noise(out, { t, dur: 1.8, f: 700, q: 1.2, gain: 0.25, attack: 0.15, release: 0.5, sustain: true, trem: [22, 0.9, 'square'] });
+        for (let i = 0; i < 5; i++) {
+          const s = t + 0.15 + i * rand(0.25, 0.35);
+          tone(out, { t: s, dur: 0.08, type: 'sine', freq: rand(5200, 6500), to: rand(7500, 9000), gain: 0.07 });
+        }
+        return 1.9;
+      },
+
+      axe(out, t) {
+        [0, 0.55, 1.1].forEach((d, i) => {
+          tone(out, { t: t + d, dur: 0.18, type: 'sine', freq: 220, to: 70, gain: 0.5 });
+          noise(out, { t: t + d, dur: 0.12, f: 1100 + i * 150, q: 2, gain: 0.45 });
+          noise(out, { t: t + d + 0.02, dur: 0.3, ft: 'lowpass', f: 600, gain: 0.12 });
+        });
+        return 1.5;
+      },
+
+      ghost(out, t) {
+        const p = rand(0.9, 1.1);
+        tone(out, { t, dur: 2.8, type: 'sine', freq: 280 * p, pts: [[0.9, 520 * p], [1.6, 380 * p], [2.8, 220 * p]],
+          gain: 0.22, attack: 0.4, release: 0.8, sustain: true, vib: [5, 14] });
+        tone(out, { t: t + 0.1, dur: 2.7, type: 'triangle', freq: 420 * p, pts: [[0.9, 780 * p], [1.6, 570 * p], [2.7, 330 * p]],
+          gain: 0.07, attack: 0.5, release: 0.8, sustain: true, vib: [4.5, 20] });
+        noise(out, { t, dur: 2.8, f: 500, fTo: 1400, q: 3, gain: 0.05, attack: 0.6, release: 1, sustain: true });
+        return 3;
+      },
+
+      raven(out, t) {
+        [0, 0.55].forEach((d, i) => {
+          const f = rand(480, 560) * (i ? 0.92 : 1);
+          tone(out, { t: t + d, dur: 0.38, type: 'sawtooth', freq: f, to: f * 0.72, gain: 0.3, attack: 0.02, release: 0.12, sustain: true,
+            formants: [[1100, 4, 3], [1900, 5, 2]], trem: [70, 0.6, 'square'] });
+        });
+        return 1.05;
+      },
+
+      door(out, t) {
+        tone(out, { t, dur: 1.7, type: 'sawtooth', freq: 28, pts: [[0.3, 44], [0.7, 22], [1.1, 50], [1.7, 30]],
+          filter: ['bandpass', 950, 6], gain: 0.9, attack: 0.08, release: 0.2, sustain: true });
+        tone(out, { t, dur: 1.7, type: 'sawtooth', freq: 34, pts: [[0.5, 26], [0.9, 48], [1.7, 25]],
+          filter: ['bandpass', 1700, 9], gain: 0.5, attack: 0.1, release: 0.2, sustain: true });
+        const s = t + 1.85;
+        tone(out, { t: s, dur: 0.45, type: 'sine', freq: 95, to: 38, gain: 0.7 });
+        noise(out, { t: s, dur: 0.5, ft: 'lowpass', f: 900, fTo: 200, gain: 0.5 });
+        return 2.4;
+      },
+
+      witch(out, t) {
+        const base = rand(720, 860);
+        for (let i = 0; i < 7; i++) {
+          const f = base * (1 - i * 0.045);
+          syllable(out, t + i * 0.13, f * 1.05, f * 0.95, 0.09, VOWEL_I, 0.12, i % 2 === 0);
+        }
+        for (let i = 0; i < 3; i++) {
+          const f = base * 0.6;
+          syllable(out, t + 1.05 + i * 0.17, f, f * 0.93, 0.12, VOWEL_I, 0.11, true);
+        }
+        return 1.7;
+      },
+
+      chainsaw(out, t) {
+        const pts = [[0.2, 70], [0.45, 150], [0.75, 95], [1.0, 165], [1.35, 100], [1.8, 60]];
+        tone(out, { t, dur: 1.9, type: 'sawtooth', freq: 55, pts, filter: ['lowpass', 1600, 1], gain: 0.22,
+          attack: 0.05, release: 0.3, sustain: true, trem: [32, 0.5] });
+        tone(out, { t, dur: 1.9, type: 'square', freq: 56, pts: pts.map(([d, f]) => [d, f * 1.01]), filter: ['lowpass', 900, 1],
+          gain: 0.1, attack: 0.05, release: 0.3, sustain: true });
+        noise(out, { t, dur: 1.9, f: 2500, q: 0.7, gain: 0.05, attack: 0.1, release: 0.3, sustain: true });
+        return 2;
+      },
+
+      vampire(out, t) {
+        tone(out, { t, dur: 1.4, type: 'sawtooth', freq: 73.4, filter: ['lowpass', 500, 1], gain: 0.15, attack: 0.05, release: 0.6, sustain: true });
+        tone(out, { t, dur: 1.4, type: 'sawtooth', freq: 87.3, filter: ['lowpass', 500, 1], gain: 0.12, attack: 0.05, release: 0.6, sustain: true });
+        const base = rand(82, 96), s = t + 0.7;
+        syllable(out, s, base * 0.9, base * 1.3, 0.5, VOWEL_U, 0.28, false);
+        syllable(out, s + 0.45, base * 1.3, base * 1.25, 0.35, VOWEL_A, 0.26, false);
+        for (let i = 0; i < 4; i++) {
+          const f = base * 1.25 * (1 - i * 0.06);
+          syllable(out, s + 0.95 + i * 0.28, f, f * 0.92, 0.2, VOWEL_A, 0.25, true);
+        }
+        return 3.2;
+      },
+
+      piano(out, t) {
+        // Moll-Akkorde, langsam absteigend
+        const chords = [[146.8, 174.6, 220, 293.7], [116.5, 146.8, 174.6, 233.1], [98, 116.5, 146.8, 196], [110, 138.6, 164.8, 220]];
+        chords.forEach((c, i) => {
+          const s = t + i * 0.7;
+          c.forEach((f, j) => {
+            tone(out, { t: s + j * 0.025, dur: 1.6, type: 'triangle', freq: f, gain: 0.14, attack: 0.004 });
+            tone(out, { t: s + j * 0.025, dur: 0.9, type: 'sine', freq: f * 2, gain: 0.05, attack: 0.004 });
+          });
+        });
+        return 3.6;
+      },
+
+      steps(out, t) {
+        let s = t;
+        for (let i = 0; i < 7; i++) {
+          const g = 0.12 + i * 0.07;
+          tone(out, { t: s, dur: 0.18, type: 'sine', freq: 110, to: 45, gain: g * 1.4 });
+          noise(out, { t: s, dur: 0.14, ft: 'lowpass', f: 450, gain: g });
+          s += 0.55 - i * 0.04;
+        }
+        return s - t + 0.3;
+      },
+
+      bell(out, t) {
+        const partials = [[0.5, 0.35, 4.5], [1, 0.3, 3.5], [1.19, 0.18, 3], [1.5, 0.12, 2.5], [2, 0.1, 2], [2.52, 0.07, 1.6], [3, 0.05, 1.2]];
+        [0, 1.6, 3.2].forEach(d => {
+          partials.forEach(([r, g, dec]) => tone(out, { t: t + d, dur: dec, type: 'sine', freq: 233 * r, gain: g * 0.5, attack: 0.003 }));
+          noise(out, { t: t + d, dur: 0.05, f: 3000, gain: 0.08 });
+        });
+        return 5.6;
+      },
+
+      sword(out, t) {
+        noise(out, { t, dur: 0.35, f: 600, fTo: 4500, q: 2, gain: 0.22, attack: 0.15, release: 0.1 });
+        const s = t + 0.35;
+        [[2480, 0.12, 1.4], [3720, 0.09, 1.1], [5210, 0.06, 0.8], [6930, 0.04, 0.6]].forEach(([f, g, d]) =>
+          tone(out, { t: s, dur: d, type: 'sine', freq: f, gain: g, attack: 0.002, vib: [9, f * 0.004] }));
+        noise(out, { t: s, dur: 0.06, ft: 'highpass', f: 4000, gain: 0.2 });
+        return 1.8;
+      },
+
+      scream(out, t) {
+        const f = rand(560, 680);
+        tone(out, { t, dur: 1.3, type: 'sawtooth', freq: f * 0.8, pts: [[0.15, f], [0.6, f * 1.05], [1.3, f * 0.45]],
+          formants: [[900, 5, 3], [1400, 6, 2.5], [2800, 8, 1]], gain: 0.16, attack: 0.05, release: 0.35, sustain: true, vib: [7, 18] });
+        return 1.4;
+      },
+
+      keys(out, t) {
+        // die berühmte Orgel-Einleitung, kurz und knackig
+        const seq = [[880, 0.13], [784, 0.13], [880, 0.9], [0, 0.25], [784, 0.13], [698.5, 0.13], [659.3, 0.13], [587.3, 0.13], [554.4, 0.45], [587.3, 1.1]];
+        let s = t;
+        seq.forEach(([f, d]) => {
+          if (f) [1, 0.5].forEach(m => {
+            tone(out, { t: s, dur: d + 0.08, type: 'square', freq: f * m, filter: ['lowpass', 2400, 0.7], gain: 0.07, attack: 0.01, release: 0.06, sustain: true });
+            tone(out, { t: s, dur: d + 0.08, type: 'sawtooth', freq: f * m, detune: 7, filter: ['lowpass', 1800, 0.7], gain: 0.05, attack: 0.01, release: 0.06, sustain: true });
+          });
+          s += d;
+        });
+        return s - t + 0.3;
+      },
+
+      storm(out, t) {
+        noise(out, { t, dur: 4.5, ft: 'highpass', f: 2500, gain: 0.07, attack: 0.5, release: 1.2, sustain: true });
+        noise(out, { t: t + 0.25, dur: 0.25, f: 2200, q: 0.6, gain: 0.4 });
+        noise(out, { t: t + 0.3, dur: 3.4, ft: 'lowpass', f: 260, fTo: 70, q: 1.5, gain: 0.85, attack: 0.15, release: 1.6, trem: [4, 0.5] });
+        noise(out, { t: t + 1.6, dur: 2.6, ft: 'lowpass', f: 180, fTo: 60, q: 1.2, gain: 0.6, attack: 0.3, release: 1.5, trem: [2.5, 0.45] });
+        return 4.6;
+      },
+
+      clock(out, t) {
+        for (let i = 0; i < 6; i++) {
+          const hi = i % 2 === 0;
+          noise(out, { t: t + i * 0.45, dur: 0.04, f: hi ? 3200 : 2100, q: 6, gain: 0.45 });
+        }
+        const s = t + 2.85;
+        [[1, 0.35, 4], [2, 0.15, 3], [2.4, 0.1, 2.4], [3, 0.08, 2], [0.5, 0.25, 4.5]].forEach(([r, g, d]) =>
+          tone(out, { t: s, dur: d, type: 'sine', freq: 130.8 * r, gain: g * 0.6, attack: 0.003 }));
+        return 7;
+      }
+    };
+
+    /* ================= Knopf-Belegung ================= */
+    const KEYS = [
+      { id: 'bat', name: 'Fledermaus', rev: 0.2, fx: 'bat' },
+      { id: 'axe', name: 'Holzhacken', rev: 0.35 },
+      { id: 'ghost', name: 'Gespenst', rev: 0.7, fx: 'ghost' },
+      { id: 'raven', name: 'Rabe', rev: 0.35, fx: 'raven' },
+      { id: 'door', name: 'Knarrende Tür', rev: 0.4 },
+      { id: 'hat', sfx: 'witch', name: 'Hexe', rev: 0.3, fx: 'witch' },
+      { id: 'chainsaw', name: 'Kettensäge', rev: 0.1 },
+      { id: 'vampire', name: 'Graf Dracula', rev: 0.6, fx: 'vampire' },
+      { id: 'piano', name: 'Spukflügel', rev: 0.6 },
+      { id: 'steps', name: 'Schritte', rev: 0.5 },
+      { id: 'bell', name: 'Glocke', rev: 0.5 },
+      { id: 'sword', name: 'Schwert', rev: 0.3 },
+      { id: 'scream', name: 'Schrei', rev: 0.4 },
+      { id: 'keys', name: 'Orgel', rev: 0.6 },
+      { id: 'storm', name: 'Gewitter', rev: 0.25, fx: 'flash' },
+      { id: 'clock', name: 'Mitternacht', rev: 0.5 }
+    ];
+    const ROWS = [4, 4, 3, 3, 2]; // wie beim Vorbild: der Sarg wird nach unten schmaler
+
+    const pad = document.getElementById('pad');
+    const buttons = {};
+    let k = 0;
+    ROWS.forEach(n => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      for (let i = 0; i < n; i++, k++) {
+        const def = KEYS[k];
+        const b = document.createElement('button');
+        b.className = 'key';
+        b.type = 'button';
+        b.setAttribute('aria-label', def.name);
+        b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[def.id]}</svg><span class="bubble" aria-hidden="true">${def.name}</span>`;
+        bind(b, () => play(def));
+        row.appendChild(b);
+        buttons[def.id] = b;
+      }
+      pad.appendChild(row);
+    });
+
+    const skull = document.getElementById('skull');
+    const SKULL = { id: 'skull', sfx: 'laugh', name: 'Skelett', rev: 0.35 };
+    bind(skull, () => play(SKULL));
+
+    // pointerdown reagiert ohne Verzögerung; click mit detail 0 kommt von der Tastatur
+    function bind(el, fn) {
+      el.addEventListener('pointerdown', e => {
+        if (e.button !== undefined && e.button > 0) return;
+        el.classList.add('pressed');
+        fn();
+      });
+      const up = () => el.classList.remove('pressed');
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointerleave', up);
+      el.addEventListener('pointercancel', up);
+      el.addEventListener('click', e => { if (e.detail === 0) fn(); });
+      el.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    /* ================= Abspielen ================= */
+    const MAX_VOICES = 6;
+    let voices = [];
+
+    function play(def) {
+      unlock();
+      if (!ctx) return;
+      // gleicher Knopf nochmal: von vorn beginnen
+      voices.filter(v => v.id === def.id).forEach(stopVoice);
+      while (voices.length >= MAX_VOICES) stopVoice(voices[0]);
+
+      const bus = ctx.createGain();
+      bus.connect(master);
+      const send = ctx.createGain();
+      send.gain.value = def.rev || 0;
+      bus.connect(send).connect(reverb);
+
+      const t = ctx.currentTime + 0.02;
+      const dur = SFX[def.sfx || def.id](bus, t);
+      const v = { id: def.id, bus, send, timer: 0 };
+      v.timer = setTimeout(() => finish(v), (dur + 0.2) * 1000);
+      voices.push(v);
+
+      setLit(def.id, true);
+      if (def.fx) effect(def.fx);
+    }
+
+    function setLit(id, on) {
+      if (id === 'skull') {
+        skull.classList.toggle('laughing', on);
+        return;
+      }
+      const b = buttons[id];
+      if (!b) return;
+      b.classList.toggle('on', on);
+      b.classList.toggle('show-name', on);
+      if (on) setTimeout(() => b.classList.remove('show-name'), 1200);
+    }
+
+    function finish(v) {
+      voices = voices.filter(x => x !== v);
+      if (!voices.some(x => x.id === v.id)) setLit(v.id, false);
+      setTimeout(() => { try { v.bus.disconnect(); v.send.disconnect(); } catch (e) {} }, 3000);
+    }
+
+    function stopVoice(v) {
+      clearTimeout(v.timer);
+      const now = ctx.currentTime;
+      v.bus.gain.cancelScheduledValues(now);
+      v.bus.gain.setValueAtTime(v.bus.gain.value, now);
+      v.bus.gain.linearRampToValueAtTime(0, now + 0.08);
+      voices = voices.filter(x => x !== v);
+      setLit(v.id, false);
+      setTimeout(() => { try { v.bus.disconnect(); v.send.disconnect(); } catch (e) {} }, 200);
+    }
+
+    document.getElementById('stop').addEventListener('click', () => {
+      voices.slice().forEach(stopVoice);
+      document.querySelectorAll('.flyer').forEach(f => f.remove());
+    });
+
+    const vol = document.getElementById('vol');
+    vol.value = Math.round(volume() * 100);
+    vol.addEventListener('input', () => {
+      try { localStorage.setItem(VOL_KEY, vol.value); } catch (e) {}
+      if (master) master.gain.setTargetAtTime(vol.value / 100, ctx.currentTime, 0.03);
+    });
+
+    /* ================= Bild-Effekte ================= */
+    const flash = document.getElementById('flash');
+    const FLYERS = {
+      bat: ['🦇', 'across', 3],
+      raven: ['🐦‍⬛', 'across', 1],
+      ghost: ['👻', 'rise', 1],
+      witch: ['🧙‍♀️', 'across', 1],
+      vampire: ['🧛', 'rise', 1]
+    };
+
+    function effect(kind) {
+      if (kind === 'flash') {
+        flash.classList.remove('go');
+        void flash.offsetWidth;
+        flash.classList.add('go');
+        return;
+      }
+      const [emoji, anim, count] = FLYERS[kind];
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = `flyer ${anim}`;
+        el.textContent = emoji;
+        if (anim === 'across') {
+          el.style.left = '0';
+          el.style.top = `${rand(8, 45)}vh`;
+        } else {
+          el.style.left = `${rand(25, 65)}vw`;
+          el.style.top = '70vh';
+        }
+        el.style.animationDelay = `${i * 0.25}s`;
+        el.addEventListener('animationend', () => el.remove());
+        document.body.appendChild(el);
+      }
+    }
+  })();
+  </script>
+</body>
+</html>
