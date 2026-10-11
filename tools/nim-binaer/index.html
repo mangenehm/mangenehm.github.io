@@ -1,0 +1,1174 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#fdf6e9" />
+  <meta name="description" content="NIM – Binär-Knobelei: das Strategiespiel NIM spielen und dabei das Binärsystem lernen." />
+  <title>NIM – Binär-Knobelei</title>
+  <style>
+    :root {
+      --bg: #fdf6e9;
+      --card: #ffffff;
+      --ink: #1f2433;
+      --muted: #5f6577;
+      --line: #e6dccb;
+      --accent: #e8572a;
+      --accent-dark: #c2401a;
+      --ok: #16a34a;
+      --ok-bg: #dcfce7;
+      --warn: #d97706;
+      --warn-bg: #fef3c7;
+      --bad: #dc2626;
+      --p8: #8b5cf6;
+      --p4: #3b82f6;
+      --p2: #10b981;
+      --p1: #f59e0b;
+      --off: #ece6da;
+      --radius: 16px;
+      --shadow: 0 2px 0 rgba(31,36,51,.08), 0 6px 20px rgba(31,36,51,.06);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+      font-size: 17px;
+      line-height: 1.45;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      min-height: 100vh;
+    }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .45; }
+    :focus-visible { outline: 3px solid var(--p4); outline-offset: 2px; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 12px 16px 48px; }
+
+    /* ---------- Kopf ---------- */
+    header.top {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 0 12px;
+    }
+    header.top h1 {
+      font-size: 1.35rem; margin: 0; flex: 1; letter-spacing: .3px;
+      display: flex; align-items: center; gap: 8px; cursor: pointer;
+    }
+    .logo { display: inline-flex; gap: 3px; }
+    .logo i { width: 12px; height: 12px; border-radius: 3px; display: block; }
+    .icon-btn {
+      border: 2px solid var(--line); background: var(--card); border-radius: 12px;
+      min-width: 44px; height: 44px; padding: 0 10px; font-size: 1.1rem;
+    }
+    .hidden { display: none !important; }
+
+    /* ---------- Allgemeine Bausteine ---------- */
+    .card {
+      background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 16px; margin-bottom: 14px; border: 1px solid var(--line);
+    }
+    h2 { font-size: 1.25rem; margin: 0 0 8px; }
+    h3 { font-size: 1.05rem; margin: 14px 0 6px; }
+    p { margin: 6px 0; }
+    .muted { color: var(--muted); }
+    .btn {
+      border: 0; border-radius: 14px; padding: 12px 18px; font-weight: 800;
+      background: var(--accent); color: #fff; box-shadow: 0 3px 0 var(--accent-dark);
+      min-height: 48px;
+    }
+    .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-dark); }
+    .btn.secondary { background: var(--card); color: var(--ink); border: 2px solid var(--line); box-shadow: 0 3px 0 var(--line); }
+    .btn.green { background: var(--ok); box-shadow: 0 3px 0 #11803a; }
+    .btn.block { width: 100%; }
+    .row-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .row-btns .btn { flex: 1 1 140px; }
+
+    .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+    .seg button {
+      flex: 1 1 auto; border: 2px solid var(--line); background: var(--card); border-radius: 12px;
+      padding: 8px 10px; font-weight: 700; min-height: 44px; font-size: .95rem;
+    }
+    .seg button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: #fff; }
+    label.field { display: block; font-weight: 700; margin: 12px 0 6px; }
+    input[type=text] {
+      width: 100%; font: inherit; padding: 10px 12px; border: 2px solid var(--line); border-radius: 12px; background: #fff;
+    }
+
+    /* ---------- Menü ---------- */
+    .hero { text-align: center; padding: 8px 0 4px; }
+    .hero h2 { font-size: 1.6rem; margin-bottom: 4px; }
+    .menu-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    @media (min-width: 640px) { .menu-grid { grid-template-columns: repeat(3, 1fr); } }
+    .menu-tile {
+      text-align: left; border: 2px solid var(--line); background: var(--card); border-radius: var(--radius);
+      padding: 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 4px;
+    }
+    .menu-tile:hover { border-color: var(--ink); }
+    .menu-tile .emoji { font-size: 2rem; }
+    .menu-tile strong { font-size: 1.1rem; }
+    .menu-tile span.small { color: var(--muted); font-size: .92rem; }
+    .rules li { margin: 4px 0; }
+
+    /* ---------- Binär-Kästchen ---------- */
+    .bits { display: inline-flex; gap: 4px; vertical-align: middle; }
+    .bit {
+      width: 30px; height: 34px; border-radius: 8px; background: var(--off); color: #9a927f;
+      display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .95rem; line-height: 1; border: 2px solid transparent;
+    }
+    .bit small { font-size: .6rem; font-weight: 700; opacity: .85; margin-bottom: 2px; }
+    .bit.on { color: #fff; }
+    .bit.on.p8 { background: var(--p8); } .bit.on.p4 { background: var(--p4); }
+    .bit.on.p2 { background: var(--p2); } .bit.on.p1 { background: var(--p1); }
+
+    /* ---------- Spielfeld ---------- */
+    .turn-banner {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+      padding: 12px 16px; border-radius: var(--radius); font-weight: 800; margin-bottom: 12px;
+      background: var(--ink); color: #fff;
+    }
+    .turn-banner.p1 { background: #2b4fbf; }
+    .turn-banner.p2 { background: #b8326b; }
+    .turn-banner.cpu { background: #4b5563; }
+    .turn-banner .sub { font-weight: 600; opacity: .9; font-size: .92rem; }
+    .help-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .help-line > span { font-weight: 800; }
+    .help-line .seg { flex: 1; }
+
+    .heap {
+      background: var(--card); border: 2px solid var(--line); border-radius: var(--radius);
+      padding: 10px 12px; margin-bottom: 10px; box-shadow: var(--shadow);
+      transition: border-color .15s;
+    }
+    .heap.active { border-color: var(--accent); }
+    .heap.empty { opacity: .55; }
+    .heap-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+    .heap-head .name { font-weight: 800; }
+    .heap-head .count {
+      background: var(--off); border-radius: 999px; padding: 2px 10px; font-weight: 800; min-width: 36px; text-align: center;
+    }
+    .heap-head .bits { margin-left: auto; }
+    .heap-head .after { width: 100%; font-size: .9rem; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .stones { display: flex; flex-wrap: wrap; gap: 10px; min-height: 40px; align-items: center; }
+    .group { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; position: relative; }
+    .show-groups .group { background: #f6f1e7; }
+    .show-groups .group::after {
+      content: attr(data-p); position: absolute; top: -9px; right: -6px; font-size: .68rem; font-weight: 800;
+      background: var(--ink); color: #fff; border-radius: 999px; padding: 1px 6px;
+    }
+    .stone {
+      width: 30px; height: 30px; border-radius: 50%; border: 0; padding: 0;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,.18), 0 1px 2px rgba(0,0,0,.2);
+      transition: transform .12s, opacity .12s;
+    }
+    .stone.p8 { background: var(--p8); } .stone.p4 { background: var(--p4); }
+    .stone.p2 { background: var(--p2); } .stone.p1 { background: var(--p1); }
+    .plain .stone { background: #a0795a; }
+    .stone:not(:disabled):hover { transform: translateY(-2px); }
+    .stone:disabled { cursor: default; opacity: 1; }
+    .stone.sel { opacity: .3; transform: scale(.82); outline: 3px dashed var(--bad); outline-offset: 2px; }
+    .stone.hint { animation: pulse 1s ease-in-out infinite; outline: 3px solid var(--ink); outline-offset: 2px; }
+    .stone.gone { transform: scale(0); opacity: 0; }
+    @keyframes pulse { 50% { transform: scale(1.15); } }
+
+    .action-bar {
+      position: sticky; bottom: 0; z-index: 5; margin: 6px -16px 12px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(253,246,233,.95); backdrop-filter: blur(4px); border-top: 1px solid var(--line);
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    .action-bar .info { flex: 1 1 100%; font-weight: 700; min-height: 1.4em; }
+    .action-bar .btn { flex: 1 1 120px; }
+
+    /* ---------- Paare-Check-Tabelle ---------- */
+    table.pairs { border-collapse: separate; border-spacing: 4px; margin: 4px auto 8px; }
+    table.pairs th, table.pairs td { text-align: center; padding: 0; }
+    table.pairs th.lbl, table.pairs td.lbl { text-align: right; padding-right: 8px; font-weight: 700; white-space: nowrap; font-size: .92rem; }
+    table.pairs th.h { width: 38px; font-size: .85rem; border-radius: 8px; color: #fff; padding: 3px 0; }
+    table.pairs th.h.p8 { background: var(--p8); } table.pairs th.h.p4 { background: var(--p4); }
+    table.pairs th.h.p2 { background: var(--p2); } table.pairs th.h.p1 { background: var(--p1); }
+    table.pairs td .bit { width: 38px; height: 32px; }
+    table.pairs tr.preview td.lbl { color: var(--accent); }
+    table.pairs tr.preview .bit { border-color: var(--accent); border-style: dashed; }
+    table.pairs tr.sum td { padding-top: 6px; }
+    .cnt { display: inline-flex; width: 38px; height: 34px; align-items: center; justify-content: center; border-radius: 8px; font-weight: 800; font-size: .9rem; }
+    .cnt.even { background: var(--ok-bg); color: var(--ok); }
+    .cnt.odd { background: var(--warn-bg); color: var(--warn); }
+    .verdict { border-radius: 12px; padding: 10px 12px; font-weight: 700; margin-top: 6px; }
+    .verdict.ok { background: var(--ok-bg); color: #14532d; }
+    .verdict.warn { background: var(--warn-bg); color: #78350f; }
+    .verdict.info { background: #e0ecff; color: #1e3a8a; }
+
+    .log { list-style: none; padding: 0; margin: 0; font-size: .95rem; }
+    .log li { padding: 6px 0; border-bottom: 1px dashed var(--line); }
+    .log li:last-child { border-bottom: 0; }
+    .speech { background: #eef2ff; border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-weight: 600; }
+    .speech:empty { display: none; }
+
+    /* ---------- Overlay ---------- */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(31,36,51,.55); display: flex; align-items: center; justify-content: center;
+      padding: 16px; z-index: 20;
+    }
+    .overlay .card { max-width: 440px; width: 100%; text-align: center; animation: pop .25s ease-out; }
+    .overlay .big { font-size: 3.2rem; line-height: 1.1; }
+    @keyframes pop { from { transform: scale(.85); opacity: 0; } }
+
+    /* ---------- Lernmodus ---------- */
+    .lesson-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .lesson-list button {
+      width: 100%; text-align: left; display: flex; align-items: center; gap: 12px;
+      border: 2px solid var(--line); background: var(--card); border-radius: var(--radius); padding: 12px 14px; box-shadow: var(--shadow);
+    }
+    .lesson-list button:hover { border-color: var(--ink); }
+    .lesson-list .num {
+      width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+      background: var(--off); font-weight: 800; flex: none;
+    }
+    .lesson-list .done .num { background: var(--ok); color: #fff; }
+    .lesson-list .t { flex: 1; }
+    .lesson-list .t strong { display: block; }
+    .lesson-list .t span { color: var(--muted); font-size: .9rem; }
+    .progress { height: 10px; background: var(--off); border-radius: 999px; overflow: hidden; margin: 8px 0 14px; }
+    .progress div { height: 100%; background: var(--ok); width: 0; transition: width .3s; }
+
+    .explain p { margin: 8px 0; }
+    .explain .example { background: #f6f1e7; border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+    .task-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .task-head .step { color: var(--muted); font-weight: 700; font-size: .9rem; }
+    .target { font-size: 2.2rem; font-weight: 900; text-align: center; margin: 6px 0; }
+    .big-bits { display: flex; justify-content: center; gap: 8px; margin: 10px 0; }
+    .big-bits .bit { width: clamp(56px, 18vw, 76px); height: clamp(66px, 20vw, 86px); font-size: 1.6rem; border-radius: 14px; }
+    .big-bits .bit small { font-size: .8rem; }
+    .big-bits button.bit { border: 0; box-shadow: inset 0 -4px 0 rgba(0,0,0,.12); }
+    .sum-line { text-align: center; font-weight: 800; font-size: 1.15rem; min-height: 1.6em; }
+    .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; margin: 10px 0; }
+    .choices .btn { font-size: 1.3rem; }
+    .pos-options { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .pos-option {
+      border: 2px solid var(--line); background: var(--card); border-radius: var(--radius); padding: 10px;
+    }
+    .pos-option:hover { border-color: var(--ink); }
+    .pos-option .title { font-weight: 800; font-size: 1.1rem; margin-bottom: 4px; }
+    .feedback { min-height: 1.5em; font-weight: 700; text-align: center; margin: 8px 0; }
+    .feedback.ok { color: var(--ok); }
+    .feedback.bad { color: var(--bad); }
+    .shake { animation: shake .3s; }
+    @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <h1 id="homeTitle" title="Zum Menü">
+        <span class="logo" aria-hidden="true"><i style="background:var(--p8)"></i><i style="background:var(--p4)"></i><i style="background:var(--p2)"></i><i style="background:var(--p1)"></i></span>
+        NIM – Binär-Knobelei
+      </h1>
+      <button class="icon-btn" id="muteBtn" aria-label="Ton aus">🔊</button>
+      <button class="icon-btn hidden" id="menuBtn" aria-label="Zum Menü">☰</button>
+    </header>
+
+    <!-- ===== Menü ===== -->
+    <section id="scrMenu">
+      <div class="hero">
+        <h2>Nimm den letzten Stein!</h2>
+        <p class="muted">Ein uraltes Knobelspiel – und der Trick zum Gewinnen steckt im Binärsystem.</p>
+      </div>
+      <div class="menu-grid" style="margin-top:14px">
+        <button class="menu-tile" data-go="cpu">
+          <span class="emoji">🤖</span><strong>Gegen den Computer</strong>
+          <span class="small">Leicht, mittel oder schwer – der schwere Computer kennt den Binär-Trick.</span>
+        </button>
+        <button class="menu-tile" data-go="pvp">
+          <span class="emoji">👫</span><strong>Zu zweit</strong>
+          <span class="small">Abwechselnd an einem Gerät spielen.</span>
+        </button>
+        <button class="menu-tile" data-go="learn">
+          <span class="emoji">🎓</span><strong>Lernmodus</strong>
+          <span class="small">Schritt für Schritt: Binärzahlen und die geheime Gewinnstrategie.</span>
+        </button>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h2>So geht NIM</h2>
+        <ul class="rules">
+          <li>Auf dem Tisch liegen mehrere <b>Reihen mit Steinen</b>.</li>
+          <li>Wer dran ist, nimmt aus <b>genau einer Reihe</b> beliebig viele Steine – mindestens einen.</li>
+          <li>Wer den <b>letzten Stein</b> nimmt, gewinnt.</li>
+        </ul>
+        <p class="muted">Tipp: Tippe auf einen Stein – dann werden er und alle Steine rechts davon ausgewählt. Mit „Nehmen“ bestätigst du.</p>
+      </div>
+    </section>
+
+    <!-- ===== Einstellungen ===== -->
+    <section id="scrSetup" class="hidden">
+      <div class="card">
+        <h2 id="setupTitle">Neue Partie</h2>
+        <div id="setupCpu">
+          <label class="field">Wie stark ist der Computer?</label>
+          <div class="seg" data-opt="level">
+            <button data-v="leicht">😊 Leicht</button>
+            <button data-v="mittel">🤔 Mittel</button>
+            <button data-v="schwer">🧠 Schwer</button>
+          </div>
+          <label class="field">Wer fängt an?</label>
+          <div class="seg" data-opt="first">
+            <button data-v="me">Ich</button>
+            <button data-v="cpu">Computer</button>
+            <button data-v="random">Zufall</button>
+          </div>
+        </div>
+        <div id="setupPvp">
+          <label class="field" for="name1">Spieler 1</label>
+          <input type="text" id="name1" maxlength="16" placeholder="Spieler 1" />
+          <label class="field" for="name2">Spieler 2</label>
+          <input type="text" id="name2" maxlength="16" placeholder="Spieler 2" />
+        </div>
+        <label class="field">Aufstellung</label>
+        <div class="seg" data-opt="layout">
+          <button data-v="357">3 · 5 · 7</button>
+          <button data-v="1357">1 · 3 · 5 · 7</button>
+          <button data-v="r3">🎲 3 Reihen</button>
+          <button data-v="r4">🎲 4 Reihen</button>
+        </div>
+        <label class="field">Binär-Hilfe</label>
+        <div class="seg" data-opt="help">
+          <button data-v="0">Aus</button>
+          <button data-v="1">Binär</button>
+          <button data-v="2">Paare-Check</button>
+          <button data-v="3">Tipp</button>
+        </div>
+        <p class="muted" id="helpDesc"></p>
+        <div class="row-btns" style="margin-top:14px">
+          <button class="btn" id="startBtn">Los geht's!</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Spiel ===== -->
+    <section id="scrGame" class="hidden">
+      <div class="turn-banner" id="turnBanner"><span id="turnText"></span><span class="sub" id="turnSub"></span></div>
+      <div class="speech" id="lessonIntro"></div>
+      <div class="help-line" id="helpLine">
+        <span>Hilfe:</span>
+        <div class="seg" id="helpSeg">
+          <button data-v="0">Aus</button>
+          <button data-v="1">Binär</button>
+          <button data-v="2">Paare</button>
+          <button data-v="3">Tipp</button>
+        </div>
+      </div>
+      <div id="board"></div>
+      <div class="action-bar">
+        <div class="info" id="selInfo"></div>
+        <button class="btn secondary" id="clearBtn" disabled>Abwählen</button>
+        <button class="btn" id="takeBtn" disabled>Nehmen</button>
+      </div>
+      <div class="speech" id="speech"></div>
+      <div class="card" id="pairsCard">
+        <h2>Paare-Check</h2>
+        <p class="muted" style="margin-top:0">Zähle in jeder Spalte die leuchtenden Kästchen. Ist überall eine <b>gerade</b> Anzahl, ist die Stellung „ganz gerade“ – und wer dann ziehen muss, steckt in der Klemme.</p>
+        <div id="pairs"></div>
+      </div>
+      <div class="card">
+        <h2>Spielverlauf</h2>
+        <ul class="log" id="log"></ul>
+        <div class="row-btns" style="margin-top:12px">
+          <button class="btn secondary" id="restartBtn">↺ Neu starten</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Lernmodus: Übersicht ===== -->
+    <section id="scrLearn" class="hidden">
+      <div class="card">
+        <h2>🎓 Lernmodus</h2>
+        <p>In sieben Schritten lernst du das Binärsystem – und wie du damit bei NIM (fast) immer gewinnst.</p>
+        <div class="progress"><div id="progressBar"></div></div>
+        <ol class="lesson-list" id="lessonList"></ol>
+      </div>
+    </section>
+
+    <!-- ===== Lernmodus: Lektion ===== -->
+    <section id="scrLesson" class="hidden">
+      <div class="card explain">
+        <div class="task-head"><h2 id="lessonTitle"></h2><span class="step" id="lessonNo"></span></div>
+        <div id="lessonText"></div>
+      </div>
+      <div class="card" id="lessonTask"></div>
+      <div class="row-btns">
+        <button class="btn secondary" id="lessonBack">← Übersicht</button>
+        <button class="btn green hidden" id="lessonNext">Weiter →</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="overlay hidden" id="overlay" role="dialog" aria-modal="true">
+    <div class="card">
+      <div class="big" id="ovEmoji"></div>
+      <h2 id="ovTitle"></h2>
+      <p id="ovText"></p>
+      <div class="row-btns" id="ovBtns" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ================= Binär- und NIM-Logik =================
+  const POW = [8, 4, 2, 1];
+  const nimSum = heaps => heaps.reduce((a, b) => a ^ b, 0);
+  const total = heaps => heaps.reduce((a, b) => a + b, 0);
+  const powsOf = n => POW.filter(p => n & p);
+  const bitStr = n => POW.map(p => (n & p ? '1' : '0')).join('');
+  const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  // Alle Züge, nach denen die Nim-Summe 0 ist ("alles gerade").
+  function winningMoves(heaps) {
+    const s = nimSum(heaps);
+    if (!s) return [];
+    const moves = [];
+    heaps.forEach((n, row) => {
+      const t = n ^ s;
+      if (t < n) moves.push({ row, take: n - t });
+    });
+    return moves;
+  }
+
+  function randomMove(heaps) {
+    const rows = heaps.map((n, i) => i).filter(i => heaps[i] > 0);
+    const row = pick(rows);
+    return { row, take: rand(1, heaps[row]) };
+  }
+
+  function aiMove(heaps, level) {
+    const chance = { leicht: 0.25, mittel: 0.6, schwer: 1 }[level];
+    const wins = winningMoves(heaps);
+    if (wins.length && Math.random() < chance) return { ...pick(wins), smart: true };
+    if (!wins.length && level === 'schwer') {
+      // Verloren-Stellung: wenig nehmen und auf einen Fehler hoffen.
+      const big = heaps.indexOf(Math.max(...heaps));
+      return { row: big, take: 1, smart: false };
+    }
+    return { ...randomMove(heaps), smart: false };
+  }
+
+  function randomHeaps(rows, min = 1, max = 15) {
+    let h;
+    do { h = Array.from({ length: rows }, () => rand(min, max)); } while (!nimSum(h));
+    return h;
+  }
+
+  // ================= Kleinkram =================
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('nim-binaer-' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('nim-binaer-' + k, JSON.stringify(v)); } catch (e) { /* egal */ } }
+  };
+
+  function bitsHTML(n, opts = {}) {
+    return '<span class="bits"' + (opts.label ? ` aria-label="${opts.label}"` : '') + '>' +
+      POW.map(p => `<span class="bit p${p} ${n & p ? 'on' : ''}"><small>${p}</small>${n & p ? 1 : 0}</span>`).join('') +
+      '</span>';
+  }
+
+  // ================= Sound =================
+  let muted = store.get('muted', false);
+  let actx = null;
+  function tone(freq, dur = 0.12, type = 'sine', when = 0, vol = 0.18) {
+    if (muted) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      const t = actx.currentTime + when;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g).connect(actx.destination);
+      o.start(t); o.stop(t + dur + 0.02);
+    } catch (e) { /* kein Audio */ }
+  }
+  const sfx = {
+    tap: () => tone(660, 0.06, 'triangle'),
+    take: () => { tone(440, 0.08, 'triangle'); tone(330, 0.1, 'triangle', 0.07); },
+    good: () => { tone(523, 0.1); tone(659, 0.1, 'sine', 0.09); tone(784, 0.16, 'sine', 0.18); },
+    bad: () => { tone(220, 0.18, 'sawtooth', 0, 0.08); },
+    win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, 'triangle', i * 0.12)),
+    lose: () => [392, 330, 262].forEach((f, i) => tone(f, 0.22, 'sine', i * 0.16))
+  };
+  function updateMute() { $('muteBtn').textContent = muted ? '🔇' : '🔊'; $('muteBtn').setAttribute('aria-label', muted ? 'Ton an' : 'Ton aus'); }
+  $('muteBtn').onclick = () => { muted = !muted; store.set('muted', muted); updateMute(); sfx.tap(); };
+  updateMute();
+
+  // ================= Bildschirme =================
+  const screens = ['scrMenu', 'scrSetup', 'scrGame', 'scrLearn', 'scrLesson'];
+  function show(id) {
+    screens.forEach(s => $(s).classList.toggle('hidden', s !== id));
+    $('menuBtn').classList.toggle('hidden', id === 'scrMenu');
+    window.scrollTo(0, 0);
+  }
+  function toMenu() { cancelTimers(); hideOverlay(); show('scrMenu'); }
+  $('menuBtn').onclick = toMenu;
+  $('homeTitle').onclick = toMenu;
+
+  document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
+    const go = b.dataset.go;
+    if (go === 'learn') { renderLessonList(); show('scrLearn'); }
+    else openSetup(go);
+  });
+
+  // ================= Einstellungen =================
+  const settings = Object.assign({ level: 'mittel', first: 'me', layout: '357', help: '2' }, store.get('settings', {}));
+  let setupMode = 'cpu';
+  const HELP_DESC = {
+    0: 'Keine Hilfe – für Profis.',
+    1: 'Neben jeder Reihe steht ihre Zahl im Binärsystem (8 · 4 · 2 · 1), die Steine sind nach Zweierpotenzen gruppiert.',
+    2: 'Zusätzlich die Paare-Check-Tabelle: Sie zeigt, ob alle Spalten gerade sind – auch als Vorschau für deinen Zug.',
+    3: 'Zusätzlich wird ein Gewinnzug direkt markiert (falls es einen gibt).'
+  };
+
+  function syncSeg(seg, val) {
+    seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val))));
+  }
+  document.querySelectorAll('#scrSetup .seg').forEach(seg => {
+    const key = seg.dataset.opt;
+    syncSeg(seg, settings[key]);
+    seg.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      settings[key] = b.dataset.v; syncSeg(seg, b.dataset.v); sfx.tap();
+      if (key === 'help') $('helpDesc').textContent = HELP_DESC[b.dataset.v];
+    });
+  });
+  $('name1').value = store.get('name1', '');
+  $('name2').value = store.get('name2', '');
+
+  function openSetup(mode) {
+    setupMode = mode;
+    $('setupTitle').textContent = mode === 'cpu' ? '🤖 Gegen den Computer' : '👫 Zu zweit';
+    $('setupCpu').classList.toggle('hidden', mode !== 'cpu');
+    $('setupPvp').classList.toggle('hidden', mode !== 'pvp');
+    $('helpDesc').textContent = HELP_DESC[settings.help];
+    show('scrSetup');
+  }
+
+  function layoutHeaps(layout) {
+    if (layout === '357') return [3, 5, 7];
+    if (layout === '1357') return [1, 3, 5, 7];
+    if (layout === 'r3') return randomHeaps(3, 2, 15);
+    return randomHeaps(4, 1, 12);
+  }
+
+  $('startBtn').onclick = () => {
+    store.set('settings', settings);
+    const n1 = $('name1').value.trim(), n2 = $('name2').value.trim();
+    store.set('name1', n1); store.set('name2', n2);
+    let first = 0;
+    if (setupMode === 'cpu') first = settings.first === 'cpu' ? 1 : settings.first === 'random' ? rand(0, 1) : 0;
+    startGame({
+      mode: setupMode,
+      heaps: layoutHeaps(settings.layout),
+      level: settings.level,
+      help: +settings.help,
+      first,
+      names: setupMode === 'cpu' ? ['Du', 'Computer'] : [n1 || 'Spieler 1', n2 || 'Spieler 2']
+    });
+  };
+
+  // ================= Spiel =================
+  let G = null;
+  let timers = [];
+  const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+  function cancelTimers() { timers.forEach(clearTimeout); timers = []; }
+
+  function startGame(cfg) {
+    cancelTimers(); hideOverlay();
+    G = {
+      mode: cfg.mode, level: cfg.level || 'schwer', help: cfg.help ?? 2,
+      names: cfg.names || ['Du', 'Computer'],
+      start: cfg.heaps.slice(), heaps: cfg.heaps.slice(),
+      first: cfg.first || 0, turn: cfg.first || 0,
+      sel: null, busy: false, over: false, log: [],
+      lesson: cfg.lesson || null, puzzle: cfg.puzzle || null, intro: cfg.intro || '', cfg
+    };
+    $('lessonIntro').innerHTML = G.intro;
+    $('helpLine').classList.toggle('hidden', !!cfg.lockHelp);
+    $('restartBtn').textContent = G.puzzle ? '↺ Aufgabe zurücksetzen' : '↺ Neu starten';
+    syncSeg($('helpSeg'), G.help);
+    say('');
+    show('scrGame');
+    render();
+    if (isCpuTurn()) cpuTurn();
+  }
+
+  const isCpuTurn = () => G.mode === 'cpu' && G.turn === 1 && !G.over;
+  const isHumanTurn = () => !G.over && !G.busy && !isCpuTurn();
+
+  $('helpSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || !G) return;
+    G.help = +b.dataset.v; syncSeg($('helpSeg'), G.help); sfx.tap(); render();
+  });
+
+  function say(html) { $('speech').innerHTML = html; }
+
+  function render() {
+    renderBanner(); renderBoard(); renderAction(); renderPairs(); renderLog();
+  }
+
+  function renderBanner() {
+    const tb = $('turnBanner');
+    let text, sub = '', cls;
+    if (G.puzzle) {
+      text = `🧩 Aufgabe ${G.puzzle.idx + 1} von ${G.puzzle.list.length}`;
+      sub = 'Finde den Zug, nach dem alles gerade ist!';
+      cls = 'p1';
+    } else if (G.over) {
+      text = 'Partie vorbei'; cls = '';
+    } else if (G.mode === 'cpu') {
+      text = G.turn === 0 ? '👉 Du bist dran!' : '🤖 Der Computer überlegt …';
+      sub = 'Stufe: ' + G.level;
+      cls = G.turn === 0 ? 'p1' : 'cpu';
+    } else {
+      text = `👉 ${G.names[G.turn]} ist dran!`;
+      cls = G.turn === 0 ? 'p1' : 'p2';
+    }
+    tb.className = 'turn-banner ' + cls;
+    $('turnText').textContent = text;
+    $('turnSub').textContent = sub;
+  }
+
+  function hintMove() {
+    if (G.help < 3 || !isHumanTurn()) return null;
+    const w = winningMoves(G.heaps);
+    return w.length ? w[0] : null;
+  }
+
+  function renderBoard() {
+    const board = $('board');
+    const hint = hintMove();
+    const canPlay = isHumanTurn();
+    board.innerHTML = '';
+    G.heaps.forEach((n, r) => {
+      const el = document.createElement('div');
+      el.className = 'heap' + (G.sel && G.sel.row === r ? ' active' : '') + (n === 0 ? ' empty' : '');
+      let head = `<div class="heap-head"><span class="name">Reihe ${r + 1}</span><span class="count">${n}</span>`;
+      if (G.help >= 1) head += bitsHTML(n, { label: `${n} binär ${bitStr(n)}` });
+      if (G.help >= 1 && G.sel && G.sel.row === r) {
+        const after = n - G.sel.take;
+        head += `<span class="after">nach dem Nehmen: <b>${after}</b> ${bitsHTML(after)}</span>`;
+      }
+      head += '</div>';
+      el.innerHTML = head;
+      const stones = document.createElement('div');
+      stones.className = 'stones' + (G.help >= 1 ? ' show-groups' : ' plain');
+      if (n === 0) stones.innerHTML = '<span class="muted">leer</span>';
+      let k = 0;
+      const groupList = G.help >= 1 ? powsOf(n) : [n];
+      groupList.forEach(size => {
+        if (!size) return;
+        const g = document.createElement('span');
+        g.className = 'group';
+        if (G.help >= 1) g.dataset.p = size;
+        for (let i = 0; i < size; i++, k++) {
+          const s = document.createElement('button');
+          s.className = 'stone' + (G.help >= 1 ? ' p' + size : '');
+          const idx = k;
+          const take = n - idx;
+          if (G.sel && G.sel.row === r && idx >= n - G.sel.take) s.classList.add('sel');
+          if (hint && hint.row === r && idx >= n - hint.take) s.classList.add('hint');
+          s.disabled = !canPlay;
+          s.setAttribute('aria-label', `Reihe ${r + 1}: ${take} ${take === 1 ? 'Stein' : 'Steine'} auswählen`);
+          s.onclick = () => selectStones(r, take);
+          g.appendChild(s);
+        }
+        stones.appendChild(g);
+      });
+      el.appendChild(stones);
+      board.appendChild(el);
+    });
+  }
+
+  function selectStones(row, take) {
+    if (!isHumanTurn()) return;
+    if (G.sel && G.sel.row === row && G.sel.take === take) G.sel = null;
+    else G.sel = { row, take };
+    sfx.tap();
+    render();
+  }
+
+  function renderAction() {
+    const has = !!G.sel && isHumanTurn();
+    $('takeBtn').disabled = !has;
+    $('clearBtn').disabled = !has;
+    $('takeBtn').textContent = has ? `Nehmen (${G.sel.take})` : 'Nehmen';
+    $('selInfo').textContent = has
+      ? `Ausgewählt: ${G.sel.take} ${G.sel.take === 1 ? 'Stein' : 'Steine'} aus Reihe ${G.sel.row + 1}`
+      : (isHumanTurn() ? 'Tippe auf einen Stein, um auszuwählen.' : '');
+  }
+  $('clearBtn').onclick = () => { G.sel = null; render(); };
+  $('takeBtn').onclick = () => { if (G.sel && isHumanTurn()) doMove(G.sel); };
+  $('restartBtn').onclick = () => {
+    if (G.puzzle) { loadPuzzle(); return; }
+    startGame(Object.assign({}, G.cfg, { heaps: G.start }));
+  };
+
+  function renderPairs() {
+    $('pairsCard').classList.toggle('hidden', G.help < 2);
+    if (G.help < 2) return;
+    const preview = G.sel && isHumanTurn() ? G.heaps.map((n, i) => (i === G.sel.row ? n - G.sel.take : n)) : null;
+    const hs = preview || G.heaps;
+    let html = '<table class="pairs"><tr><th class="lbl"></th>' + POW.map(p => `<th class="h p${p}">${p}er</th>`).join('') + '</tr>';
+    hs.forEach((n, i) => {
+      const isPrev = preview && i === G.sel.row;
+      html += `<tr class="${isPrev ? 'preview' : ''}"><td class="lbl">Reihe ${i + 1} (${n})${isPrev ? ' ✱' : ''}</td>` +
+        POW.map(p => `<td><span class="bit p${p} ${n & p ? 'on' : ''}">${n & p ? 1 : 0}</span></td>`).join('') + '</tr>';
+    });
+    const counts = POW.map(p => hs.filter(n => n & p).length);
+    html += '<tr class="sum"><td class="lbl">Anzahl</td>' +
+      counts.map(c => `<td><span class="cnt ${c % 2 ? 'odd' : 'even'}">${c} ${c % 2 ? '⚠️' : '✓'}</span></td>`).join('') + '</tr>';
+    html += '</table>';
+    const s = nimSum(hs);
+    const odd = POW.filter(p => s & p);
+    if (preview) {
+      html += s === 0
+        ? `<div class="verdict ok">✱ Vorschau: Nach diesem Zug sind <b>alle Spalten gerade</b>. Sehr gut – damit bringst du den Gegner in die Klemme!</div>`
+        : `<div class="verdict warn">✱ Vorschau: Nach diesem Zug bleiben Einzelgänger in der ${odd.join('er-, ')}er-Spalte. Dann könnte der Gegner gewinnen.</div>`;
+    } else if (G.over) {
+      html += '<div class="verdict info">Alle Reihen sind leer – 0000 ist natürlich „ganz gerade“.</div>';
+    } else {
+      html += s === 0
+        ? `<div class="verdict info">Gerade jetzt sind <b>alle Spalten gerade</b>. Wer ziehen muss, hat es schwer: Jeder Zug macht etwas ungerade. Nimm wenig und hoffe auf einen Fehler!</div>`
+        : `<div class="verdict warn">Einzelgänger in der ${odd.join('er-, ')}er-Spalte! Wer jetzt dran ist, kann mit dem richtigen Zug wieder <b>alles gerade</b> machen.</div>`;
+    }
+    html += `<p class="muted" style="margin-bottom:0">Profi-Wort: Das Ergebnis heißt <b>Nim-Summe</b> (XOR) – hier <b>${bitStr(s)}</b>${s ? ' = ' + s : ''}.</p>`;
+    $('pairs').innerHTML = html;
+  }
+
+  function renderLog() {
+    $('log').innerHTML = G.log.length
+      ? G.log.map(l => `<li>${l}</li>`).join('')
+      : '<li class="muted">Noch keine Züge.</li>';
+  }
+
+  function moveText(who, m) {
+    return `<b>${esc(who)}</b>: ${m.take} ${m.take === 1 ? 'Stein' : 'Steine'} aus Reihe ${m.row + 1} → ${G.heaps.join(' · ')}`;
+  }
+
+  function doMove(m, fromCpu) {
+    const who = G.puzzle ? 'Du' : G.names[G.turn];
+    G.heaps[m.row] -= m.take;
+    G.sel = null;
+    sfx.take();
+    G.log.unshift(moveText(who, m));
+
+    if (G.puzzle) return afterPuzzleMove();
+
+    if (!fromCpu && G.help >= 2) {
+      say(nimSum(G.heaps) === 0
+        ? '✅ Super – nach deinem Zug ist alles gerade!'
+        : (winningMoves(G.heaps.map((n, i) => (i === m.row ? n + m.take : n))).length
+          ? '💡 Da wäre ein Zug möglich gewesen, der alles gerade macht. Schau in den Paare-Check!'
+          : '🙂 Es gab keinen Gewinnzug – gut, dass du nicht aufgegeben hast.'));
+    } else if (!fromCpu) say('');
+
+    if (total(G.heaps) === 0) return endGame(G.turn);
+    G.turn = 1 - G.turn;
+    render();
+    if (isCpuTurn()) cpuTurn();
+  }
+
+  function cpuTurn() {
+    G.busy = true;
+    render();
+    later(() => {
+      const m = aiMove(G.heaps, G.level);
+      G.sel = m;
+      G.busy = true;
+      renderBoardSelectionOnly(m);
+      later(() => {
+        G.busy = false;
+        const expl = G.help >= 2
+          ? (m.smart
+            ? `🤖 Ich nehme ${m.take} aus Reihe ${m.row + 1} – jetzt sind alle Spalten gerade. Hehe!`
+            : `🤖 Hmm … ich nehme ${m.take} aus Reihe ${m.row + 1}.`)
+          : `🤖 Ich nehme ${m.take} aus Reihe ${m.row + 1}.`;
+        doMove(m, true);
+        if (!G.over) say(expl + (G.help >= 2 && nimSum(G.heaps) ? ' <br>👀 Aber Achtung: Es gibt Einzelgänger – deine Chance!' : ''));
+      }, 900);
+    }, 700);
+  }
+
+  // Zeigt kurz, welche Steine der Computer nimmt.
+  function renderBoardSelectionOnly(m) {
+    const heapEl = $('board').children[m.row];
+    if (!heapEl) return;
+    heapEl.classList.add('active');
+    const stones = heapEl.querySelectorAll('.stone');
+    const n = G.heaps[m.row];
+    stones.forEach((s, i) => { if (i >= n - m.take) s.classList.add('sel'); });
+  }
+
+  function endGame(winner) {
+    G.over = true;
+    render();
+    const humanWon = G.mode === 'pvp' || winner === 0;
+    if (G.mode === 'cpu') {
+      if (humanWon) sfx.win(); else sfx.lose();
+    } else sfx.win();
+
+    if (G.lesson) {
+      if (humanWon) {
+        completeLesson(G.lesson);
+        overlay('🏆', 'Geschafft!', G.cfg.winText || 'Du hast den letzten Stein genommen. Lektion bestanden!', [
+          ['Weiter zur Übersicht', 'btn green', () => { renderLessonList(); show('scrLearn'); }],
+        ]);
+      } else {
+        overlay('🤖', 'Der Computer war schneller', 'Kein Problem – probier es noch einmal. Schau dir den Tipp in der Lektion an!', [
+          ['Nochmal', 'btn', () => startGame(Object.assign({}, G.cfg, { heaps: G.cfg.fresh ? G.cfg.fresh() : G.start }))],
+          ['Zur Lektion', 'btn secondary', () => openLesson(G.lesson)]
+        ]);
+      }
+      return;
+    }
+    const title = G.mode === 'cpu' ? (humanWon ? 'Du hast gewonnen!' : 'Der Computer gewinnt') : `${G.names[winner]} gewinnt!`;
+    const emoji = humanWon ? '🏆' : '🤖';
+    const text = G.mode === 'cpu' && !humanWon
+      ? 'Er hat den letzten Stein genommen. Tipp: Schalte den Paare-Check ein und versuche, nach jedem Zug alles gerade zu lassen.'
+      : 'Den letzten Stein genommen – stark!';
+    overlay(emoji, title, text, [
+      ['Revanche', 'btn', () => startGame(Object.assign({}, G.cfg, { first: G.mode === 'cpu' ? G.cfg.first : 1 - G.first, heaps: G.start }))],
+      ['Neue Aufstellung', 'btn secondary', () => startGame(Object.assign({}, G.cfg, { heaps: layoutHeaps(settings.layout) }))],
+      ['Menü', 'btn secondary', toMenu]
+    ]);
+  }
+
+  // ---------- Puzzle (Gewinnzug finden) ----------
+  function loadPuzzle() {
+    const P = G.puzzle;
+    G.heaps = P.list[P.idx].slice();
+    G.start = G.heaps.slice();
+    G.sel = null; G.over = false; G.log = [];
+    say('');
+    render();
+  }
+  function afterPuzzleMove() {
+    const P = G.puzzle;
+    if (nimSum(G.heaps) === 0) {
+      sfx.good();
+      G.over = true;
+      render();
+      say('✅ Richtig! Nach deinem Zug sind alle Spalten gerade.');
+      const last = P.idx === P.list.length - 1;
+      later(() => {
+        if (last) {
+          completeLesson(G.lesson);
+          overlay('🧩', 'Alle Aufgaben gelöst!', 'Du kannst Gewinnzüge finden. Jetzt fehlt nur noch die Abschlussprüfung.', [
+            ['Weiter zur Übersicht', 'btn green', () => { renderLessonList(); show('scrLearn'); }]
+          ]);
+        } else {
+          P.idx++;
+          loadPuzzle();
+          say('Nächste Aufgabe!');
+        }
+      }, 1200);
+    } else {
+      sfx.bad();
+      const s = nimSum(G.heaps);
+      G.busy = true;
+      render();
+      say(`❌ Nicht ganz: Danach gibt es Einzelgänger in der ${POW.filter(p => s & p).join('er-, ')}er-Spalte. Die Aufgabe wird zurückgesetzt – probier's nochmal!`);
+      later(() => { G.busy = false; const msg = $('speech').innerHTML; loadPuzzle(); say(msg); }, 1600);
+    }
+  }
+
+  // ================= Overlay =================
+  function overlay(emoji, title, text, buttons) {
+    $('ovEmoji').textContent = emoji;
+    $('ovTitle').textContent = title;
+    $('ovText').textContent = text;
+    const wrap = $('ovBtns');
+    wrap.innerHTML = '';
+    buttons.forEach(([label, cls, fn]) => {
+      const b = document.createElement('button');
+      b.className = cls; b.textContent = label;
+      b.onclick = () => { hideOverlay(); fn(); };
+      wrap.appendChild(b);
+    });
+    $('overlay').classList.remove('hidden');
+    wrap.firstChild && wrap.firstChild.focus();
+  }
+  function hideOverlay() { $('overlay').classList.add('hidden'); }
+
+  // ================= Lernmodus =================
+  let progress = store.get('progress', {});
+  function completeLesson(id) { progress[id] = true; store.set('progress', progress); }
+
+  const LESSONS = [
+    {
+      id: 'boxes',
+      title: 'Die Zauberkästchen 8 · 4 · 2 · 1',
+      short: 'Wie Computer zählen',
+      text: `<p>Computer kennen nur zwei Zustände: <b>an (1)</b> und <b>aus (0)</b>. Damit sie trotzdem große Zahlen speichern können, benutzen sie Kästchen mit besonderen Werten:</p>
+        <p style="text-align:center">${bitsHTML(15)}</p>
+        <p>Jedes Kästchen ist <b>doppelt so viel wert</b> wie das rechts daneben: 1, 2, 4, 8. Jedes Kästchen darfst du nur einmal anschalten.</p>
+        <div class="example">Beispiel: <b>6 = 4 + 2</b> → Kästchen 4 und 2 leuchten → ${bitsHTML(6)} → geschrieben <b>0110</b></div>
+        <p>Schalte die Kästchen durch Antippen an und aus, bis die gesuchte Zahl entsteht.</p>`,
+      type: 'boxes', live: true, tasks: () => [5, 3, 10, 13, 15]
+    },
+    {
+      id: 'tobin',
+      title: 'Zahlen ins Binärsystem übersetzen',
+      short: 'Jetzt ohne Summen-Anzeige',
+      text: `<p>Jetzt wird es schwieriger: Die Summe wird nicht mehr angezeigt. So gehst du vor:</p>
+        <ol><li>Passt die <b>8</b> hinein? Wenn ja: anschalten und 8 abziehen.</li>
+        <li>Passt die <b>4</b> in den Rest? Wenn ja: anschalten und abziehen.</li>
+        <li>Genauso mit <b>2</b> und <b>1</b>.</li></ol>
+        <div class="example">11: 8 passt (Rest 3) → 4 passt nicht → 2 passt (Rest 1) → 1 passt → ${bitsHTML(11)} = <b>1011</b></div>`,
+      type: 'boxes', live: false, tasks: () => shuffle([...Array(15).keys()].map(i => i + 1)).slice(0, 5)
+    },
+    {
+      id: 'fromb',
+      title: 'Binärzahlen lesen',
+      short: 'Vom Binärsystem zurück',
+      text: `<p>Umgekehrt geht es ganz einfach: Zähle die Werte aller <b>leuchtenden</b> Kästchen zusammen.</p>
+        <div class="example">${bitsHTML(9)} → 8 + 1 = <b>9</b></div>`,
+      type: 'read', tasks: () => shuffle([...Array(15).keys()].map(i => i + 1)).slice(0, 5)
+    },
+    {
+      id: 'mirror',
+      title: 'NIM-Regeln & der Spiegeltrick',
+      short: 'Deine erste Partie',
+      text: `<p><b>Die Regeln:</b> Wer dran ist, nimmt aus <b>einer</b> Reihe so viele Steine, wie er will (mindestens einen). Wer den <b>letzten Stein</b> nimmt, gewinnt.</p>
+        <p><b>Der Spiegeltrick:</b> Gibt es nur zwei Reihen, sorgst du dafür, dass beide <b>gleich lang</b> sind. Nimmt der Computer dann aus einer Reihe etwas weg, nimmst du aus der anderen genauso viel. So bekommst du immer den letzten Stein!</p>
+        <div class="example">Du startest mit 5 und 3 Steinen. Welcher erste Zug macht beide Reihen gleich lang?</div>`,
+      type: 'game',
+      game: () => ({ mode: 'cpu', level: 'schwer', heaps: [5, 3], help: 1, first: 0, lockHelp: true,
+        intro: '🪞 <b>Spiegeltrick:</b> Mach beide Reihen gleich lang – und spiegle danach jeden Zug des Computers.',
+        winText: 'Der Spiegeltrick funktioniert! Gleich lange Reihen = Paare. Genau diese Idee steckt hinter der Binär-Strategie.' })
+    },
+    {
+      id: 'pairs',
+      title: 'Die Paare-Regel',
+      short: 'Das Geheimnis hinter NIM',
+      text: `<p>Der Spiegeltrick klappt, weil gleich lange Reihen <b>Paare</b> bilden. Mit mehr Reihen schauen wir uns die <b>Kästchen</b> an:</p>
+        <ol><li>Schreibe jede Reihe als Binärzahl untereinander.</li>
+        <li>Zähle in jeder Spalte (8er, 4er, 2er, 1er), wie viele Kästchen leuchten.</li>
+        <li>Ist <b>jede</b> Anzahl gerade (0, 2, 4 …), nennen wir die Stellung <b>„ganz gerade“</b>.</li></ol>
+        <div class="example">3 · 5 · 6 → 0011 · 0101 · 0110 → 8er: 0 ✓, 4er: 2 ✓, 2er: 2 ✓, 1er: 2 ✓ → ganz gerade!</div>
+        <p><b>Das Geheimnis:</b> Wer eine ganz gerade Stellung vor sich hat, muss sie mit jedem Zug kaputt machen. Der andere kann sie aber immer reparieren – bis zum letzten Stein. <b>Lass deinem Gegner also immer eine ganz gerade Stellung!</b></p>
+        <p class="muted">Mathematiker sagen dazu: Die <b>Nim-Summe</b> (XOR) ist 0000.</p>`,
+      type: 'pairs', tasks: () => [0, 1, 2].map(() => pairsTask())
+    },
+    {
+      id: 'findmove',
+      title: 'Den Gewinnzug finden',
+      short: 'Mach alles gerade',
+      text: `<p>So findest du den Zug, der alles gerade macht:</p>
+        <ol><li>Suche die Spalten mit ungerader Anzahl (⚠️).</li>
+        <li>Nimm die <b>linkeste</b> ungerade Spalte und wähle eine Reihe, in der dort ein Kästchen leuchtet.</li>
+        <li>Diese Reihe änderst du: In jeder ungeraden Spalte drehst du ihr Kästchen um (an ↔ aus). Die neue Zahl ist kleiner – nimm die Differenz weg!</li></ol>
+        <div class="example">4 · 2 · 1 → 0100 · 0010 · 0001. Alle drei Spalten (4er, 2er, 1er) sind ungerade ⚠️. Die linkeste ist die 4er-Spalte – dort leuchtet nur Reihe 1. Wir drehen in Reihe 1 alle drei Kästchen um: 0100 → <b>0011</b> = 3. Aus 4 wird 3, also <b>1 Stein aus Reihe 1</b> nehmen. Danach: 0011 · 0010 · 0001 → alles gerade ✓</div>
+        <p>Der Paare-Check zeigt dir als Vorschau, ob dein ausgewählter Zug alles gerade macht.</p>`,
+      type: 'puzzle',
+      game: () => ({ mode: 'puzzle', heaps: [0], help: 2, lockHelp: true,
+        puzzle: { idx: 0, list: [0, 1, 2].map((_, i) => randomHeaps(i < 2 ? 3 : 4, 1, i < 2 ? 9 : 13)) },
+        intro: '🧩 Wähle Steine aus und nimm sie so, dass danach <b>alle Spalten gerade</b> sind.' })
+    },
+    {
+      id: 'final',
+      title: 'Abschlussprüfung: Schlag den Computer!',
+      short: 'Gegen die schwerste Stufe',
+      text: `<p>Jetzt weißt du alles! Der Computer spielt auf der Stufe <b>Schwer</b> – er kennt die Paare-Regel auch. Aber du darfst anfangen und hast eine Stellung mit Einzelgängern vor dir.</p>
+        <p><b>Dein Plan:</b> Mach mit jedem Zug alles gerade. Der Paare-Check hilft dir dabei.</p>`,
+      type: 'game',
+      game: () => { const fresh = () => randomHeaps(3, 3, 12); return ({ mode: 'cpu', level: 'schwer', heaps: fresh(), fresh, help: 2, first: 0, lockHelp: true,
+        intro: '🏁 <b>Abschlussprüfung:</b> Lass dem Computer nach jedem Zug eine ganz gerade Stellung!',
+        winText: 'Du hast den Computer auf der schwersten Stufe geschlagen. Du bist jetzt NIM- und Binär-Profi! 🎉' }); }
+    }
+  ];
+
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = rand(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+  function pairsTask() {
+    // Eine ganz gerade Stellung und zwei mit Einzelgängern.
+    let good;
+    do { const a = rand(1, 15), b = rand(1, 15); good = [a, b, a ^ b]; } while (good.includes(0) || new Set(good).size < 3);
+    const bads = [];
+    while (bads.length < 2) {
+      const h = shuffle(good.slice());
+      h[rand(0, 2)] = rand(1, 15);
+      if (nimSum(h) && !bads.some(x => x.join() === h.join())) bads.push(h);
+    }
+    const opts = shuffle([{ h: shuffle(good.slice()), ok: true }, ...bads.map(h => ({ h, ok: false }))]);
+    return opts;
+  }
+
+  function renderLessonList() {
+    const list = $('lessonList');
+    list.innerHTML = '';
+    LESSONS.forEach((L, i) => {
+      const li = document.createElement('li');
+      const done = !!progress[L.id];
+      li.innerHTML = `<button class="${done ? 'done' : ''}"><span class="num">${done ? '✓' : i + 1}</span>
+        <span class="t"><strong>${L.title}</strong><span>${L.short}</span></span><span aria-hidden="true">›</span></button>`;
+      li.firstChild.onclick = () => openLesson(L.id);
+      list.appendChild(li);
+    });
+    const n = LESSONS.filter(L => progress[L.id]).length;
+    $('progressBar').style.width = (n / LESSONS.length * 100) + '%';
+  }
+
+  $('lessonBack').onclick = () => { cancelTimers(); renderLessonList(); show('scrLearn'); };
+
+  function openLesson(id) {
+    cancelTimers();
+    const i = LESSONS.findIndex(L => L.id === id);
+    const L = LESSONS[i];
+    $('lessonTitle').textContent = L.title;
+    $('lessonNo').textContent = `Lektion ${i + 1} von ${LESSONS.length}`;
+    $('lessonText').innerHTML = L.text;
+    const next = $('lessonNext');
+    next.classList.add('hidden');
+    next.onclick = () => (i + 1 < LESSONS.length ? openLesson(LESSONS[i + 1].id) : (renderLessonList(), show('scrLearn')));
+    const done = () => { completeLesson(L.id); sfx.win(); next.classList.remove('hidden'); next.focus(); };
+    const task = $('lessonTask');
+    task.innerHTML = '';
+    show('scrLesson');
+    if (progress[L.id]) next.classList.remove('hidden');
+
+    if (L.type === 'boxes') boxesTask(task, L, done);
+    else if (L.type === 'read') readTask(task, L, done);
+    else if (L.type === 'pairs') pairsLesson(task, L, done);
+    else {
+      task.innerHTML = `<p>${L.type === 'puzzle' ? 'Drei Aufgaben warten auf dich.' : 'Bereit? Dann ab aufs Spielfeld!'}</p>
+        <button class="btn block" id="lessonPlay">${L.type === 'puzzle' ? '🧩 Aufgaben starten' : '▶ Partie starten'}</button>`;
+      $('lessonPlay').onclick = () => {
+        const cfg = Object.assign(L.game(), { lesson: L.id, names: ['Du', 'Computer'] });
+        startGame(cfg);
+        if (cfg.puzzle) loadPuzzle();
+      };
+    }
+  }
+
+  function taskHead(i, n, title) {
+    return `<div class="task-head"><h3 style="margin:0">${title}</h3><span class="step">Aufgabe ${i + 1} von ${n}</span></div>`;
+  }
+
+  function boxesTask(el, L, done) {
+    const tasks = L.tasks();
+    let i = 0, val = 0;
+    function draw() {
+      const target = tasks[i];
+      el.innerHTML = taskHead(i, tasks.length, 'Baue diese Zahl:') +
+        `<div class="target">${target}</div>
+         <div class="big-bits">${POW.map(p => `<button class="bit p${p} ${val & p ? 'on' : ''}" data-p="${p}" aria-pressed="${!!(val & p)}" aria-label="Kästchen ${p}"><small>${p}</small>${val & p ? 1 : 0}</button>`).join('')}</div>
+         <div class="sum-line">${L.live ? sumText(val) : 'Binär: ' + bitStr(val)}</div>
+         <div class="feedback" id="fb"></div>
+         ${L.live ? '' : '<button class="btn block" id="check">Prüfen</button>'}`;
+      el.querySelectorAll('.big-bits button').forEach(b => b.onclick = () => {
+        val ^= +b.dataset.p; sfx.tap(); draw();
+        if (L.live && val === target) success();
+      });
+      if (!L.live) $('check').onclick = () => (val === target ? success() : fail());
+    }
+    function sumText(v) {
+      const parts = powsOf(v);
+      return parts.length ? parts.join(' + ') + ' = ' + v : '0';
+    }
+    function success() {
+      sfx.good();
+      const fb = $('fb'); fb.className = 'feedback ok';
+      fb.textContent = `✅ Richtig! ${tasks[i]} = ${bitStr(tasks[i])}`;
+      el.querySelectorAll('button').forEach(b => (b.disabled = true));
+      later(() => { i++; val = 0; if (i < tasks.length) draw(); else finish(el, done); }, 1100);
+    }
+    function fail() {
+      sfx.bad();
+      const fb = $('fb'); fb.className = 'feedback bad';
+      fb.textContent = val > tasks[i] ? `Das ergibt ${val} – zu viel!` : `Das ergibt ${val} – zu wenig!`;
+      el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+    }
+    draw();
+  }
+
+  function readTask(el, L, done) {
+    const tasks = L.tasks();
+    let i = 0;
+    function draw() {
+      const t = tasks[i];
+      const choices = new Set([t]);
+      while (choices.size < 4) {
+        const c = Math.random() < 0.6 ? t ^ pick(POW) : rand(1, 15);
+        if (c > 0 && c <= 15) choices.add(c);
+      }
+      el.innerHTML = taskHead(i, tasks.length, 'Welche Zahl ist das?') +
+        `<div class="big-bits">${POW.map(p => `<span class="bit p${p} ${t & p ? 'on' : ''}"><small>${p}</small>${t & p ? 1 : 0}</span>`).join('')}</div>
+         <div class="choices">${shuffle([...choices]).map(c => `<button class="btn secondary" data-c="${c}">${c}</button>`).join('')}</div>
+         <div class="feedback" id="fb"></div>`;
+      el.querySelectorAll('.choices button').forEach(b => b.onclick = () => {
+        const fb = $('fb');
+        if (+b.dataset.c === t) {
+          sfx.good(); fb.className = 'feedback ok';
+          fb.textContent = `✅ Genau: ${powsOf(t).join(' + ')} = ${t}`;
+          el.querySelectorAll('button').forEach(x => (x.disabled = true));
+          b.classList.remove('secondary'); b.classList.add('green');
+          later(() => { i++; if (i < tasks.length) draw(); else finish(el, done); }, 1100);
+        } else {
+          sfx.bad(); fb.className = 'feedback bad'; b.disabled = true;
+          fb.textContent = 'Nicht ganz – zähle die Werte der leuchtenden Kästchen zusammen.';
+        }
+      });
+    }
+    draw();
+  }
+
+  function pairsLesson(el, L, done) {
+    const tasks = L.tasks();
+    let i = 0;
+    function draw() {
+      const opts = tasks[i];
+      el.innerHTML = taskHead(i, tasks.length, 'Welche Stellung ist „ganz gerade“?') +
+        `<div class="pos-options">${opts.map((o, k) => `<button class="pos-option" data-k="${k}">
+            <div class="title">${o.h.join(' · ')}</div>${miniTable(o.h)}</button>`).join('')}</div>
+         <div class="feedback" id="fb"></div>`;
+      el.querySelectorAll('.pos-option').forEach(b => b.onclick = () => {
+        const o = opts[+b.dataset.k];
+        const fb = $('fb');
+        if (o.ok) {
+          sfx.good(); fb.className = 'feedback ok'; fb.textContent = '✅ Richtig – in jeder Spalte leuchtet eine gerade Anzahl!';
+          b.style.borderColor = 'var(--ok)';
+          el.querySelectorAll('button').forEach(x => (x.disabled = true));
+          later(() => { i++; if (i < tasks.length) draw(); else finish(el, done); }, 1300);
+        } else {
+          sfx.bad(); fb.className = 'feedback bad'; b.disabled = true; b.style.borderColor = 'var(--bad)';
+          const s = nimSum(o.h);
+          fb.textContent = `Hier ist die ${POW.filter(p => s & p).join('er-, ')}er-Spalte ungerade.`;
+        }
+      });
+    }
+    draw();
+  }
+
+  function miniTable(h) {
+    return '<table class="pairs" style="margin:0 auto">' +
+      h.map(n => `<tr><td class="lbl">${n}</td>${POW.map(p => `<td><span class="bit p${p} ${n & p ? 'on' : ''}">${n & p ? 1 : 0}</span></td>`).join('')}</tr>`).join('') +
+      '</table>';
+  }
+
+  function finish(el, done) {
+    el.innerHTML = '<div class="target">🎉</div><p style="text-align:center"><b>Alle Aufgaben geschafft!</b></p>';
+    done();
+  }
+
+  // ================= Tastatur =================
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('overlay').classList.contains('hidden')) {
+      const first = $('ovBtns').firstChild; if (first) first.click();
+    }
+  });
+
+  show('scrMenu');
+})();
+</script>
+</body>
+</html>
