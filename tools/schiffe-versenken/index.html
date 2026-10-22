@@ -53,6 +53,17 @@
       display: flex; align-items: center; gap: 10px; white-space: nowrap; min-width: 0;
     }
     @media (max-width: 420px) { header.top h1 { font-size: 1.08rem; } }
+    @media (max-width: 480px) { body.in-game .title-text { display: none; } }
+    .top-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+    .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 40px; min-width: 40px; padding: 0 10px; border: 0; border-radius: 999px;
+      background: var(--card); box-shadow: var(--shadow); font-weight: 600; font-size: .9rem; color: var(--ink);
+    }
+    .icon-btn svg { width: 19px; height: 19px; flex: none; }
+    .icon-btn.end { padding: 0 14px 0 11px; }
+    .icon-btn.end:hover { color: var(--coral-dark); }
+    @media (max-width: 520px) { #connState { display: none; } }
     .mark {
       width: 30px; height: 30px; border-radius: 9px; flex: none;
       background: linear-gradient(160deg, var(--sea-1), var(--sea-2));
@@ -88,6 +99,9 @@
     .btn.secondary { background: #f3efe7; color: var(--ink); box-shadow: none; }
     .btn.secondary:hover:not(:disabled) { background: #ebe5d9; }
     .btn.teal { background: var(--teal); box-shadow: 0 4px 14px rgba(31,122,122,.3); }
+    .btn.outline { background: transparent; color: var(--coral-dark); border: 2px solid var(--coral); box-shadow: none; }
+    .btn.ghost { background: rgba(255,255,255,.16); color: #fff; box-shadow: none; }
+    .btn.ghost:hover:not(:disabled) { background: rgba(255,255,255,.24); }
     .btn.block { width: 100%; }
     .row-btns { display: flex; gap: 10px; flex-wrap: wrap; }
     .row-btns .btn { flex: 1 1 130px; }
@@ -102,17 +116,20 @@
     .error { color: var(--coral-dark); font-weight: 600; }
 
     /* ---------- Start ---------- */
+    /* Bild immer vollständig zeigen; mobil steht der Text darunter, breiter darüber */
     .hero {
       position: relative; border-radius: 26px; overflow: hidden; margin-bottom: 16px;
-      background: var(--sea-2) url("img/hero.webp") center / cover no-repeat;
-      aspect-ratio: 20 / 9; min-height: 220px; box-shadow: var(--shadow);
-      display: flex; align-items: flex-end;
+      background: var(--navy); box-shadow: var(--shadow);
     }
-    .hero::after {
-      content: ""; position: absolute; inset: 0;
-      background: linear-gradient(180deg, rgba(21,75,95,0) 35%, rgba(19,41,61,.85) 100%);
+    .hero img { display: block; width: 100%; height: auto; }
+    .hero-text { position: relative; z-index: 1; padding: 14px 20px 20px; color: #fff; }
+    @media (min-width: 640px) {
+      .hero::after {
+        content: ""; position: absolute; inset: 0; pointer-events: none;
+        background: linear-gradient(180deg, rgba(21,75,95,0) 40%, rgba(19,41,61,.85) 100%);
+      }
+      .hero-text { position: absolute; left: 0; right: 0; bottom: 0; padding: 20px 24px; }
     }
-    .hero-text { position: relative; z-index: 1; padding: 20px 22px; color: #fff; }
     .hero-text h2 { font-size: clamp(1.7rem, 6vw, 2.6rem); margin: 0; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; }
     .hero-text p { margin: 6px 0 0; opacity: .9; font-weight: 500; }
     .menu-grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
@@ -287,15 +304,30 @@
       background: #fbefd0; color: #6b4a07; border-radius: 14px;
       padding: 10px 14px; font-weight: 600; margin-bottom: 14px; display: flex; gap: 10px; align-items: center;
     }
-    footer { text-align: center; margin-top: 18px; }
-    .linkish { background: none; border: 0; color: var(--muted); text-decoration: underline; font-size: .9rem; padding: 6px; }
+
+    /* ---------- Dialog ---------- */
+    #dlg {
+      position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px;
+      background: rgba(19,41,61,.45); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    }
+    #dlg .card { width: 100%; max-width: 380px; margin: 0; text-align: center; padding: 22px; animation: dlgIn .2s ease-out; }
+    #dlg h2 { font-size: 1.35rem; }
+    #dlg .row-btns { margin-top: 16px; flex-direction: column; }
+    #dlg .row-btns .btn { flex: none; }
+    @keyframes dlgIn { from { transform: translateY(12px) scale(.97); opacity: 0; } }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header class="top">
-      <h1><span class="mark"><i></i></span>Schiffe versenken</h1>
-      <span id="connBadge" class="conn hidden"><i></i><span id="connText"></span></span>
+      <h1><span class="mark"><i></i></span><span class="title-text">Schiffe versenken</span></h1>
+      <div class="top-actions">
+        <span id="connBadge" class="conn hidden"><i></i><span><span id="connState"></span><span id="connCode"></span></span></span>
+        <button id="btnSound" class="icon-btn" type="button"></button>
+        <button id="btnEnd" class="icon-btn end hidden" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>Beenden
+        </button>
+      </div>
     </header>
 
     <div id="netBanner" class="hidden"><span class="spinner"></span><span id="netText"></span></div>
@@ -303,6 +335,7 @@
     <!-- ===== Start ===== -->
     <section id="scrStart" class="hidden">
       <div class="hero">
+        <img src="img/hero.webp" width="1200" height="540" alt="" />
         <div class="hero-text">
           <h2>Zu zweit,<br />auf zwei Geräten.</h2>
           <p>Flotte verstecken, Meer absuchen, alle Schiffe finden.</p>
@@ -342,6 +375,7 @@
         <div id="qr"></div>
         <div class="row-btns">
           <button id="btnShare" class="btn secondary">Link teilen</button>
+          <button id="btnCancelLobby" class="btn outline">Abbrechen</button>
         </div>
         <div id="lobbyWait" class="waiting"><span class="spinner"></span><span id="lobbyStatus">Verbinde mit Server …</span></div>
       </div>
@@ -352,6 +386,7 @@
       <div class="card" style="text-align:center">
         <h2>Trete Spiel <span id="joiningCode"></span> bei …</h2>
         <div class="waiting"><span class="spinner"></span><span id="joiningStatus">Verbinde …</span></div>
+        <button id="btnCancelJoin" class="btn outline block" style="margin-top:16px">Abbrechen</button>
       </div>
     </section>
 
@@ -396,6 +431,7 @@
         <p id="rematchInfo" class="muted small"></p>
         <div class="row-btns">
           <button id="btnRematch" class="btn">Revanche</button>
+          <button id="btnHome" class="btn ghost">Zur Startseite</button>
         </div>
       </div>
       <div class="boards">
@@ -411,9 +447,13 @@
       </div>
     </section>
 
-    <footer>
-      <button id="btnLeave" class="linkish hidden">Spiel verlassen</button>
-    </footer>
+  </div>
+  <div id="dlg" class="hidden" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <div class="card">
+      <h2 id="dlgTitle"></h2>
+      <p id="dlgText" class="muted"></p>
+      <div id="dlgBtns" class="row-btns"></div>
+    </div>
   </div>
   <div id="toast" role="status" aria-live="polite"></div>
 
@@ -442,6 +482,94 @@
     const grid = () => Array.from({ length: N }, () => Array(N).fill(0));
     const cellName = (x, y) => COLS[x] + (y + 1);
     const possessive = f => (f.art === 'Der' ? 'Dein ' : f.art === 'Die' ? 'Deine ' : 'Dein ') + f.name;
+
+    // ---------- Sound ----------
+    // Komplett über WebAudio synthetisiert – keine Dateien. Der Kontext wird beim ersten Tippen entsperrt (iOS).
+    const Sound = (() => {
+      const KEY = 'schiffe-versenken-sound';
+      let ctx = null, master = null, noiseBuf = null, enabled = true;
+      try { enabled = localStorage.getItem(KEY) !== 'off'; } catch (e) {}
+
+      function ensure() {
+        if (ctx) return ctx;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        try {
+          ctx = new AC();
+          master = ctx.createGain();
+          master.gain.value = .6;
+          master.connect(ctx.destination);
+        } catch (e) { ctx = null; }
+        return ctx;
+      }
+      function noiseBuffer() {
+        if (noiseBuf) return noiseBuf;
+        const len = Math.floor(ctx.sampleRate * .8);
+        noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        return noiseBuf;
+      }
+      function env(g, t, peak, dur, attack) {
+        g.gain.setValueAtTime(.0001, t);
+        g.gain.exponentialRampToValueAtTime(peak, t + attack);
+        g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      }
+      function tone(freq, at, dur, o = {}) {
+        const t = ctx.currentTime + at;
+        const osc = ctx.createOscillator(), g = ctx.createGain();
+        osc.type = o.type || 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+        if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + dur);
+        env(g, t, o.gain || .2, dur, o.attack || .005);
+        osc.connect(g).connect(master);
+        osc.start(t); osc.stop(t + dur + .05);
+      }
+      function noise(at, dur, o = {}) {
+        const t = ctx.currentTime + at;
+        const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+        src.buffer = noiseBuffer();
+        f.type = o.type || 'bandpass';
+        f.frequency.setValueAtTime(o.freq || 1200, t);
+        if (o.to) f.frequency.exponentialRampToValueAtTime(o.to, t + dur);
+        f.Q.value = o.q || 1;
+        env(g, t, o.gain || .2, dur, o.attack || .01);
+        src.connect(f).connect(g).connect(master);
+        src.start(t); src.stop(t + dur + .05);
+      }
+      const SFX = {
+        place() { tone(520, 0, .07, { type: 'triangle', gain: .16, to: 300 }); noise(0, .05, { freq: 2600, gain: .05 }); },
+        tick() { tone(900, 0, .045, { type: 'triangle', gain: .09 }); },
+        miss() { tone(720, 0, .16, { gain: .2, to: 200 }); noise(.02, .2, { freq: 900, q: .8, gain: .07, to: 400 }); },
+        hit() { noise(0, .5, { freq: 1600, q: .6, gain: .5, to: 320, attack: .005 }); tone(170, 0, .28, { gain: .28, to: 70 }); },
+        sunk() {
+          noise(0, .35, { freq: 900, q: .6, gain: .3, to: 200 });
+          [460, 380, 300, 240].forEach((f, i) => tone(f, .12 + i * .11, .09, { gain: .18, to: f * .65 }));
+        },
+        incoming() { noise(0, .4, { type: 'lowpass', freq: 700, gain: .32, to: 180 }); tone(120, 0, .3, { gain: .22, to: 60 }); },
+        turn() { tone(660, 0, .2, { gain: .12, type: 'triangle' }); tone(880, .13, .3, { gain: .12, type: 'triangle' }); },
+        join() { [523, 659, 784].forEach((f, i) => tone(f, i * .09, .3, { gain: .11, type: 'triangle' })); },
+        win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .12, i === 3 ? .7 : .25, { gain: .15, type: 'triangle' })); },
+        lose() { tone(440, 0, .35, { gain: .13, type: 'triangle' }); tone(349, .3, .7, { gain: .13, type: 'triangle' }); },
+      };
+      return {
+        get enabled() { return enabled; },
+        setEnabled(on) {
+          enabled = !!on;
+          try { localStorage.setItem(KEY, enabled ? 'on' : 'off'); } catch (e) {}
+        },
+        unlock() {
+          const c = ensure();
+          if (c && c.state === 'suspended') c.resume().catch(() => {});
+        },
+        play(name, delay) {
+          if (!enabled || !ensure()) return;
+          if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+          const run = () => { try { SFX[name](); } catch (e) {} };
+          if (delay) setTimeout(run, delay); else run();
+        },
+      };
+    })();
 
     // ---------- Zustand ----------
     // incoming: 0 = frei, 1 = Wasser, 2 = Treffer   (Schüsse auf mein Feld)
@@ -715,12 +843,17 @@
         case 'ping': return;
         case 'hello': return onHello(m);
         case 'full':
-          leaveGame(false); showJoinError('Dieses Spiel läuft bereits mit einem anderen Gerät.'); return;
+          leaveGame(false);
+          openDialog({ title: 'Spiel ist voll', text: 'Dieses Spiel läuft bereits mit einem anderen Gerät.', buttons: [{ label: 'Zur Startseite' }] });
+          return;
         case 'bye':
-          leaveGame(false); toast('Dein Gegenüber hat das Spiel verlassen.'); return;
+          leaveGame(false);
+          openDialog({ title: 'Partie beendet', text: 'Dein Gegenüber hat das Spiel verlassen.', buttons: [{ label: 'Zur Startseite' }] });
+          return;
         case 'newround':
           if (S.role !== 'guest') return;
           S.round = m.round; resetRound(); S.phase = 'setup'; save(); render();
+          Sound.play('join');
           return;
       }
       if (m.round !== S.round) return; // veraltete Nachricht aus einer früheren Runde
@@ -732,6 +865,7 @@
         case 'start':
           if (S.role === 'guest' && S.phase === 'setup') {
             S.first = m.first; S.phase = 'play'; S.myTurn = m.first === 'guest'; save(); render();
+            if (S.myTurn) Sound.play('turn');
           }
           return;
         case 'shot': return onShot(m.x, m.y);
@@ -751,6 +885,7 @@
           const wasPlaying = !!S.partnerToken && S.phase !== 'lobby';
           S.partnerToken = m.token;
           startNewRound();
+          Sound.play('join');
           if (wasPlaying) toast('Neues Gerät verbunden – neues Spiel.');
           return;
         }
@@ -797,6 +932,7 @@
       S.myTurn = S.first === 'host';
       send({ t: 'start', round: S.round, first: S.first });
       save(); render();
+      if (S.myTurn) Sound.play('turn');
     }
 
     function checkRematch() {
@@ -821,6 +957,9 @@
       send({ t: 'result', round: S.round, x, y, hit: !!ship, sunk, gameOver });
       if (prev === 0) {
         if (gameOver) { S.phase = 'over'; S.winner = 'opp'; S.myTurn = false; }
+        Sound.play(sunk ? 'sunk' : ship ? 'incoming' : 'miss');
+        if (gameOver) Sound.play('lose', 800);
+        else if (!ship) Sound.play('turn', 450);
         if (ship) {
           const f = FLEET[ship.id];
           buzz(sunk ? [80, 60, 160] : 60);
@@ -865,6 +1004,8 @@
       } else {
         S.myTurn = !!m.hit;
       }
+      Sound.play(m.sunk ? 'sunk' : m.hit ? 'hit' : 'miss');
+      if (m.gameOver) Sound.play('win', 800);
       if (m.sunk) { buzz([80, 60, 160]); toast('Versenkt: ' + FLEET[m.sunk.id].name + '!', 'sunk'); }
       else if (m.hit) { buzz(60); toast('Treffer! Du darfst nochmal.', 'hit'); }
       else toast('Daneben – nur Wasser.');
@@ -907,7 +1048,7 @@
         // Schiff wieder aufnehmen
         S.myShips = S.myShips.filter(s => s !== existing);
         selId = existing.id; horiz = existing.horiz !== false;
-        preview = null; save(); render(); return;
+        preview = null; save(); render(); Sound.play('tick'); return;
       }
       const f = selectedFleet();
       if (!f) return;
@@ -919,6 +1060,7 @@
       }
       S.myShips.push({ id: f.id, size: f.size, horiz, cells });
       preview = null; save(); render();
+      Sound.play('place');
     }
 
     // ---------- Darstellung ----------
@@ -1112,7 +1254,9 @@
       $('scrJoining').classList.toggle('hidden', p !== 'joining');
       $('scrSetup').classList.toggle('hidden', p !== 'setup');
       $('scrPlay').classList.toggle('hidden', p !== 'play' && p !== 'over');
-      $('btnLeave').classList.toggle('hidden', p === 'start');
+      // „Beenden“ nur während Aufstellen/Spiel – Lobby, Beitreten und Ergebnis haben eigene Knöpfe
+      $('btnEnd').classList.toggle('hidden', p !== 'setup' && p !== 'play');
+      document.body.classList.toggle('in-game', p !== 'start');
       if (p === 'lobby') renderLobby();
       if (p === 'joining') $('joiningCode').textContent = S.code;
       if (p === 'setup') renderSetup();
@@ -1151,7 +1295,10 @@
       const ok = connected();
       const server = peer && !peer.disconnected && !peer.destroyed;
       badge.className = 'conn ' + (ok ? 'ok' : (server ? 'wait' : 'bad'));
-      $('connText').textContent = (ok ? 'Verbunden' : (p === 'lobby' || p === 'joining') ? 'Warte' : 'Getrennt') + ' · ' + (S.code || '');
+      const state = ok ? 'Verbunden' : (p === 'lobby' || p === 'joining') ? 'Warte' : 'Getrennt';
+      $('connState').textContent = state + ' · ';
+      $('connCode').textContent = S.code || '';
+      badge.title = state;
       if (p === 'lobby' || p === 'joining') { setNet(server || ok ? '' : 'Verbinde mit Server …'); return; }
       if (ok) setNet('');
       else if (S.role === 'host') setNet('Verbindung zum Gegenüber unterbrochen – warte, bis es wieder da ist …');
@@ -1176,6 +1323,33 @@
           wakeLock.addEventListener('release', () => { wakeLock = null; });
         }
       } catch (e) { /* nicht unterstützt */ }
+    }
+
+    // Eigenes Dialogfenster statt confirm(): buttons = [{ label, cls, action }]
+    function openDialog({ title, text, buttons }) {
+      $('dlgTitle').textContent = title;
+      $('dlgText').textContent = text;
+      const box = $('dlgBtns');
+      box.innerHTML = '';
+      for (const b of buttons) {
+        const el = Object.assign(document.createElement('button'), { type: 'button', className: b.cls || 'btn', textContent: b.label });
+        el.addEventListener('click', () => { closeDialog(); if (b.action) b.action(); });
+        box.appendChild(el);
+      }
+      $('dlg').classList.remove('hidden');
+      box.firstChild.focus();
+    }
+    function closeDialog() { $('dlg').classList.add('hidden'); }
+    $('dlg').addEventListener('click', e => { if (e.target === $('dlg')) closeDialog(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDialog(); });
+
+    const SPEAKER_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+    const SPEAKER_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></svg>';
+    function renderSoundBtn() {
+      const b = $('btnSound');
+      b.innerHTML = Sound.enabled ? SPEAKER_ON : SPEAKER_OFF;
+      b.setAttribute('aria-label', Sound.enabled ? 'Ton ausschalten' : 'Ton einschalten');
+      b.title = Sound.enabled ? 'Ton an' : 'Ton aus';
     }
 
     function showJoinError(text) {
@@ -1215,9 +1389,9 @@
       try { await navigator.clipboard.writeText(url); toast('Link kopiert!'); }
       catch (e) { prompt('Link zum Beitreten:', url); }
     });
-    $('orH').addEventListener('click', () => { horiz = true; render(); });
-    $('orV').addEventListener('click', () => { horiz = false; render(); });
-    $('btnRandom').addEventListener('click', () => { S.myShips = randomFleet(); preview = null; save(); render(); });
+    $('orH').addEventListener('click', () => { horiz = true; render(); Sound.play('tick'); });
+    $('orV').addEventListener('click', () => { horiz = false; render(); Sound.play('tick'); });
+    $('btnRandom').addEventListener('click', () => { S.myShips = randomFleet(); preview = null; save(); render(); Sound.play('place'); });
     $('btnClear').addEventListener('click', () => { S.myShips = []; selId = 0; preview = null; save(); render(); });
     $('btnReady').addEventListener('click', () => {
       if (S.myShips.length !== FLEET.length || S.myReady) return;
@@ -1233,10 +1407,26 @@
       if (S.role === 'host') checkRematch();
       save(); render();
     });
-    $('btnLeave').addEventListener('click', () => {
-      if (S.phase !== 'lobby' && S.phase !== 'joining' && !confirm('Spiel wirklich verlassen?')) return;
-      leaveGame(true);
+    $('btnEnd').addEventListener('click', () => {
+      openDialog({
+        title: 'Partie beenden?',
+        text: 'Dein Gegenüber wird benachrichtigt und die Partie ist vorbei.',
+        buttons: [
+          { label: 'Weiterspielen', cls: 'btn teal' },
+          { label: 'Partie beenden', cls: 'btn outline', action: () => leaveGame(true) },
+        ],
+      });
     });
+    $('btnCancelLobby').addEventListener('click', () => leaveGame(true));
+    $('btnCancelJoin').addEventListener('click', () => leaveGame(true));
+    $('btnHome').addEventListener('click', () => leaveGame(true));
+    $('btnSound').addEventListener('click', () => {
+      Sound.setEnabled(!Sound.enabled);
+      renderSoundBtn();
+      Sound.play('tick');
+    });
+    renderSoundBtn();
+    document.addEventListener('pointerdown', () => Sound.unlock(), { passive: true });
 
     boards.setup = buildBoard($('setupBoard'), onSetupTap, (x, y) => {
       preview = x === null || S.myReady ? null : [x, y];
