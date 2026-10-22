@@ -244,6 +244,20 @@
     .fleet button.f[aria-pressed="true"] { background: var(--navy); color: #fff; box-shadow: 0 4px 12px rgba(19,41,61,.25); }
     .rules-fleet span { display: inline-flex; align-items: center; gap: 8px; font-size: .9rem; }
 
+    .orient { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .orient .o {
+      border: 2px solid transparent; background: #f3efe7; border-radius: 16px; padding: 8px 8px 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px; font-weight: 600; font-size: .9rem;
+      transition: border-color .15s, background .15s, box-shadow .15s;
+    }
+    .orient .o[aria-pressed="true"] { border-color: var(--navy); background: #fff; box-shadow: 0 6px 16px rgba(19,41,61,.14); }
+    .orient .o:not([aria-pressed="true"]) .stage img { opacity: .55; }
+    .orient .stage {
+      width: 100%; height: 100px; border-radius: 11px; display: grid; place-items: center; overflow: hidden;
+      background: linear-gradient(160deg, var(--sea-1), var(--sea-2));
+    }
+    .orient .stage img { display: block; filter: drop-shadow(0 2px 2px rgba(5,25,35,.45)); transition: opacity .15s; }
+    .orient .stage img.v { transform: rotate(90deg); }
     .setup-tools { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0 4px; }
     .setup-tools .btn { flex: 1 1 100px; padding: 10px 12px; min-height: 46px; }
 
@@ -350,8 +364,17 @@
       <div class="card">
         <div id="setupBoard" class="board"></div>
         <div id="setupFleet" class="fleet"></div>
+        <div id="orientPick" class="orient" role="group" aria-label="Ausrichtung des Schiffs">
+          <button id="orH" type="button" class="o" aria-pressed="true">
+            <span class="stage"><img alt="" draggable="false" /></span>
+            <span>Waagerecht</span>
+          </button>
+          <button id="orV" type="button" class="o" aria-pressed="false">
+            <span class="stage"><img class="v" alt="" draggable="false" /></span>
+            <span>Senkrecht</span>
+          </button>
+        </div>
         <div id="setupTools" class="setup-tools">
-          <button id="btnRotate" class="btn secondary">↻ <span id="rotateLabel">Waagerecht</span></button>
           <button id="btnRandom" class="btn secondary">Zufällig</button>
           <button id="btnClear" class="btn secondary">Leeren</button>
         </div>
@@ -988,12 +1011,22 @@
         b.addEventListener('click', () => { selId = f.id; render(); });
         fl.appendChild(b);
       }
-      $('rotateLabel').textContent = horiz ? 'Waagerecht' : 'Senkrecht';
+      // Ausrichtung: das gewählte Schiff in beiden Lagen zeigen
+      $('orientPick').classList.toggle('hidden', !sel || S.myReady);
+      if (sel) {
+        for (const [id, isH, unit] of [['orH', true, 22], ['orV', false, 18]]) {
+          const b = $(id), img = b.querySelector('img');
+          if (img.getAttribute('src') !== sel.img) img.src = sel.img;
+          img.style.width = sel.size * unit + 'px';
+          img.style.height = unit + 'px';
+          b.setAttribute('aria-pressed', String(horiz === isH));
+          b.setAttribute('aria-label', sel.name + ' ' + (isH ? 'waagerecht' : 'senkrecht') + ' setzen');
+        }
+      }
       const allPlaced = S.myShips.length === FLEET.length;
       $('setupTools').classList.toggle('hidden', S.myReady);
       $('btnReady').classList.toggle('hidden', S.myReady);
       $('btnReady').disabled = !allPlaced;
-      $('btnRotate').disabled = !sel;
       if (S.myReady) {
         $('setupHint').textContent = S.oppReady ? 'Gleich geht’s los …' : 'Warte, bis dein Gegenüber seine Flotte versteckt hat …';
       } else if (sel) {
@@ -1182,7 +1215,8 @@
       try { await navigator.clipboard.writeText(url); toast('Link kopiert!'); }
       catch (e) { prompt('Link zum Beitreten:', url); }
     });
-    $('btnRotate').addEventListener('click', () => { horiz = !horiz; render(); });
+    $('orH').addEventListener('click', () => { horiz = true; render(); });
+    $('orV').addEventListener('click', () => { horiz = false; render(); });
     $('btnRandom').addEventListener('click', () => { S.myShips = randomFleet(); preview = null; save(); render(); });
     $('btnClear').addEventListener('click', () => { S.myShips = []; selId = 0; preview = null; save(); render(); });
     $('btnReady').addEventListener('click', () => {
