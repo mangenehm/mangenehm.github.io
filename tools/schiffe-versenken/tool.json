@@ -1,0 +1,8 @@
+{
+    "name": "Schiffe versenken",
+    "description": "Das Klassiker-Duell auf zwei Geräten: Ein Gerät erstellt ein Spiel, das andere tritt per Code oder QR-Code bei – Flotte aufstellen und abwechselnd feuern.",
+    "category": "Spiel",
+    "tags": ["Spiel", "Multiplayer"],
+    "created": "2026-10-22",
+    "lastUpdated": "2026-10-22"
+}
