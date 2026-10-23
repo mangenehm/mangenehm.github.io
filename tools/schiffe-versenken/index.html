@@ -498,6 +498,31 @@
       const KEY = 'schiffe-versenken-sound';
       let ctx = null, master = null, noiseBuf = null, enabled = true;
       try { enabled = localStorage.getItem(KEY) !== 'off'; } catch (e) {}
+      // Echte Aufnahmen (CC0, siehe sfx/CREDITS.md); bis sie geladen sind, springt die Synthese ein
+      const FILES = { splash: 'sfx/splash.mp3', bang: 'sfx/bang.mp3', bangDull: 'sfx/bang-dull.mp3', bubbles: 'sfx/bubbles.mp3' };
+      const buffers = {};
+      let loading = null;
+      function loadSamples() {
+        if (!loading && ctx) {
+          loading = Promise.all(Object.entries(FILES).map(([k, url]) =>
+            fetch(url).then(r => r.arrayBuffer())
+              .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
+              .then(b => { buffers[k] = b; })
+              .catch(() => {})));
+        }
+        return loading || Promise.resolve();
+      }
+      function sample(name, at = 0, gain = 1) {
+        const buf = buffers[name];
+        if (!buf) return false;
+        const src = ctx.createBufferSource(), g = ctx.createGain();
+        src.buffer = buf;
+        g.gain.value = gain;
+        // Aufnahmen sind schon fertig gemastert (Spitze ca. −3,5 dB) → am Kompressor vorbei direkt raus
+        src.connect(g).connect(ctx.destination);
+        src.start(ctx.currentTime + at);
+        return true;
+      }
 
       // Master-Kette: Gain → Kompressor → Ausgang, damit der Knall laut sein kann, ohne zu übersteuern
       function chain(c) {
@@ -516,6 +541,7 @@
         try {
           ctx = new AC();
           master = chain(ctx);
+          loadSamples();
         } catch (e) { ctx = null; }
         return ctx;
       }
@@ -578,6 +604,7 @@
         tick() { tone(900, 0, .05, { type: 'triangle', gain: .3 }); },
         // Platsch: Plopp beim Eintauchen, breites Wasserrauschen, Zischen und ein paar Tropfen
         miss() {
+          if (sample('splash', 0, 1.2)) return;
           tone(300, 0, .08, { gain: .55, to: 80, attack: .002 });
           noise(0, .5, { type: 'bandpass', freq: 2500, to: 450, q: .6, gain: .9, attack: .008 });
           noise(.01, .28, { type: 'highpass', freq: 3200, gain: .2, attack: .005 });
@@ -587,12 +614,19 @@
           }
         },
         hit() {
+          if (sample('bang')) return;
           bang(false);
           noise(.14, .32, { type: 'bandpass', freq: 1800, to: 600, q: .8, gain: .16 }); // Spritzer danach
         },
-        sunk() { bang(false); bubbles(.35); },
-        incoming() { bang(true); },
-        sunkOwn() { bang(true); bubbles(.4); },
+        sunk() {
+          if (sample('bang')) sample('bubbles', .5, .8);
+          else { bang(false); bubbles(.35); }
+        },
+        incoming() { if (!sample('bangDull')) bang(true); },
+        sunkOwn() {
+          if (sample('bangDull')) sample('bubbles', .5, .8);
+          else { bang(true); bubbles(.4); }
+        },
         turn() { tone(660, 0, .2, { gain: .12, type: 'triangle' }); tone(880, .13, .3, { gain: .12, type: 'triangle' }); },
         join() { [523, 659, 784].forEach((f, i) => tone(f, i * .09, .3, { gain: .11, type: 'triangle' })); },
         win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .12, i === 3 ? .7 : .25, { gain: .15, type: 'triangle' })); },
@@ -608,6 +642,9 @@
           const c = ensure();
           if (c && c.state === 'suspended') c.resume().catch(() => {});
         },
+        // Zum Testen: Kontext anlegen und warten, bis die Aufnahmen geladen sind
+        ready() { return ensure() ? loadSamples() : Promise.resolve(); },
+        loaded() { return Object.keys(buffers); },
         // Zum Vorhören/Testen: Klang offline rendern, liefert die Samples
         render(name, seconds = 1.6, rate = 44100) {
           const saved = [ctx, master, noiseBuf];
