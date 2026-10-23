@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { classifyTags, stitchRings, simplify, clipRing, clipLine, toFeatures, makeProjection, buildQuery } from '../src/map/overpass.js';
+import { classifyTags, stitchRings, simplify, clipRing, clipLine, toFeatures, makeProjection, buildQuery, fetchOsm } from '../src/map/overpass.js';
 import { terrainFromPixels, RASTER_COLORS, PRIORITY } from '../src/map/classify.js';
 import { shiftCenter } from '../src/map/build.js';
 import { isValidBoard } from '../src/engine/board.js';
@@ -89,4 +89,78 @@ test('Pixel zählen: Mehrheit gewinnt, Gleichstand nach Priorität, Mischfarben 
   paint(0, 2, RASTER_COLORS.water); paint(1, 2, [10, 20, 30]); paint(0, 3, [10, 20, 30]); paint(1, 3, [10, 20, 30]);
   assert.deepEqual(terrainFromPixels(data, size, ppc), ['building', 'green', 'water', 'other']);
   assert.deepEqual(PRIORITY, ['water', 'building', 'forest', 'green', 'road', 'other']);
+});
+
+// Fake-fetch: pro URL ein Verhalten – Zahl = Antwort nach ms, 'hang' = nie, 'statusNNN' = HTTP-Fehler
+function fakeFetch(plan, calls) {
+  return (url, { signal }) => {
+    calls.push(url);
+    const b = plan[url];
+    return new Promise((resolve, reject) => {
+      signal.addEventListener('abort', () => reject(signal.reason ?? new Error('abort')));
+      if (b === 'hang') return;
+      if (typeof b === 'number') setTimeout(() => resolve({ ok: true, json: async () => ({ elements: [{ from: url }] }) }), b);
+      else resolve({ ok: false, status: +b.slice(6) });
+    });
+  };
+}
+let bboxN = 0;
+const freshBbox = () => ({ south: 1, west: 2, north: 3, east: 4 + ++bboxN });
+
+test('fetchOsm: hängender Server blockiert nicht, nächster wird parallel gefragt', async () => {
+  const calls = [], seen = [];
+  const data = await fetchOsm(freshBbox(), {
+    endpoints: ['https://a/x', 'https://b/x', 'https://c/x'],
+    fetchImpl: fakeFetch({ 'https://a/x': 'hang', 'https://b/x': 'hang', 'https://c/x': 5 }, calls),
+    staggerMs: 20, timeoutMs: 1000, onProgress: p => seen.push(p.attempt),
+  });
+  assert.equal(data.elements[0].from, 'https://c/x');
+  assert.deepEqual(seen, [1, 2, 3]);
+});
+
+test('fetchOsm: Fehler führt sofort zum nächsten Server', async () => {
+  const calls = [];
+  const t0 = Date.now();
+  const data = await fetchOsm(freshBbox(), {
+    endpoints: ['https://a/x', 'https://b/x'],
+    fetchImpl: fakeFetch({ 'https://a/x': 'status406', 'https://b/x': 1 }, calls),
+    staggerMs: 5000, timeoutMs: 5000,
+  });
+  assert.equal(data.elements[0].from, 'https://b/x');
+  assert.ok(Date.now() - t0 < 1000);
+});
+
+test('fetchOsm: alle scheitern → Fehler mit Gründen, Zeitlimit greift', async () => {
+  await assert.rejects(fetchOsm(freshBbox(), {
+    endpoints: ['https://a/x', 'https://b/x'],
+    fetchImpl: fakeFetch({ 'https://a/x': 'status406', 'https://b/x': 'hang' }, []),
+    staggerMs: 10, timeoutMs: 50, retryDelayMs: 10,
+  }), /a: HTTP 406; b: keine Antwort/);
+});
+
+test('fetchOsm: Abbruch durch Aufrufer liefert AbortError', async () => {
+  const ctrl = new AbortController();
+  const p = fetchOsm(freshBbox(), {
+    signal: ctrl.signal, endpoints: ['https://a/x'],
+    fetchImpl: fakeFetch({ 'https://a/x': 'hang' }, []), timeoutMs: 5000,
+  });
+  ctrl.abort();
+  await assert.rejects(p, { name: 'AbortError' });
+});
+
+test('fetchOsm: Überlastung → zweite Runde, dauerhafte Fehler → keine', async () => {
+  let n = 0;
+  const flaky = (url, init) => fakeFetch({ 'https://a/x': n++ === 0 ? 'status429' : 1 }, [])(url, init);
+  const rounds = [];
+  const data = await fetchOsm(freshBbox(), {
+    endpoints: ['https://a/x'], fetchImpl: flaky, retryDelayMs: 10, onProgress: p => rounds.push(p.round),
+  });
+  assert.equal(data.elements[0].from, 'https://a/x');
+  assert.deepEqual(rounds, [1, 2]);
+
+  const calls = [];
+  await assert.rejects(fetchOsm(freshBbox(), {
+    endpoints: ['https://a/x'], fetchImpl: fakeFetch({ 'https://a/x': 'status406' }, calls), retryDelayMs: 10,
+  }), /HTTP 406/);
+  assert.equal(calls.length, 1);
 });

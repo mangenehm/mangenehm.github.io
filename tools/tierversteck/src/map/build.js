@@ -7,9 +7,9 @@ import { classifyFeatures } from './classify.js';
 export const PAN_MARGIN = 3;
 
 /** Lädt die OSM-Daten für einen Ausschnitt plus Rand. */
-export async function loadArea(center, size, cellMeters, { signal } = {}) {
+export async function loadArea(center, size, cellMeters, { signal, onProgress } = {}) {
   const bbox = makeProjection(center, size + 2 * PAN_MARGIN, cellMeters).bbox;
-  const osm = await fetchOsm(bbox, { signal });
+  const osm = await fetchOsm(bbox, { signal, onProgress });
   return { bbox, osm, cellMeters };
 }
 

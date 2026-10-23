@@ -8,8 +8,8 @@
 
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
-  'https://overpass.private.coffee/api/interpreter',
   'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
 ];
 const CACHE_PREFIX = 'tierversteck:osm:';
 const M_PER_DEG = 111320;
@@ -233,8 +233,16 @@ function cacheKey(bbox) {
   return CACHE_PREFIX + [bbox.south, bbox.west, bbox.north, bbox.east].map(v => v.toFixed(5)).join(',');
 }
 
-/** Lädt die OSM-Daten (mit Cache in localStorage und Ausweich-Endpunkten). */
-export async function fetchOsm(bbox, { signal } = {}) {
+/**
+ * Lädt die OSM-Daten (mit Cache in localStorage und Ausweich-Endpunkten).
+ * Antwortet ein Server nicht binnen staggerMs, wird parallel der nächste gefragt;
+ * die erste brauchbare Antwort gewinnt. Jede Anfrage bricht nach timeoutMs ab.
+ * onProgress({ attempt, total, host }) meldet jeden gestarteten Versuch.
+ */
+export async function fetchOsm(bbox, {
+  signal, onProgress, fetchImpl = (...a) => fetch(...a),
+  endpoints = ENDPOINTS, staggerMs = 6000, timeoutMs = 45000, retryDelayMs = 4000,
+} = {}) {
   const key = cacheKey(bbox);
   try {
     const cached = localStorage.getItem(key);
@@ -242,23 +250,84 @@ export async function fetchOsm(bbox, { signal } = {}) {
   } catch { /* Speicher nicht verfügbar */ }
 
   const body = 'data=' + encodeURIComponent(buildQuery(bbox));
-  let lastError = null;
-  for (const url of ENDPOINTS) {
-    try {
-      const res = await fetch(url, {
-        method: 'POST', body, signal,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
-      if (!res.ok) throw new Error(`Overpass ${res.status}`);
-      const data = await res.json();
-      storeCache(key, data);
-      return data;
-    } catch (e) {
-      if (signal?.aborted) throw e;
-      lastError = e;
-    }
+  const opts = { signal, fetchImpl, staggerMs, timeoutMs };
+  let data;
+  try {
+    data = await raceEndpoints(endpoints, body, { ...opts, onProgress: p => onProgress?.({ ...p, round: 1 }) });
+  } catch (err) {
+    // Überlastung (429/5xx, keine Antwort) ist meist kurzlebig → eine zweite Runde
+    if (signal?.aborted || !err.transient) throw err;
+    await sleep(retryDelayMs, signal);
+    data = await raceEndpoints(endpoints, body, { ...opts, onProgress: p => onProgress?.({ ...p, round: 2 }) });
   }
-  throw new Error('Kartendaten konnten nicht geladen werden' + (lastError ? ` (${lastError.message})` : ''));
+  storeCache(key, data);
+  return data;
+}
+
+function sleep(ms, signal) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(resolve, ms);
+    signal?.addEventListener('abort', () => { clearTimeout(t); reject(signal.reason); }, { once: true });
+  });
+}
+
+function raceEndpoints(endpoints, body, { signal, onProgress, fetchImpl, staggerMs, timeoutMs }) {
+  return new Promise((resolve, reject) => {
+    const ctrls = [], errors = [];
+    let next = 0, failed = 0, done = false, stagger = null, transient = false;
+
+    const finish = (fn, value) => {
+      if (done) return;
+      done = true;
+      clearTimeout(stagger);
+      signal?.removeEventListener('abort', onAbort);
+      ctrls.forEach(c => c.abort());
+      fn(value);
+    };
+    const onAbort = () => finish(reject, signal.reason ?? new DOMException('Abgebrochen', 'AbortError'));
+    if (signal?.aborted) return onAbort();
+    signal?.addEventListener('abort', onAbort, { once: true });
+
+    const launch = () => {
+      clearTimeout(stagger);
+      if (done || next >= endpoints.length) return;
+      const url = endpoints[next++];
+      const host = new URL(url).host;
+      onProgress?.({ attempt: next, total: endpoints.length, host });
+      const ctrl = new AbortController();
+      ctrls.push(ctrl);
+      let timedOut = false;
+      const timer = setTimeout(() => { timedOut = true; ctrl.abort(); }, timeoutMs);
+      fetchImpl(url, {
+        method: 'POST', body, signal: ctrl.signal,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      })
+        .then(res => {
+          if (!res.ok) {
+            if (res.status === 429 || res.status >= 500) transient = true;
+            throw new Error(`HTTP ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (!Array.isArray(data?.elements)) throw new Error('unerwartete Antwort');
+          finish(resolve, data);
+        })
+        .catch(err => {
+          if (done) return;
+          errors.push(`${host}: ${timedOut ? 'keine Antwort' : err.message}`);
+          if (timedOut || err instanceof TypeError) transient = true; // Zeitlimit oder Netzwerkfehler
+          if (++failed === endpoints.length) {
+            const e = new Error(`Kartendaten konnten nicht geladen werden (${errors.join('; ')})`);
+            e.transient = transient;
+            finish(reject, e);
+          } else launch(); // gescheitert → sofort den nächsten Server fragen
+        })
+        .finally(() => clearTimeout(timer));
+      if (next < endpoints.length) stagger = setTimeout(launch, staggerMs);
+    };
+    launch();
+  });
 }
 
 function storeCache(key, data) {
