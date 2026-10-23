@@ -54,6 +54,9 @@
     }
     @media (max-width: 420px) { header.top h1 { font-size: 1.08rem; } }
     @media (max-width: 480px) { body.in-game .title-text { display: none; } }
+    /* Startseite: Titel steht groß im Bild, nicht doppelt in der Kopfzeile */
+    body:not(.in-game) header.top h1 { display: none; }
+    body:not(.in-game) .top-actions { margin-left: auto; }
     .top-actions { display: flex; align-items: center; gap: 8px; flex: none; }
     .icon-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -139,7 +142,6 @@
       .hero-text { position: absolute; left: 0; right: 0; bottom: 0; padding: 20px 24px; }
     }
     .hero-text h2 { font-size: clamp(1.7rem, 6vw, 2.6rem); margin: 0; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; }
-    .hero-text p { margin: 6px 0 0; opacity: .9; font-weight: 500; }
     .menu-grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
     @media (min-width: 640px) { .menu-grid { grid-template-columns: 1fr 1fr; } }
     .menu-grid .card { margin-bottom: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -251,12 +253,50 @@
       padding: 14px 18px; border-radius: var(--radius); font-weight: 700; margin-bottom: 14px;
       background: var(--navy); color: #fff; font-size: 1.05rem; transition: background .3s;
     }
-    .turn-banner.mine { background: var(--coral); }
     .turn-banner .sub { font-weight: 500; opacity: .9; font-size: .92rem; }
 
     .boards { display: grid; gap: 14px; grid-template-columns: 1fr; }
     @media (min-width: 800px) { .boards { grid-template-columns: auto auto; justify-content: center; align-items: start; } }
-    .boards .card { margin-bottom: 0; }
+    .boards .card { margin-bottom: 0; transition: box-shadow .35s; }
+
+    /* ---------- Zug-Anzeige direkt am Spielfeld ---------- */
+    .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; min-height: 28px; }
+    .card-head h3 { margin: 0; }
+    .pill {
+      font-size: .82rem; font-weight: 700; padding: 4px 11px; border-radius: 999px; white-space: nowrap;
+      opacity: 0; transform: scale(.85); transition: opacity .25s, transform .25s;
+    }
+    #enemyCard.turn-mine { box-shadow: 0 0 0 3px var(--coral), 0 10px 30px rgba(239,111,83,.35); animation: glow 1.8s ease-in-out infinite; }
+    #enemyCard.turn-mine .pill { opacity: 1; transform: none; background: var(--coral); color: #fff; }
+    #enemyCard.turn-mine.flash { animation: flash .7s ease-out, glow 1.8s ease-in-out .7s infinite; }
+    #ownCard.turn-opp { box-shadow: 0 0 0 3px var(--mustard), var(--shadow); }
+    #ownCard.turn-opp .pill { opacity: 1; transform: none; background: var(--mustard); color: var(--navy); }
+    @keyframes glow { 50% { box-shadow: 0 0 0 3px var(--coral), 0 10px 40px rgba(239,111,83,.6); } }
+    @keyframes flash {
+      0% { box-shadow: 0 0 0 3px var(--coral), 0 0 0 3px rgba(239,111,83,.7); }
+      100% { box-shadow: 0 0 0 3px var(--coral), 0 0 0 22px rgba(239,111,83,0); }
+    }
+    /* Schleier über dem gegnerischen Meer, solange das Gegenüber dran ist */
+    .board .veil {
+      position: absolute; left: var(--cell); top: var(--cell); z-index: 2;
+      width: calc(var(--cell) * 10); height: calc(var(--cell) * 10); border-radius: 12px;
+      display: grid; place-items: center; pointer-events: none;
+      background: rgba(19,41,61,.42); -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px);
+      opacity: 0; transition: opacity .35s;
+    }
+    #enemyCard.turn-opp .veil { opacity: 1; }
+    .veil > span {
+      background: var(--card); color: var(--navy); font-weight: 700; font-size: .95rem;
+      padding: 9px 16px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .dots { display: inline-flex; gap: 3px; }
+    .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--mustard); animation: dot 1.2s infinite ease-in-out; }
+    .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+    @keyframes dot { 0%, 80%, 100% { transform: scale(.5); opacity: .4; } 40% { transform: scale(1); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+      #enemyCard.turn-mine, #enemyCard.flash, .dots i { animation: none !important; }
+    }
 
     .fleet { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; justify-content: center; }
     .fleet .f {
@@ -346,8 +386,7 @@
       <div class="hero">
         <img src="img/hero.webp" width="1200" height="540" alt="" />
         <div class="hero-text">
-          <h2>Zu zweit,<br />auf zwei Geräten.</h2>
-          <p>Flotte verstecken, Meer absuchen, alle Schiffe finden.</p>
+          <h2>Schiffe versenken</h2>
         </div>
       </div>
       <div class="menu-grid">
@@ -429,10 +468,6 @@
 
     <!-- ===== Spiel / Ende ===== -->
     <section id="scrPlay" class="hidden">
-      <div id="playBanner" class="turn-banner">
-        <span id="playTitle"></span>
-        <span id="playSub" class="sub"></span>
-      </div>
       <div id="resultCard" class="card result-card hidden">
         <h2 id="resultTitle"></h2>
         <p id="resultText" class="muted"></p>
@@ -444,13 +479,13 @@
         </div>
       </div>
       <div class="boards">
-        <div class="card">
-          <h3>Meer deines Gegenübers</h3>
+        <div id="enemyCard" class="card">
+          <div class="card-head"><h3>Meer deines Gegenübers</h3><span id="enemyPill" class="pill">Du bist dran</span></div>
           <div id="enemyBoard" class="board target"></div>
           <div id="enemyFleet" class="fleet"></div>
         </div>
-        <div class="card">
-          <h3>Deine Flotte</h3>
+        <div id="ownCard" class="card">
+          <div class="card-head"><h3>Deine Flotte</h3><span class="pill">Gegenüber zielt …</span></div>
           <div id="ownBoard" class="board mini"></div>
         </div>
       </div>
@@ -1273,14 +1308,18 @@
 
     function renderPlay() {
       const over = S.phase === 'over';
-      const banner = $('playBanner');
-      banner.className = 'turn-banner' + (over ? ' hidden' : (S.myTurn ? ' mine' : ''));
-      if (S.myTurn) {
-        $('playTitle').textContent = S.pending ? 'Feld ' + cellName(S.pending.x, S.pending.y) + ' …' : 'Du bist dran';
-        $('playSub').textContent = S.pending ? '' : 'Tippe ein Feld im Meer deines Gegenübers an';
-      } else {
-        $('playTitle').textContent = 'Dein Gegenüber ist dran';
-        $('playSub').textContent = '';
+      // Zug-Anzeige: Rahmen + Pill am Feld, das gerade „aktiv“ ist; Schleier übers gegnerische Meer, wenn man warten muss
+      const mine = !over && S.myTurn, opp = !over && !S.myTurn;
+      const ecard = $('enemyCard');
+      const wasMine = ecard.classList.contains('turn-mine');
+      ecard.classList.toggle('turn-mine', mine);
+      ecard.classList.toggle('turn-opp', opp);
+      if (!mine) ecard.classList.remove('flash');
+      $('ownCard').classList.toggle('turn-opp', opp);
+      $('enemyPill').textContent = S.pending ? 'Wurf auf ' + cellName(S.pending.x, S.pending.y) + ' …' : 'Du bist dran';
+      if (mine && !wasMine) {
+        ecard.classList.remove('flash'); void ecard.offsetWidth; ecard.classList.add('flash');
+        setTimeout(() => ecard.classList.remove('flash'), 750);
       }
 
       // Meer des Gegenübers
@@ -1299,13 +1338,13 @@
         for (const s of S.oppShips) if (!S.enemySunk.includes(s.id)) enemyShips.push({ key: s.id, id: s.id, cells: s.cells, cls: 'reveal' });
       }
       renderShips(es, enemyShips);
+      // Flottenliste nur einmal aufbauen, danach nur „versenkt“ umschalten (kein Neuladen der Bilder)
       const ef = $('enemyFleet');
-      ef.innerHTML = '';
-      for (const f of FLEET) {
-        const chip = fleetChip(f, 'span');
-        if (S.enemySunk.includes(f.id)) chip.classList.add('done');
-        ef.appendChild(chip);
+      if (ef.children.length !== FLEET.length) {
+        ef.innerHTML = '';
+        for (const f of FLEET) ef.appendChild(fleetChip(f, 'span'));
       }
+      FLEET.forEach((f, i) => ef.children[i].classList.toggle('done', S.enemySunk.includes(f.id)));
 
       // Eigenes Feld
       const { cells: oc, sea: os } = boards.own;
@@ -1398,19 +1437,25 @@
     }
 
     let toastTimer = null;
-    function toast(text, kind) {
+    function toast(text, kind, ms = 2200) {
       const t = $('toast');
       t.textContent = text;
       t.className = 'show' + (kind ? ' ' + kind : '');
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { t.className = ''; }, 2200);
+      toastTimer = setTimeout(() => { t.className = ''; }, ms);
     }
     // Vibration (nur Android – Safari/iPhone kennt navigator.vibrate nicht)
     const VIBE_KEY = 'schiffe-versenken-vibration';
     const vibeSupported = typeof navigator.vibrate === 'function';
     let vibeOn = true;
     try { vibeOn = localStorage.getItem(VIBE_KEY) !== 'off'; } catch (e) {}
-    function buzz(p) { if (vibeSupported && vibeOn) { try { navigator.vibrate(p); } catch (e) {} } }
+    // In-App-Browser (Android-WebView, z. B. Link aus einer anderen App) – dort ist Vibration meist gesperrt
+    const inAppBrowser = /; wv\)/.test(navigator.userAgent);
+    // Liefert true/false wie navigator.vibrate (false = vom Browser blockiert), null wenn aus/nicht unterstützt
+    function buzz(p) {
+      if (!vibeSupported || !vibeOn) return null;
+      try { return navigator.vibrate(p); } catch (e) { return false; }
+    }
 
     let wakeLock = null;
     async function keepAwake() {
@@ -1537,7 +1582,19 @@
       vibeOn = !vibeOn;
       try { localStorage.setItem(VIBE_KEY, vibeOn ? 'on' : 'off'); } catch (e) {}
       renderVibeBtn();
-      buzz([120]); // kurz antippen, damit man merkt, dass es funktioniert
+      if (!vibeOn) return;
+      const ok = buzz(200); // Probe-Vibration, damit man merkt, ob es funktioniert
+      if (ok === false || inAppBrowser) {
+        openDialog({
+          title: 'Vibration nicht möglich',
+          text: inAppBrowser
+            ? 'Die Seite läuft im Browser einer anderen App. Dort ist Vibration meist gesperrt. Öffne die Seite direkt in Chrome.'
+            : 'Dein Browser hat die Vibration blockiert. Öffne die Seite direkt in Chrome.',
+          buttons: [{ label: 'OK' }],
+        });
+      } else {
+        toast('Keine Vibration gespürt? In Android unter Einstellungen → Töne & Vibration → Vibration & Haptik prüfen.', '', 5000);
+      }
     });
     renderVibeBtn();
     document.addEventListener('pointerdown', () => Sound.unlock(), { passive: true });
@@ -1548,6 +1605,10 @@
       if (S.phase === 'setup') renderSetup();
     });
     boards.enemy = buildBoard($('enemyBoard'), fire);
+    $('enemyBoard').appendChild(Object.assign(document.createElement('div'), {
+      className: 'veil',
+      innerHTML: '<span>Gegenüber ist dran <span class="dots"><i></i><i></i><i></i></span></span>',
+    }));
     boards.own = buildBoard($('ownBoard'));
     for (const f of FLEET) $('rulesFleet').appendChild(Object.assign(fleetChip(f, 'span'), { className: '' }));
 
