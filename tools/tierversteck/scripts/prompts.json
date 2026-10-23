@@ -1,0 +1,22 @@
+{
+  "model": "",
+  "variants": 3,
+  "style": "cartoon sticker, bold dark outline, thick white sticker border around the subject, flat bright colors, friendly cute expression, top-down friendly view, centered, no text, no shadow, on a solid pure magenta (#FF00FF) background",
+  "assets": {
+    "snake":       { "size": 256, "prompt": "a cheerful green snake curled in a zigzag S-shape" },
+    "horse":       { "size": 256, "prompt": "a friendly brown horse standing, full body" },
+    "dog":         { "size": 256, "prompt": "a playful golden dog lying stretched out, full body, side view" },
+    "cat":         { "size": 256, "prompt": "a cute orange cat curled up in a corner pose" },
+    "mouse":       { "size": 256, "prompt": "a tiny grey mouse sitting, full body" },
+    "head-snake":  { "size": 128, "prompt": "head of a cheerful green snake, icon" },
+    "head-horse":  { "size": 128, "prompt": "head of a friendly brown horse, icon" },
+    "head-dog":    { "size": 128, "prompt": "head of a playful golden dog, icon" },
+    "head-cat":    { "size": 128, "prompt": "head of a cute orange cat, icon" },
+    "head-mouse":  { "size": 128, "prompt": "head of a tiny grey mouse, icon" },
+    "hit":         { "size": 128, "prompt": "a single dark brown animal paw print, icon" },
+    "miss":        { "size": 128, "prompt": "a small puff of swirling beige dust cloud, icon" },
+    "counter":     { "size": 128, "prompt": "a yellow lightning bolt with a small paw, icon" },
+    "logo":        { "size": 256, "prompt": "logo badge: a paw print over a tiny folded map with a location pin" },
+    "hero":        { "size": 1024, "keepBackground": true, "prompt": "wide illustration: a snake, a horse, a dog, a cat and a mouse peeking out from hiding spots in a colorful cartoon town seen from above, with houses, trees, a park, a pond and streets; soft pastel cream background instead of magenta" }
+  }
+}
