@@ -1,0 +1,8 @@
+{
+    "name": "Tierversteck",
+    "description": "Schiffe versenken auf einer echten Karte: Aus einer Adresse wird mit OpenStreetMap-Daten ein Spielbrett, auf dem beide fünf Tiere verstecken – mit Lieblingsgelände und Konter-Schuss. Online zu zweit oder an einem Gerät.",
+    "category": "Spiel",
+    "tags": ["Spiel", "Multiplayer", "Karte"],
+    "created": "2026-10-23",
+    "lastUpdated": "2026-10-23"
+}
