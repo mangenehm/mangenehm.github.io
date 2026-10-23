@@ -188,8 +188,15 @@ export function createScreen(root, { mode, onDone, onBack }) {
       st.board = null;
       sync();
       setStatus('Lade Kartendaten …');
+      const signal = abort.signal;
+      const onProgress = ({ attempt, total, round }) => {
+        if (signal.aborted || (attempt === 1 && round === 1)) return;
+        setStatus(round > 1
+          ? `Lade Kartendaten … (Kartenserver überlastet, neuer Versuch ${attempt}/${total})`
+          : `Lade Kartendaten … (Kartenserver ist langsam, frage Server ${attempt}/${total})`);
+      };
       try {
-        st.area = await loadArea(st.center, st.size, st.cellMeters, { signal: abort.signal });
+        st.area = await loadArea(st.center, st.size, st.cellMeters, { signal, onProgress });
       } catch (err) {
         if (err.name === 'AbortError') return;
         st.loading = false;
