@@ -76,17 +76,18 @@ Online-Modus ohne Relays testen: `…/tools/tierversteck/?net=bc` in zwei Tabs �
 
 ## Grafiken
 
-Ohne Grafiken zeichnet die App eigene Sticker-Formen mit Emoji. Generierte Sticker werden automatisch genutzt, sobald sie in `assets/manifest.json` stehen:
+Die Sticker (Tiere, Pfote, Staubwolke, Titelbild) wurden mit OpenRouter erzeugt (`google/gemini-3.1-flash-image`, Prompts in `scripts/prompts.json`) und liegen als WebP in `assets/`. Die App nutzt alles, was in `assets/manifest.json` steht; fehlt eine Grafik, zeichnet sie eigene Formen mit Emoji.
+
+Neu erzeugen:
 
 ```sh
 echo "OPENROUTER_API_KEY=sk-or-…" > .env          # bleibt lokal (.gitignore)
 node scripts/generate-assets.mjs --list-models    # Bildmodell aussuchen
-node scripts/generate-assets.mjs --model <slug>   # Varianten nach scripts/out/
-npm i --no-save sharp
-node scripts/generate-assets.mjs --pick snake=2 horse=1 dog=3 …
+node scripts/generate-assets.mjs                  # Varianten nach scripts/out/
+python3 scripts/postprocess-assets.py <ordner> assets   # freistellen, skalieren, WebP
 ```
 
-`--pick` stellt den Magenta-Hintergrund frei, skaliert und schreibt WebP nach `assets/`. Die Tier-Sticker werden auf die Bounding Box der Form gelegt, mit der Form-Maske beschnitten und mitgedreht.
+Die Tier-Sticker werden auf die Bounding Box der Grundform gelegt, mit der Form-Maske beschnitten und mitgedreht bzw. -gespiegelt. Hund (3:1) und Pferd (Hochformat) haben deshalb passende Seitenverhältnisse.
 
 ## Lizenzen
 

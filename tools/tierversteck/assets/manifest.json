@@ -1,1 +1,10 @@
-{}
+{
+  "snake": "snake.webp",
+  "horse": "horse.webp",
+  "dog": "dog.webp",
+  "cat": "cat.webp",
+  "mouse": "mouse.webp",
+  "hit": "hit.webp",
+  "miss": "miss.webp",
+  "hero": "hero.webp"
+}

@@ -32,7 +32,8 @@ export function asset(key) { return images[key] || null; }
 
 /** Kleiner Tierkopf für Legenden: <img> wenn vorhanden, sonst Emoji. */
 export function headHtml(animalId, cls = 'head') {
-  const img = asset('head-' + animalId) || asset(animalId);
+  // nur eigene Kopf-Grafiken; die ganzen Sticker sind für Chips zu länglich
+  const img = asset('head-' + animalId);
   return img
     ? `<img class="${cls}" src="${img.src}" alt="">`
     : `<span class="${cls} emoji" aria-hidden="true">${ANIMALS[animalId].emoji}</span>`;
@@ -122,9 +123,10 @@ function drawOriented(ctx, img, p, cell, ox, oy) {
   const ys = [0, b * w0, d * h0, b * w0 + d * h0];
   const minX = Math.min(...xs), minY = Math.min(...ys);
   ctx.transform(a * cell, b * cell, c * cell, d * cell, ox + (p.x - minX) * cell, oy + (p.y - minY) * cell);
-  // quadratischen Sticker zentriert auf die Box legen (Überstand schneidet die Maske ab)
-  const s = Math.max(w0, h0);
-  ctx.drawImage(img, (w0 - s) / 2, (h0 - s) / 2, s, s);
+  // Sticker füllend auf die Box legen (Überstand schneidet die Maske ab)
+  const scale = Math.max(w0 / img.naturalWidth, h0 / img.naturalHeight);
+  const iw = img.naturalWidth * scale, ih = img.naturalHeight * scale;
+  ctx.drawImage(img, (w0 - iw) / 2, (h0 - ih) / 2, iw, ih);
 }
 
 function drawEmoji(ctx, emoji, cells, cell, ox, oy) {

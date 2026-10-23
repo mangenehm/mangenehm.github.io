@@ -19,12 +19,11 @@ Plan: „Tierversteck – Implementierungsplan“ (23.10.2026). Umgesetzt als To
 - [x] M2 Karte – Nominatim-Suche beim Absenden mit Trefferliste, Brettgröße 8–12, Zellgröße 20/35/50 m, verschiebbarer Ausschnitt (Pfeile oder Ziehen, 3 Zellen Rand vorgeladen), Overpass mit Ausweich-Endpunkten und `localStorage`-Cache, Rasterung je Klasse mit Priorität bei Gleichstand, eigenes Rendering, Geländeverteilung mit 80-%-Warnung, OSM-Hinweis
 - [x] M3 Hot-Seat – Verstecken (Tippen, Ziehen, Doppeltipp/R drehen, F spiegeln, Zufällig), Glanz im Lieblingsgelände, Zielen + Bestätigen, Sichtschutz mit Zusammenfassung der gegnerischen Züge, Endbildschirm, Revanche
 - [x] M4 Online – Trystero-Transport, Einladungslink, Teilen-Dialog, QR-Code, Protokoll mit Prüfung jeder Nachricht, Commitment und Nachprüfung beim Aufdecken, Wiederverbinden nach Reload (Postausgang + `sync`), Dritte im Raum werden ignoriert
-- [ ] M5 Grafiken – Skript und Prompts fertig, Darstellung mit Maskierung/Drehung eingebaut; **Grafiken selbst noch nicht erzeugt** (braucht OpenRouter-Key und Auswahl von Hand)
+- [x] M5 Grafiken – mit OpenRouter (`google/gemini-3.1-flash-image`) erzeugt: 5 Tier-Sticker, Pfote (Treffer), Staubwolke (Daneben), Titelbild; freigestellt mit `scripts/postprocess-assets.py`, eingebaut mit Maskierung und Drehung. Pferd und Katze gespiegelt, damit der Kopf in der Form liegt. Keine eigenen Kopf-Grafiken – Legenden nutzen Emoji
 - [x] M6 Feinschliff (teilweise) – Mobile-Layout, `prefers-reduced-motion`, Vibration bei eigenem Zug, README mit Regeln. Offen: Sounds, Online-Revanche
 
 ## Offene Punkte
 
-- Grafiken erzeugen und auswählen (siehe README, Abschnitt „Grafiken“)
 - Online-Revanche im selben Raum (derzeit: neues Spiel)
 - Playtest: Maus auf 12×12 ggf. zu schwer
 - WebRTC hinter strikten Firewalls: nur Fehlermeldung, kein TURN-Server

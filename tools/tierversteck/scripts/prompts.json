@@ -1,6 +1,6 @@
 {
-  "model": "",
-  "variants": 3,
+  "model": "google/gemini-3.1-flash-image",
+  "variants": 1,
   "style": "cartoon sticker, bold dark outline, thick white sticker border around the subject, flat bright colors, friendly cute expression, top-down friendly view, centered, no text, no shadow, on a solid pure magenta (#FF00FF) background",
   "assets": {
     "snake":       { "size": 256, "prompt": "a cheerful green snake curled in a zigzag S-shape" },
