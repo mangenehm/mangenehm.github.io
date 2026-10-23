@@ -64,6 +64,14 @@
     .icon-btn.end { padding: 0 14px 0 11px; }
     .icon-btn.end:hover { color: var(--coral-dark); }
     @media (max-width: 520px) { #connState { display: none; } }
+    @media (max-width: 374px) {
+      .top-actions { gap: 6px; }
+      .icon-btn { height: 36px; min-width: 36px; padding: 0 8px; }
+      .icon-btn.end { padding: 0 10px 0 8px; }
+      .conn { padding: 6px 9px; }
+      body.in-game header.top h1 { display: none; }
+      body.in-game .top-actions { margin-left: auto; }
+    }
     .mark {
       width: 30px; height: 30px; border-radius: 9px; flex: none;
       background: linear-gradient(160deg, var(--sea-1), var(--sea-2));
@@ -324,6 +332,7 @@
       <div class="top-actions">
         <span id="connBadge" class="conn hidden"><i></i><span><span id="connState"></span><span id="connCode"></span></span></span>
         <button id="btnSound" class="icon-btn" type="button"></button>
+        <button id="btnVibe" class="icon-btn hidden" type="button"></button>
         <button id="btnEnd" class="icon-btn end hidden" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>Beenden
         </button>
@@ -490,25 +499,40 @@
       let ctx = null, master = null, noiseBuf = null, enabled = true;
       try { enabled = localStorage.getItem(KEY) !== 'off'; } catch (e) {}
 
+      // Master-Kette: Gain → Kompressor → Ausgang, damit der Knall laut sein kann, ohne zu übersteuern
+      function chain(c) {
+        const g = c.createGain(), comp = c.createDynamicsCompressor(), makeup = c.createGain();
+        g.gain.value = .7;
+        comp.threshold.value = -12; comp.knee.value = 6; comp.ratio.value = 5;
+        comp.attack.value = .002; comp.release.value = .2;
+        makeup.gain.value = 2.3;
+        g.connect(comp).connect(makeup).connect(c.destination);
+        return g;
+      }
       function ensure() {
         if (ctx) return ctx;
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return null;
         try {
           ctx = new AC();
-          master = ctx.createGain();
-          master.gain.value = .6;
-          master.connect(ctx.destination);
+          master = chain(ctx);
         } catch (e) { ctx = null; }
         return ctx;
       }
       function noiseBuffer() {
         if (noiseBuf) return noiseBuf;
-        const len = Math.floor(ctx.sampleRate * .8);
+        const len = Math.floor(ctx.sampleRate * 1.2);
         noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
         const d = noiseBuf.getChannelData(0);
         for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
         return noiseBuf;
+      }
+      // Sättigung für mehr „Biss“ beim Knall
+      function shaper(k) {
+        const ws = ctx.createWaveShaper(), n = 1024, curve = new Float32Array(n);
+        for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; curve[i] = Math.tanh(k * x) / Math.tanh(k); }
+        ws.curve = curve;
+        return ws;
       }
       function env(g, t, peak, dur, attack) {
         g.gain.setValueAtTime(.0001, t);
@@ -534,19 +558,41 @@
         if (o.to) f.frequency.exponentialRampToValueAtTime(o.to, t + dur);
         f.Q.value = o.q || 1;
         env(g, t, o.gain || .2, dur, o.attack || .01);
-        src.connect(f).connect(g).connect(master);
-        src.start(t); src.stop(t + dur + .05);
+        let node = src.connect(f);
+        if (o.shape) node = node.connect(shaper(o.shape));
+        node.connect(g).connect(master);
+        src.start(t, Math.random() * .3); src.stop(t + dur + .05);
+      }
+      // Knall: harter Rausch-Transient + tiefer Wumms + Nachgrollen; dull = dumpfer (eigenes Schiff getroffen)
+      function bang(dull) {
+        noise(0, dull ? .4 : .32, { type: 'lowpass', freq: dull ? 2600 : 8000, to: dull ? 200 : 300, q: .5, gain: .95, attack: .001, shape: dull ? 4 : 6 });
+        tone(dull ? 110 : 140, 0, dull ? .55 : .45, { gain: .8, to: dull ? 34 : 40, attack: .002 });
+        noise(.04, dull ? .85 : .7, { type: 'lowpass', freq: dull ? 320 : 420, to: 100, gain: dull ? .45 : .35, attack: .03 });
+      }
+      function bubbles(at) {
+        [540, 450, 370, 300, 240].forEach((f, i) => tone(f, at + i * .11, .1, { gain: .16, to: f * .6 }));
+        noise(at - .05, .6, { type: 'lowpass', freq: 900, to: 150, gain: .18 });
       }
       const SFX = {
-        place() { tone(520, 0, .07, { type: 'triangle', gain: .16, to: 300 }); noise(0, .05, { freq: 2600, gain: .05 }); },
-        tick() { tone(900, 0, .045, { type: 'triangle', gain: .09 }); },
-        miss() { tone(720, 0, .16, { gain: .2, to: 200 }); noise(.02, .2, { freq: 900, q: .8, gain: .07, to: 400 }); },
-        hit() { noise(0, .5, { freq: 1600, q: .6, gain: .5, to: 320, attack: .005 }); tone(170, 0, .28, { gain: .28, to: 70 }); },
-        sunk() {
-          noise(0, .35, { freq: 900, q: .6, gain: .3, to: 200 });
-          [460, 380, 300, 240].forEach((f, i) => tone(f, .12 + i * .11, .09, { gain: .18, to: f * .65 }));
+        place() { tone(520, 0, .08, { type: 'triangle', gain: .45, to: 300 }); noise(0, .05, { freq: 2600, gain: .12 }); },
+        tick() { tone(900, 0, .05, { type: 'triangle', gain: .3 }); },
+        // Platsch: Plopp beim Eintauchen, breites Wasserrauschen, Zischen und ein paar Tropfen
+        miss() {
+          tone(300, 0, .08, { gain: .55, to: 80, attack: .002 });
+          noise(0, .5, { type: 'bandpass', freq: 2500, to: 450, q: .6, gain: .9, attack: .008 });
+          noise(.01, .28, { type: 'highpass', freq: 3200, gain: .2, attack: .005 });
+          for (let i = 0; i < 4; i++) {
+            const f = 900 + Math.random() * 700;
+            tone(f, .16 + Math.random() * .34, .05, { gain: .08, to: f * 1.7 });
+          }
         },
-        incoming() { noise(0, .4, { type: 'lowpass', freq: 700, gain: .32, to: 180 }); tone(120, 0, .3, { gain: .22, to: 60 }); },
+        hit() {
+          bang(false);
+          noise(.14, .32, { type: 'bandpass', freq: 1800, to: 600, q: .8, gain: .16 }); // Spritzer danach
+        },
+        sunk() { bang(false); bubbles(.35); },
+        incoming() { bang(true); },
+        sunkOwn() { bang(true); bubbles(.4); },
         turn() { tone(660, 0, .2, { gain: .12, type: 'triangle' }); tone(880, .13, .3, { gain: .12, type: 'triangle' }); },
         join() { [523, 659, 784].forEach((f, i) => tone(f, i * .09, .3, { gain: .11, type: 'triangle' })); },
         win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .12, i === 3 ? .7 : .25, { gain: .15, type: 'triangle' })); },
@@ -561,6 +607,14 @@
         unlock() {
           const c = ensure();
           if (c && c.state === 'suspended') c.resume().catch(() => {});
+        },
+        // Zum Vorhören/Testen: Klang offline rendern, liefert die Samples
+        render(name, seconds = 1.6, rate = 44100) {
+          const saved = [ctx, master, noiseBuf];
+          const off = new OfflineAudioContext(1, Math.ceil(seconds * rate), rate);
+          ctx = off; master = chain(off); noiseBuf = null;
+          try { SFX[name](); } finally { [ctx, master, noiseBuf] = saved; }
+          return off.startRendering().then(b => b.getChannelData(0));
         },
         play(name, delay) {
           if (!enabled || !ensure()) return;
@@ -957,12 +1011,13 @@
       send({ t: 'result', round: S.round, x, y, hit: !!ship, sunk, gameOver });
       if (prev === 0) {
         if (gameOver) { S.phase = 'over'; S.winner = 'opp'; S.myTurn = false; }
-        Sound.play(sunk ? 'sunk' : ship ? 'incoming' : 'miss');
-        if (gameOver) Sound.play('lose', 800);
-        else if (!ship) Sound.play('turn', 450);
+        Sound.play(sunk ? 'sunkOwn' : ship ? 'incoming' : 'miss');
+        if (gameOver) Sound.play('lose', 900);
+        else if (!ship) Sound.play('turn', 650);
         if (ship) {
           const f = FLEET[ship.id];
-          buzz(sunk ? [80, 60, 160] : 60);
+          // Vibration nur, wenn man selbst getroffen wird
+          buzz(gameOver ? [400, 120, 400] : sunk ? [200, 80, 200, 80, 350] : [180]);
           toast(sunk ? possessive(f) + ' wurde versenkt!' : possessive(f) + ' wurde getroffen (' + cellName(x, y) + ').', sunk ? 'sunk' : 'hit');
         }
         save(); render();
@@ -1006,8 +1061,8 @@
       }
       Sound.play(m.sunk ? 'sunk' : m.hit ? 'hit' : 'miss');
       if (m.gameOver) Sound.play('win', 800);
-      if (m.sunk) { buzz([80, 60, 160]); toast('Versenkt: ' + FLEET[m.sunk.id].name + '!', 'sunk'); }
-      else if (m.hit) { buzz(60); toast('Treffer! Du darfst nochmal.', 'hit'); }
+      if (m.sunk) toast('Versenkt: ' + FLEET[m.sunk.id].name + '!', 'sunk');
+      else if (m.hit) toast('Treffer! Du darfst nochmal.', 'hit');
       else toast('Daneben – nur Wasser.');
       save(); render();
     }
@@ -1313,7 +1368,12 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => { t.className = ''; }, 2200);
     }
-    function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+    // Vibration (nur Android – Safari/iPhone kennt navigator.vibrate nicht)
+    const VIBE_KEY = 'schiffe-versenken-vibration';
+    const vibeSupported = typeof navigator.vibrate === 'function';
+    let vibeOn = true;
+    try { vibeOn = localStorage.getItem(VIBE_KEY) !== 'off'; } catch (e) {}
+    function buzz(p) { if (vibeSupported && vibeOn) { try { navigator.vibrate(p); } catch (e) {} } }
 
     let wakeLock = null;
     async function keepAwake() {
@@ -1350,6 +1410,16 @@
       b.innerHTML = Sound.enabled ? SPEAKER_ON : SPEAKER_OFF;
       b.setAttribute('aria-label', Sound.enabled ? 'Ton ausschalten' : 'Ton einschalten');
       b.title = Sound.enabled ? 'Ton an' : 'Ton aus';
+    }
+    const PHONE = '<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 17.5h2"/>';
+    const VIBE_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + PHONE + '<path d="M3 9v6M21 9v6"/></svg>';
+    const VIBE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + PHONE + '<path d="M3 3l18 18"/></svg>';
+    function renderVibeBtn() {
+      const b = $('btnVibe');
+      b.classList.toggle('hidden', !vibeSupported);
+      b.innerHTML = vibeOn ? VIBE_ON : VIBE_OFF;
+      b.setAttribute('aria-label', vibeOn ? 'Vibration ausschalten' : 'Vibration einschalten');
+      b.title = vibeOn ? 'Vibration bei eigenem Treffer an' : 'Vibration aus';
     }
 
     function showJoinError(text) {
@@ -1426,7 +1496,15 @@
       Sound.play('tick');
     });
     renderSoundBtn();
+    $('btnVibe').addEventListener('click', () => {
+      vibeOn = !vibeOn;
+      try { localStorage.setItem(VIBE_KEY, vibeOn ? 'on' : 'off'); } catch (e) {}
+      renderVibeBtn();
+      buzz([120]); // kurz antippen, damit man merkt, dass es funktioniert
+    });
+    renderVibeBtn();
     document.addEventListener('pointerdown', () => Sound.unlock(), { passive: true });
+    if (new URLSearchParams(location.search).has('soundtest')) window.__sound = Sound; // nur für Tests
 
     boards.setup = buildBoard($('setupBoard'), onSetupTap, (x, y) => {
       preview = x === null || S.myReady ? null : [x, y];
