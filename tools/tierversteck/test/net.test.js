@@ -117,6 +117,14 @@ test('komplette Online-Partie über den Transport', async () => {
   assert.equal(guest.s.verdict?.ok, true);
 });
 
+test('SHA-256-Ersatz ohne crypto.subtle stimmt mit Node überein', async () => {
+  const { sha256 } = await import('../src/net/commit.js');
+  const { createHash } = await import('node:crypto');
+  for (const s of ['', 'abc', 'x'.repeat(55), 'x'.repeat(56), 'x'.repeat(64), 'Grüße 🐍'.repeat(40)]) {
+    assert.equal(Buffer.from(sha256(new TextEncoder().encode(s))).toString('hex'), createHash('sha256').update(s).digest('hex'));
+  }
+});
+
 test('Protokoll-Prüfung', () => {
   assert.ok(isValidMessage(msg.hello('Ada')));
   assert.ok(isValidMessage(msg.shot(3)));

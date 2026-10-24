@@ -141,7 +141,7 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
       const p = pl[id];
       const ok = complete(id) && !problemOf(id);
       const fav = ok && isInFavorite(board, p);
-      const state = !p ? 'offen' : !complete(id) ? `${p.regions.length}/${a.size}` : problemOf(id) ? 'ungültig' : fav ? '✨ unsichtbar' : 'versteckt';
+      const state = !p ? 'offen' : !complete(id) ? `${p.regions.length}/${a.size}` : problemOf(id) ? 'ungültig' : fav ? '✨ getarnt' : 'versteckt';
       return `<button type="button" class="tray-item ${id === selected ? 'sel' : ''} ${ok ? 'placed' : ''} ${fav ? 'fav' : ''}" data-id="${id}"
                 aria-pressed="${id === selected}" title="${esc(a.name)}: ${a.size} ${a.size === 1 ? 'Ort' : 'Orte'}, mag ${esc(a.favoriteLabel)}">
         ${headHtml(id)}

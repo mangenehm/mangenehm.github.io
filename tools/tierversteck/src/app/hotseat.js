@@ -10,6 +10,7 @@ import { coverScreen } from '../ui/cover.js';
 import { hideScreen } from '../ui/hide.js';
 import { playScreen, describe } from '../ui/play.js';
 import { endScreen } from '../ui/end.js';
+import { toast } from '../ui/dom.js';
 
 const tick = () => new Promise(r => setTimeout(r, 0));
 
@@ -47,7 +48,7 @@ export function runHotseat(ui, { names, board, onExit }) {
           board: g.board,
           title: `${g.s.name}: Tiere verstecken`,
           onDone: async placements => {
-            await g.commit(placements);
+            try { await g.commit(placements); } catch (err) { toast(err.message || 'Verstecken fehlgeschlagen'); return; }
             await tick();
             if (role === 'host') hideFor('guest');
             else nextTurn();

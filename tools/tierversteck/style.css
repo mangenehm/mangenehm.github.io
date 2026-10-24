@@ -157,7 +157,7 @@ input[type=text]:focus, select:focus { border-color: var(--teal); outline: none;
 .tray-item.fav { background: #fff8de; border-color: var(--mustard); }
 .tray-item.fav.sel { border-color: var(--ink); }
 .ti-name { font-weight: 700; font-size: .85rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-@media (max-width: 480px) { .ti-name { font-size: .74rem; } }
+@media (max-width: 480px) { .ti-name { font-size: .68rem; letter-spacing: -.01em; } .tray { gap: 4px; } }
 .ti-meta, .ti-state { font-size: .7rem; color: var(--muted); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 @media (max-width: 480px) { .ti-meta { display: none; } .tray-item { padding: 6px 2px; } }
 .tools { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 10px; }
