@@ -1,20 +1,27 @@
 /*
- * Tiere verstecken: auswählen, auf das Brett tippen oder ziehen,
- * drehen (Taste R / Doppeltipp), spiegeln (F), entfernen (Entf).
- * Ein Tier im Lieblingsgelände glänzt.
+ * Tiere verstecken: Tier auswählen, dann so viele zusammenhängende Orte
+ * antippen, wie es braucht. Nochmal tippen nimmt einen Ort weg.
+ * Ein Tier im Lieblingsgelände glänzt – und hinterlässt keine Spuren.
  */
 
-import { ANIMALS, ANIMAL_IDS, shapeSize, TERRAIN_INFO, placementCells } from '../engine/shapes.js';
-import { placementProblem, isInFavorite, randomFleet, validateFleet } from '../engine/board.js';
+import { ANIMALS, ANIMAL_IDS, TERRAIN_INFO } from '../engine/shapes.js';
+import { placementProblem, isInFavorite, randomFleet, validateFleet, regionLabel } from '../engine/board.js';
 import { BoardView } from './boardview.js';
 import { headHtml } from './sprites.js';
 import { el, $, $$, esc, vibrate } from './dom.js';
 
 const PROBLEM_TEXT = {
-  bounds: 'ragt über den Rand',
-  overlap: 'überlappt ein anderes Tier',
-  touch: 'berührt ein anderes Tier',
+  size: 'braucht noch Orte',
+  apart: 'hängt nicht zusammen',
+  overlap: 'teilt einen Ort mit einem anderen Tier',
 };
+
+/** Ortsbeschreibung für Hinweiszeilen: „Ort 12 · Häuser an der Lindenstraße (Häuser)“ */
+export function regionText(board, r) {
+  const reg = board.regions[r];
+  const terrain = TERRAIN_INFO[reg.t].label;
+  return `${regionLabel(r)} · ${reg.n}${reg.n.startsWith(TERRAIN_INFO[reg.t].plural) ? '' : ` (${terrain})`}`;
+}
 
 /**
  * @param {object} o
@@ -25,27 +32,24 @@ const PROBLEM_TEXT = {
  * @param {(placements:object[])=>void} [o.onDraft]
  */
 export function hideScreen(root, { board, title, draft = [], onDone, onDraft = () => {} }) {
-  const size = board.size;
-  const pl = Object.fromEntries(ANIMAL_IDS.map(id => [id, draft.find(p => p.animal === id) || null]));
-  let selected = ANIMAL_IDS.find(id => !pl[id]) || null;
-  let showTerrain = false;
-  let drag = null;
-  let lastTap = { id: null, t: 0 };
+  const pl = Object.fromEntries(ANIMAL_IDS.map(id => [id, null]));
+  for (const p of draft) if (ANIMAL_IDS.includes(p?.animal) && Array.isArray(p.regions)) pl[p.animal] = { animal: p.animal, regions: [...p.regions] };
+  let selected = ANIMAL_IDS.find(id => !complete(id)) || null;
+  let info = '';
 
   const node = el(`
     <section class="screen hide">
       <div class="card">
         <h2>${esc(title)}</h2>
-        <p class="muted small hint">Tier auswählen und aufs Brett tippen. Ziehen verschiebt, Doppeltipp oder <kbd>R</kbd> dreht, <kbd>F</kbd> spiegelt.</p>
+        <p class="muted small hint">Tier auswählen und zusammenhängende Orte antippen. Nochmal tippen nimmt den Ort weg.
+          Im Lieblingsgelände ✨ hinterlässt ein Tier keine Spuren 👣.</p>
         <div class="tray"></div>
         <div class="board-wrap"></div>
+        <p class="region-info small muted" aria-live="polite"></p>
         <div class="tools">
-          <button type="button" class="btn secondary" data-act="rotate" title="Drehen (R)">⟳ Drehen</button>
-          <button type="button" class="btn secondary" data-act="flip" title="Spiegeln (F)">⇋ Spiegeln</button>
-          <button type="button" class="btn secondary" data-act="remove" title="Entfernen (Entf)">✕ Weg</button>
+          <button type="button" class="btn secondary" data-act="remove">✕ Tier weg</button>
           <button type="button" class="btn secondary" data-act="random">🎲 Zufall</button>
         </div>
-        <label class="toggle"><input type="checkbox" data-act="terrain"> Geländeklassen zeigen</label>
         <p class="problems small"></p>
       </div>
       <button class="btn block" data-act="done" disabled>Fertig versteckt</button>
@@ -54,111 +58,57 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
 
   const view = new BoardView($(node, '.board-wrap'), board, { onPointer, label: 'Dein Revier zum Verstecken' });
 
-  $(node, '[data-act=rotate]').onclick = () => transform('rotate');
-  $(node, '[data-act=flip]').onclick = () => transform('flip');
   $(node, '[data-act=remove]').onclick = () => { if (selected && pl[selected]) { pl[selected] = null; changed(); } };
   $(node, '[data-act=random]').onclick = () => {
-    for (const p of randomFleet(size)) pl[p.animal] = p;
+    for (const p of randomFleet(board)) pl[p.animal] = p;
     selected = null;
     changed();
   };
-  $(node, '[data-act=terrain]').onchange = e => { showTerrain = e.target.checked; draw(); };
   $(node, '[data-act=done]').onclick = () => {
     const fleet = placements();
-    if (!validateFleet(size, fleet)) onDone(fleet);
+    if (!validateFleet(board, fleet)) onDone(fleet);
   };
-
-  const onKey = e => {
-    if (e.target.closest?.('input, textarea, select')) return;
-    const k = e.key.toLowerCase();
-    if (k === 'r') transform('rotate');
-    else if (k === 'f') transform('flip');
-    else if ((k === 'delete' || k === 'backspace') && selected && pl[selected]) { pl[selected] = null; changed(); }
-    else if (k.startsWith('arrow') && selected && pl[selected]) {
-      e.preventDefault();
-      const d = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] }[k];
-      moveTo(selected, pl[selected].x + d[0], pl[selected].y + d[1]);
-      changed();
-    } else return;
-  };
-  document.addEventListener('keydown', onKey);
 
   function placements() { return ANIMAL_IDS.map(id => pl[id]).filter(Boolean); }
+  function complete(id) { return !!pl[id] && pl[id].regions.length === ANIMALS[id].size; }
+  function owner(r) { return ANIMAL_IDS.find(id => pl[id]?.regions.includes(r)) || null; }
 
   function problemOf(id) {
-    return pl[id] ? placementProblem(size, pl[id], placements()) : null;
+    return pl[id] ? placementProblem(board, pl[id], placements()) : null;
   }
 
-  /** Box innerhalb des Bretts halten. */
-  function moveTo(id, x, y) {
-    const p = pl[id];
-    const { w, h } = shapeSize(id, p.rot, p.flip);
-    p.x = Math.max(0, Math.min(size - w, x));
-    p.y = Math.max(0, Math.min(size - h, y));
+  /** Orte, die das ausgewählte Tier als Nächstes belegen kann. */
+  function candidates() {
+    const p = selected && pl[selected];
+    if (!p || complete(selected) || !p.regions.length) return [];
+    return [...new Set(p.regions.flatMap(r => board.adj[r]))].filter(r => !owner(r));
   }
 
-  function transform(kind) {
-    if (!selected) return;
-    const p = pl[selected];
-    if (!p) return;
-    const before = shapeSize(selected, p.rot, p.flip);
-    const cx = p.x + before.w / 2, cy = p.y + before.h / 2;
-    if (kind === 'rotate') p.rot = (p.rot + 1) % 4;
-    else p.flip = !p.flip;
-    const after = shapeSize(selected, p.rot, p.flip);
-    moveTo(selected, Math.round(cx - after.w / 2), Math.round(cy - after.h / 2));
+  function tap(r) {
+    const who = owner(r);
+    if (who && who === selected) {
+      // Ort wieder freigeben; ohne Orte ist das Tier weg
+      pl[who].regions = pl[who].regions.filter(x => x !== r);
+      if (!pl[who].regions.length) pl[who] = null;
+    } else if (who) {
+      selected = who;
+      changed(false);
+      return;
+    } else if (selected) {
+      const p = pl[selected];
+      const neighbor = p && p.regions.some(x => board.adj[x].includes(r));
+      if (!p || complete(selected) || !neighbor) pl[selected] = { animal: selected, regions: [r] };   // neu anfangen
+      else p.regions.push(r);
+      vibrate(8);
+      // fertig → nächstes offenes Tier auswählen
+      if (complete(selected) && !problemOf(selected)) selected = ANIMAL_IDS.find(id => !complete(id)) || selected;
+    } else return;
     changed();
   }
 
-  function animalAt(cell) {
-    if (!cell) return null;
-    // ausgewähltes Tier zuerst, falls es (ungültig) über einem anderen liegt
-    const order = selected ? [selected, ...ANIMAL_IDS.filter(id => id !== selected)] : ANIMAL_IDS;
-    for (const id of order) {
-      const p = pl[id];
-      if (!p) continue;
-      const { w, h } = shapeSize(id, p.rot, p.flip);
-      if (cell.x < p.x || cell.y < p.y || cell.x >= p.x + w || cell.y >= p.y + h) continue;
-      if (placementCells(p).some(([x, y]) => x === cell.x && y === cell.y)) return id;
-    }
-    return null;
-  }
-
-  function onPointer(type, cell, e) {
-    if (type === 'down') {
-      const hitId = animalAt(cell);
-      if (hitId) {
-        const now = performance.now();
-        const isDouble = lastTap.id === hitId && now - lastTap.t < 380;
-        lastTap = { id: hitId, t: now };
-        selected = hitId;
-        if (isDouble) { transform('rotate'); drag = null; return; }
-        drag = { id: hitId, dx: cell.x - pl[hitId].x, dy: cell.y - pl[hitId].y, moved: false, start: cell };
-        changed(false);
-      } else if (cell && selected && !pl[selected]) {
-        const { w, h } = shapeSize(selected, 0, false);
-        pl[selected] = { animal: selected, x: 0, y: 0, rot: 0, flip: false };
-        moveTo(selected, cell.x - Math.floor(w / 2), cell.y - Math.floor(h / 2));
-        drag = { id: selected, dx: cell.x - pl[selected].x, dy: cell.y - pl[selected].y, moved: true, start: cell };
-        vibrate(8);
-        changed();
-      } else if (cell) {
-        selected = null;
-        changed(false);
-      }
-      e.preventDefault();
-    } else if (type === 'move' && drag && cell) {
-      const p = pl[drag.id];
-      const nx = cell.x - drag.dx, ny = cell.y - drag.dy;
-      if (nx !== p.x || ny !== p.y) {
-        moveTo(drag.id, nx, ny);
-        drag.moved = true;
-        draw();
-      }
-    } else if (type === 'up' || type === 'cancel') {
-      if (drag?.moved) changed();
-      drag = null;
-    }
+  function onPointer(type, r) {
+    if (type === 'up' && r != null) tap(r);
+    if (type === 'hover' || type === 'up') { info = r != null ? regionText(board, r) : ''; $(node, '.region-info').textContent = info; }
   }
 
   function changed(save = true) {
@@ -169,33 +119,34 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
 
   function draw() {
     view.set({
-      showTerrain,
+      marks: candidates(),
       animals: ANIMAL_IDS.filter(id => pl[id]).map(id => ({
         p: pl[id],
-        invalid: !!problemOf(id),
+        invalid: !!problemOf(id) && complete(id),
         glow: !problemOf(id) && isInFavorite(board, pl[id]),
         selected: id === selected,
       })),
     });
-    const probs = ANIMAL_IDS.filter(id => problemOf(id)).map(id => `${ANIMALS[id].name} ${PROBLEM_TEXT[problemOf(id)]}`);
+    const probs = ANIMAL_IDS.filter(id => pl[id] && problemOf(id))
+      .map(id => `${ANIMALS[id].name} ${problemOf(id) === 'size' ? `braucht noch ${ANIMALS[id].size - pl[id].regions.length} Ort(e)` : PROBLEM_TEXT[problemOf(id)]}`);
     $(node, '.problems').textContent = probs.join(' · ');
     const all = placements();
-    $(node, '[data-act=done]').disabled = all.length !== ANIMAL_IDS.length || !!validateFleet(size, all);
-    const sel = selected && pl[selected];
-    for (const act of ['rotate', 'flip', 'remove']) $(node, `[data-act=${act}]`).disabled = !sel;
+    $(node, '[data-act=done]').disabled = all.length !== ANIMAL_IDS.length || !!validateFleet(board, all);
+    $(node, '[data-act=remove]').disabled = !(selected && pl[selected]);
   }
 
   function renderTray() {
     $(node, '.tray').innerHTML = ANIMAL_IDS.map(id => {
       const a = ANIMALS[id];
       const p = pl[id];
-      const fav = p && !problemOf(id) && isInFavorite(board, p);
-      const state = !p ? 'offen' : problemOf(id) ? 'ungültig' : fav ? '✨ fühlt sich wohl' : 'versteckt';
-      return `<button type="button" class="tray-item ${id === selected ? 'sel' : ''} ${p ? 'placed' : ''} ${fav ? 'fav' : ''}" data-id="${id}"
-                aria-pressed="${id === selected}" title="${esc(a.name)}: ${a.cells.length} Felder, mag ${esc(a.favoriteLabel)}">
+      const ok = complete(id) && !problemOf(id);
+      const fav = ok && isInFavorite(board, p);
+      const state = !p ? 'offen' : !complete(id) ? `${p.regions.length}/${a.size}` : problemOf(id) ? 'ungültig' : fav ? '✨ unsichtbar' : 'versteckt';
+      return `<button type="button" class="tray-item ${id === selected ? 'sel' : ''} ${ok ? 'placed' : ''} ${fav ? 'fav' : ''}" data-id="${id}"
+                aria-pressed="${id === selected}" title="${esc(a.name)}: ${a.size} ${a.size === 1 ? 'Ort' : 'Orte'}, mag ${esc(a.favoriteLabel)}">
         ${headHtml(id)}
         <span class="ti-name">${esc(a.name)}</span>
-        <span class="ti-meta">${a.cells.length} · ${esc(a.favorite.map(t => TERRAIN_INFO[t].label).join(', '))}</span>
+        <span class="ti-meta">${a.size} · ${esc(a.favorite.map(t => TERRAIN_INFO[t].label).join(', '))}</span>
         <span class="ti-state">${state}</span>
       </button>`;
     }).join('');
@@ -206,7 +157,6 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
   draw();
 
   return {
-    destroy() { document.removeEventListener('keydown', onKey); view.destroy(); },
+    destroy() { view.destroy(); },
   };
 }
-

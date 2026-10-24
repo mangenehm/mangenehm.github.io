@@ -160,7 +160,7 @@ input[type=text]:focus, select:focus { border-color: var(--teal); outline: none;
 @media (max-width: 480px) { .ti-name { font-size: .74rem; } }
 .ti-meta, .ti-state { font-size: .7rem; color: var(--muted); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 @media (max-width: 480px) { .ti-meta { display: none; } .tray-item { padding: 6px 2px; } }
-.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+.tools { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 10px; }
 .tools .btn { min-height: 44px; padding: 6px 2px; font-size: .88rem; white-space: nowrap; }
 @media (max-width: 480px) { .tools .btn { font-size: .78rem; } }
 .problems { color: var(--coral-dark); min-height: 1.4em; margin: 6px 0 0; }
@@ -169,7 +169,7 @@ input[type=text]:focus, select:focus { border-color: var(--teal); outline: none;
 .turn { position: sticky; top: 6px; z-index: 5; text-align: center; padding: 12px 16px; }
 .turn-text { font-weight: 700; font-size: 1.05rem; }
 .play.my-turn .turn { box-shadow: 0 0 0 3px var(--coral), var(--shadow); }
-.play.counter .turn { box-shadow: 0 0 0 3px var(--mustard), var(--shadow); background: #fffaf0; }
+.region-info { min-height: 1.4em; margin: 6px 0 0; text-align: center; }
 .banner { color: var(--muted); font-size: .95rem; min-height: 1.3em; }
 .turn.flash { animation: flash .6s ease; }
 @keyframes flash { 30% { transform: scale(1.025); } }

@@ -65,7 +65,7 @@ export function runHotseat(ui, { names, board, onExit }) {
     active = null;
     ui.show(coverScreen, {
       name: g.s.name,
-      title: g.s.kind === 'counter' ? '⚡ Konter-Schuss!' : 'Du bist dran.',
+      title: 'Du bist dran.',
       info: news[role].join(' '),
       onReady: () => showPlay(role),
     });
@@ -77,7 +77,7 @@ export function runHotseat(ui, { names, board, onExit }) {
     screen = ui.show(playScreen, {
       game: g,
       banner: news[role].join(' '),
-      onShoot: (x, y) => g.shoot(x, y),
+      onShoot: r => g.shoot(r),
     });
     news[role] = [];
   }
@@ -88,7 +88,6 @@ export function runHotseat(ui, { names, board, onExit }) {
     screen.update(e);
     const g = games[role];
     if (g.phase === 'over') screen.setContinue(showEnd, 'Ergebnis ansehen');
-    else if (g.s.turn === role) screen.update();             // Konter vorbei → eigener normaler Zug
     else screen.setContinue(() => { screen.setContinue(null); nextTurn(); }, 'Weiter – Gerät übergeben');
   }
 

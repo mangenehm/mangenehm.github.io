@@ -1,24 +1,24 @@
 # Tierversteck
 
-Schiffe versenken auf einer echten Karte: Der Ersteller wählt eine Adresse, daraus entsteht ein Raster-Spielbrett aus OpenStreetMap-Daten, auf dem beide Spieler fünf Tiere verstecken. Läuft komplett statisch auf GitHub Pages – ohne eigenen Server und ohne Build-Schritt.
+Verstecken und Suchen in der echten Nachbarschaft: Der Ersteller wählt eine Adresse, daraus entsteht aus OpenStreetMap-Daten ein gezeichneter Stadtplan. Die Spielfelder sind echte **Orte**: Häuserblöcke, Parks, Wälder, Plätze und Teiche, begrenzt von echten Straßen. Beide Spieler verstecken darauf fünf Tiere. Läuft komplett statisch auf GitHub Pages – ohne eigenen Server und ohne Build-Schritt.
 
 Live: https://mangenehm.github.io/tools/tierversteck/
 
 ## Spielregeln
 
-Jede Seite versteckt fünf Tiere mit zusammen 16 Feldern. Wer zuerst alle Tiere des anderen findet, gewinnt.
+Jede Seite versteckt fünf Tiere auf zusammen 9 Orten. Wer zuerst alle Tiere des anderen findet, gewinnt.
 
-| Tier | Felder | Form | Lieblingsgelände |
-| --- | --- | --- | --- |
-| Schlange | 5 | Zickzack (S-Form) | Wald, Gebüsch |
-| Pferd | 4 | L-Form (wie der Springer) | Wiese, Feld, Park |
-| Hund | 3 | gerade | Straße, Weg |
-| Katze | 3 | Ecke | Gebäude |
-| Maus | 1 | Einzelfeld | Gebäude |
+| Tier | Orte | Lieblingsgelände |
+| --- | --- | --- |
+| Schlange | 2 | Wald |
+| Pferd | 3 | Wiese, Park |
+| Hund | 2 | Platz, Hof |
+| Katze | 1 | Häuser |
+| Maus | 1 | Häuser |
 
-- Tiere dürfen gedreht und gespiegelt werden, sich aber nicht überlappen oder berühren (auch nicht diagonal).
-- Abwechselnd wird ein Feld abgesucht: **Daneben**, **Treffer** oder **Gefunden** (Tier vollständig aufgedeckt). Ein Treffer gibt keinen Extra-Schuss.
-- **Konter-Schuss:** Ein Tier ist „im Lieblingsgelände“, wenn mindestens die Hälfte seiner Felder (aufgerundet) darauf liegt. Wird so ein Tier zum ersten Mal getroffen, schießt sein Besitzer sofort zurück; danach folgt sein normaler Zug. Höchstens ein Konter pro Tier, und ein Konter löst keinen weiteren aus.
+- Ein Tier mit mehreren Orten belegt benachbarte Orte (sie grenzen aneinander oder liegen sich an einer Straße gegenüber). Zwei Tiere teilen sich nie einen Ort; berühren ist erlaubt.
+- Abwechselnd wird ein Ort abgesucht: **Daneben**, **Treffer** oder **Gefunden** (Tier vollständig aufgedeckt). Danach ist immer der andere dran.
+- **Spuren 👣:** Ein Tier ist „im Lieblingsgelände“, wenn mindestens die Hälfte seiner Orte (aufgerundet) dazu passt. Geht eine Suche daneben, meldet die Antwort Spuren, wenn ein Nachbarort ein noch nicht gefundenes Tier enthält, das **nicht** im Lieblingsgelände steht. Tiere im Lieblingsgelände sind unsichtbar – dafür sucht der Gegner dort zuerst.
 - Beim Verstecken glänzt ein Tier ✨, solange es im Lieblingsgelände steht.
 - Wasser darf belegt werden, ist aber für kein Tier Lieblingsgelände.
 
@@ -36,15 +36,17 @@ tools/tierversteck/
 ├─ index.html, style.css, tool.json, icon.svg
 ├─ src/
 │  ├─ engine/      reine Logik ohne DOM, voll getestet
-│  │  ├─ shapes.js   Tierformen, Drehen, Spiegeln
-│  │  ├─ board.js    Zellen, Geländeklassen, Platzierungsprüfung, Zufallsbrett
-│  │  ├─ rules.js    Schuss auflösen, Lieblingsgelände, Konter, Zugfolge
+│  │  ├─ shapes.js   Tiere (Anzahl Orte, Lieblingsgelände), Geländeklassen
+│  │  ├─ board.js    Orte, Nachbarschaftsgraph, Platzierungsprüfung, Zufallsaufstellung
+│  │  ├─ rules.js    Suche auflösen, Spuren, Lieblingsgelände
 │  │  └─ game.js     Zustandsmaschine (Lobby → Verstecken → Spiel → Ende)
 │  ├─ map/
 │  │  ├─ geocode.js  Adresse → Koordinaten (Nominatim, nur beim Absenden, ≤ 1/s)
-│  │  ├─ overpass.js OSM-Daten laden (2 Ausweich-Endpunkte, Cache), in Zellkoordinaten umrechnen
-│  │  ├─ classify.js Features rastern, Pixel je Zelle zählen → Geländeklasse
-│  │  ├─ render.js   Karte in Spielfarben, Geländeflächen, Raster mit Koordinaten
+│  │  ├─ overpass.js OSM-Daten + Wahrzeichen laden (Ausweich-Endpunkte, Cache), in Brettkoordinaten umrechnen
+│  │  ├─ classify.js Features rastern: Flächenklasse und Trennlinien (Straßen, Bahn, Flüsse) je Pixel
+│  │  ├─ regions.js  Raster → Orte: Blöcke zwischen den Straßen, Krümel verschmelzen, Riesen teilen,
+│  │  │              Nachbarn, Gelände, Umrisse, Namen („Häuser an der Lindenstraße“); Fantasie-Gegend
+│  │  ├─ render.js   gezeichneter Stadtplan: Orte mit Mustern, Straßen mit Namen, Wahrzeichen, Nummern
 │  │  └─ build.js    Ausschnitt laden/verschieben, Brett bauen
 │  ├─ net/
 │  │  ├─ transport.js  gemeinsames Interface

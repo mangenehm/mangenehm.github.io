@@ -1,43 +1,56 @@
 /* Adresse/Ausschnitt → fertiges Brett aus echten OSM-Daten. */
 
-import { makeProjection, fetchOsm, toFeatures } from './overpass.js';
-import { classifyFeatures } from './classify.js';
+import { makeProjection, fetchOsm, toFeatures, toPois } from './overpass.js';
+import { rasterLayers } from './classify.js';
+import { buildBoard } from './regions.js';
 
-// So viele Zellen Rand werden mitgeladen, damit sich der Ausschnitt ohne neue Abfrage verschieben lässt
-export const PAN_MARGIN = 3;
+// Rasterauflösung: Breite des Bretts in Koordinateneinheiten (= Pixel bei der Ortsbildung)
+export const BOARD_UNITS = 256;
+
+// Ausschnittgrößen: Kantenlänge in Metern und gewünschte Anzahl Orte
+export const AREAS = {
+  s: { meters: 450, regions: 28, label: 'Klein (≈ 450 m)' },
+  m: { meters: 650, regions: 38, label: 'Mittel (≈ 650 m)' },
+  l: { meters: 900, regions: 48, label: 'Groß (≈ 900 m)' },
+};
+
+// So viel Rand (Anteil der Kantenlänge je Seite) wird mitgeladen, damit sich der Ausschnitt ohne neue Abfrage verschieben lässt
+export const PAN_MARGIN = 0.2;
 
 /** Lädt die OSM-Daten für einen Ausschnitt plus Rand. */
-export async function loadArea(center, size, cellMeters, { signal, onProgress } = {}) {
-  const bbox = makeProjection(center, size + 2 * PAN_MARGIN, cellMeters).bbox;
+export async function loadArea(center, meters, { signal, onProgress } = {}) {
+  const bbox = makeProjection(center, 1, meters * (1 + 2 * PAN_MARGIN)).bbox;
   const osm = await fetchOsm(bbox, { signal, onProgress });
-  return { bbox, osm, cellMeters };
+  return { bbox, osm };
 }
 
 /** Deckt ein geladenes Gebiet den gewünschten Ausschnitt ab? */
-export function covers(area, center, size, cellMeters) {
-  if (!area || area.cellMeters !== cellMeters) return false;
-  const b = makeProjection(center, size, cellMeters).bbox;
+export function covers(area, center, meters) {
+  if (!area) return false;
+  const b = makeProjection(center, 1, meters).bbox;
   return b.south >= area.bbox.south && b.north <= area.bbox.north && b.west >= area.bbox.west && b.east <= area.bbox.east;
 }
 
 /** Brett aus geladenen OSM-Daten berechnen (ohne Netz). */
-export function boardFromOsm(osm, { center, label = '', size, cellMeters }) {
-  const proj = makeProjection(center, size, cellMeters);
-  const features = toFeatures(osm, proj, size, cellMeters);
-  const terrain = classifyFeatures(features, size);
+export function boardFromOsm(osm, { center, label = '', meters, targetCount, n = BOARD_UNITS }) {
+  const proj = makeProjection(center, n, meters / n);
+  const features = toFeatures(osm, proj, n, meters / n, { tol: 0.3 });
+  const pois = toPois(osm, proj, n);
+  const { cls, barrier } = rasterLayers(features, n);
   return {
-    size, terrain, features, cellMeters,
+    ...buildBoard({ cls, barrier, n, targetCount, features, pois }),
+    meters,
     center: { lat: +center.lat.toFixed(6), lon: +center.lon.toFixed(6) },
     label: label.slice(0, 120),
     source: 'osm',
   };
 }
 
-/** Mittelpunkt um ganze Zellen verschieben (Vorschau mit verschiebbarem Mittelpunkt). */
-export function shiftCenter(center, cellMeters, dx, dy) {
+/** Mittelpunkt um dx/dy Meter verschieben (x nach Osten, y nach Süden). */
+export function shiftCenter(center, dx, dy) {
   const cos = Math.cos((center.lat * Math.PI) / 180);
   return {
-    lat: center.lat - (dy * cellMeters) / 111320,
-    lon: center.lon + (dx * cellMeters) / (111320 * cos),
+    lat: center.lat - dy / 111320,
+    lon: center.lon + dx / (111320 * cos),
   };
 }

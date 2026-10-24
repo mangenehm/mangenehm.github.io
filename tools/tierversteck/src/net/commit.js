@@ -1,6 +1,6 @@
 /* Hash-Commitment gegen Schummeln: SHA-256(Aufstellung + Zufallssalz). */
 
-import { canonicalFleet, validateFleet } from '../engine/board.js';
+import { canonicalFleet, validateFleet, regionLabel } from '../engine/board.js';
 import { newDefense, resolveShot } from '../engine/rules.js';
 
 export function randomSalt(bytes = 16) {
@@ -33,14 +33,14 @@ export async function verifyReveal({ board, commit, placements, salt, shots }) {
   let hash;
   try { hash = await commitFleet(placements, salt); } catch { return { ok: false, reason: 'Aufstellung unlesbar' }; }
   if (hash !== commit) return { ok: false, reason: 'Aufstellung passt nicht zum Commitment' };
-  const problem = validateFleet(board.size, placements);
+  const problem = validateFleet(board, placements);
   if (problem) return { ok: false, reason: 'Aufstellung verstößt gegen die Regeln' };
   const defense = newDefense();
   for (const s of shots) {
-    const r = resolveShot(board, placements, defense, s.x, s.y, s.kind);
-    const same = r.result === s.result && !!r.counter === !!s.counter
+    const r = resolveShot(board, placements, defense, s.r);
+    const same = r.result === s.result && !!r.tracks === !!s.tracks
       && (r.result !== 'found' || r.animal === s.animal);
-    if (!same) return { ok: false, reason: `Antwort auf ${String.fromCharCode(65 + s.x)}${s.y + 1} war falsch` };
+    if (!same) return { ok: false, reason: `Antwort auf ${regionLabel(s.r)} war falsch` };
   }
   return { ok: true };
 }
