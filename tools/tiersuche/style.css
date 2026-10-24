@@ -195,6 +195,8 @@ input[type=text]:focus, select:focus { border-color: var(--teal); outline: none;
 .tray-item.placed .ti-state { color: var(--green); }
 .tray-item.fav { background: #fff8de; border-color: var(--mustard); }
 .tray-item.fav.sel { border-color: var(--ink); }
+.fav-info { min-height: 1.5em; margin: -4px 0 8px; display: flex; align-items: center; gap: 6px; }
+.fav-info .head { width: 22px; height: 22px; font-size: 18px; }
 .ti-name { font-weight: 700; font-size: .85rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 480px) { .ti-name { font-size: .68rem; letter-spacing: -.01em; } .tray { gap: 4px; } }
 .ti-meta, .ti-state { font-size: .7rem; color: var(--muted); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
