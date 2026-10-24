@@ -94,13 +94,13 @@ export async function runOnline(ui, { session, board = null, saved = null, onExi
 
   function onEvent(e) {
     if (e.type === 'error') {
-      console.warn('Tierversteck:', e.reason);
+      console.warn('Tiersuche:', e.reason);
       if (/Version/.test(e.reason)) toast(e.reason, 5000);
     }
     if ((e.type === 'incoming' || e.type === 'play') && game.myTurn) {
       vibrate([30, 60, 30]);
-      document.title = '● Du bist dran – Tierversteck';
-    } else if (e.type === 'shot-sent') document.title = 'Tierversteck';
+      document.title = '● Du bist dran – Tiersuche';
+    } else if (e.type === 'shot-sent') document.title = 'Tiersuche';
     scheduleSave();
     render(e);
   }
@@ -134,7 +134,7 @@ export async function runOnline(ui, { session, board = null, saved = null, onExi
     } else if (s.phase === 'playing') {
       screen = ui.show(playScreen, { game, onShoot: r => game.shoot(r) });
     } else if (s.phase === 'over') {
-      document.title = 'Tierversteck';
+      document.title = 'Tiersuche';
       screen = ui.show(endScreen, { game, onNew: leave });
     }
   }

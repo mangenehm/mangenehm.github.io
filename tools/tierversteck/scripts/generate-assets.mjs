@@ -60,7 +60,7 @@ async function generate(model, prompt, key) {
       Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': 'https://mangenehm.github.io/tools/tierversteck/',
-      'X-Title': 'Tierversteck',
+      'X-Title': 'Tiersuche',
     },
     body: JSON.stringify({ model, modalities: ['image', 'text'], messages: [{ role: 'user', content: prompt }] }),
   });

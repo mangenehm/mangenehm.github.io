@@ -1,4 +1,4 @@
-# Tierversteck
+# Tiersuche
 
 Verstecken und Suchen in der echten Nachbarschaft: Der Ersteller wählt eine Adresse, daraus entsteht aus OpenStreetMap-Daten ein gezeichneter Stadtplan. Die Spielfelder sind echte **Orte**: Häuserblöcke, Parks, Wälder, Plätze und Teiche, begrenzt von echten Straßen. Beide Spieler verstecken darauf fünf Tiere. Läuft komplett statisch auf GitHub Pages – ohne eigenen Server und ohne Build-Schritt.
 

@@ -1,6 +1,6 @@
 {
-    "name": "Tierversteck",
-    "description": "Verstecken und Suchen in der echten Nachbarschaft: Aus einer Adresse wird mit OpenStreetMap-Daten ein gezeichneter Stadtplan, dessen Häuserblöcke, Parks und Plätze die Spielfelder sind. Beide verstecken fünf Tiere – im Lieblingsgelände hinterlassen sie keine Spuren. Online zu zweit oder an einem Gerät.",
+    "name": "Tiersuche",
+    "description": "Verstecken und Suchen in der echten Nachbarschaft: Aus einer Adresse wird mit OpenStreetMap-Daten ein gezeichneter Stadtplan, dessen Häuserblöcke, Parks und Plätze die Spielfelder sind. Beide verstecken fünf Tiere – im Lieblingsgelände hinterlassen sie keine Spuren. Online zu zweit.",
     "category": "Spiel",
     "tags": ["Spiel", "Multiplayer", "Karte"],
     "created": "2026-10-23",
