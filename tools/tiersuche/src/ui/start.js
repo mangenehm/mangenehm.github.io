@@ -35,7 +35,7 @@ export function startScreen(root, { onOnline, onJoin }) {
     <section class="screen start">
       <div class="hero ${hero ? 'has-img' : ''}">
         ${hero ? `<img class="hero-img" src="${hero.src}" alt="">` : `<div class="hero-emoji" aria-hidden="true">${ANIMAL_IDS.map(id => `<span>${ANIMALS[id].emoji}</span>`).join('')}</div>`}
-        <h1>Tierversteck</h1>
+        <h1>Tiersuche</h1>
         <p class="tagline">Verstecken und Suchen in deiner echten Nachbarschaft: Schlange, Pferd, Hund, Katze und Maus verkriechen sich in Häuserblöcken, Parks und Wäldern.</p>
       </div>
       <div class="card">

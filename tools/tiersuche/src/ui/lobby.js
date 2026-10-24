@@ -51,7 +51,7 @@ export function lobbyScreen(root, { roomId, status = 'connecting', onCancel }) {
     catch { $(node, 'input').select(); }
   };
   const share = $(node, '[data-act=share]');
-  if (share) share.onclick = () => navigator.share({ title: 'Tierversteck', text: 'Spiel Tierversteck mit mir!', url }).catch(() => {});
+  if (share) share.onclick = () => navigator.share({ title: 'Tiersuche', text: 'Spiel Tiersuche mit mir!', url }).catch(() => {});
   $(node, '[data-act=cancel]').onclick = onCancel;
 
   function setStatus(st, detail) {

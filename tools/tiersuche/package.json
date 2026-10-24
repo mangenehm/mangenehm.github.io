@@ -1,8 +1,8 @@
 {
-  "name": "tierversteck",
+  "name": "tiersuche",
   "private": true,
   "type": "module",
-  "description": "Tierversteck – Verstecken auf echten Karten. Läuft ohne Build-Schritt direkt auf GitHub Pages.",
+  "description": "Tiersuche – Verstecken auf echten Karten. Läuft ohne Build-Schritt direkt auf GitHub Pages.",
   "scripts": {
     "test": "node --test test/*.test.js",
     "serve": "python3 -m http.server 8000 --directory ../..",

@@ -65,6 +65,12 @@ Problem: Suchen brauchte zwei Schritte (Ort wählen, dann bestätigen); das Erge
 
 - Raum-Code 4 statt 10 Zeichen (Alphabet ohne l/o/0/1, ≈ 1 Mio. Codes), in der Lobby groß und in Großbuchstaben. Beitreten ignoriert Groß/Klein. Spieler-IDs bleiben 16 Zeichen.
 
+## 24.10.2026: Umbenannt in „Tiersuche“
+
+- Sichtbarer Name überall „Tiersuche“ (Titel, Kopfzeile, Startseite, Teilen-Text, tool.json).
+- Neue Adresse `tools/tiersuche/`. Unter `tools/tierversteck/` liegt nur noch eine Weiterleitung, die Suchparameter und `#room=…` mitnimmt – alte Einladungen funktionieren weiter.
+- Speicher-Schlüssel (`tierversteck:…`) und Trystero-App-ID bleiben, damit Einstellungen, Karten-Cache und laufende Spiele erhalten bleiben.
+
 ## Offene Punkte
 
 - Revanche im selben Raum (derzeit: neues Spiel)

@@ -59,8 +59,8 @@ async function generate(model, prompt, key) {
     headers: {
       Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://mangenehm.github.io/tools/tierversteck/',
-      'X-Title': 'Tierversteck',
+      'HTTP-Referer': 'https://mangenehm.github.io/tools/tiersuche/',
+      'X-Title': 'Tiersuche',
     },
     body: JSON.stringify({ model, modalities: ['image', 'text'], messages: [{ role: 'user', content: prompt }] }),
   });
@@ -114,7 +114,7 @@ async function main() {
   if (opts.pick.length) { for (const p of opts.pick) await pick(p, cfg); return; }
 
   const key = process.env.OPENROUTER_API_KEY;
-  if (!key) throw new Error('OPENROUTER_API_KEY fehlt (in tools/tierversteck/.env eintragen).');
+  if (!key) throw new Error('OPENROUTER_API_KEY fehlt (in tools/tiersuche/.env eintragen).');
   const model = opts.model || process.env.OPENROUTER_IMAGE_MODEL || cfg.model;
   if (!model) throw new Error('Kein Bildmodell gewählt – erst --list-models, dann --model <slug> oder "model" in prompts.json.');
 
