@@ -2,7 +2,7 @@
 
 Verstecken und Suchen in der echten Nachbarschaft: Der Ersteller wählt eine Adresse, daraus entsteht aus OpenStreetMap-Daten ein gezeichneter Stadtplan. Die Spielfelder sind echte **Orte**: Häuserblöcke, Parks, Wälder, Plätze und Teiche, begrenzt von echten Straßen. Beide Spieler verstecken darauf fünf Tiere. Läuft komplett statisch auf GitHub Pages – ohne eigenen Server und ohne Build-Schritt.
 
-Live: https://mangenehm.github.io/tools/tierversteck/
+Live: https://mangenehm.github.io/tools/tiersuche/ (früher `tools/tierversteck/`, dort liegt eine Weiterleitung)
 
 ## Spielregeln
 
@@ -33,7 +33,7 @@ Gespielt wird nur online, jede Seite auf ihrem eigenen Gerät. Der Ersteller tei
 ## Aufbau
 
 ```
-tools/tierversteck/
+tools/tiersuche/
 ├─ index.html, style.css, tool.json, icon.svg
 ├─ src/
 │  ├─ engine/      reine Logik ohne DOM, voll getestet
@@ -71,12 +71,12 @@ Die Engine kennt nur das Transport-Interface; die Tests verbinden zwei Engines �
 ## Entwickeln
 
 ```sh
-cd tools/tierversteck
+cd tools/tiersuche
 npm test                 # node --test, keine Abhängigkeiten nötig
-npm run serve            # http://localhost:8000/tools/tierversteck/
+npm run serve            # http://localhost:8000/tools/tiersuche/
 ```
 
-Online-Modus ohne Relays testen: `…/tools/tierversteck/?net=bc` in zwei Tabs öffnen.
+Online-Modus ohne Relays testen: `…/tools/tiersuche/?net=bc` in zwei Tabs öffnen.
 
 ## Grafiken
 

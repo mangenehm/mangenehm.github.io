@@ -67,7 +67,9 @@ Problem: Suchen brauchte zwei Schritte (Ort wählen, dann bestätigen); das Erge
 
 ## 24.10.2026: Umbenannt in „Tiersuche“
 
-- Sichtbarer Name überall „Tiersuche“ (Titel, Kopfzeile, Startseite, Teilen-Text, tool.json). Pfad `tools/tierversteck/`, Speicher-Schlüssel und Trystero-App-ID bleiben, damit Links und laufende Spiele weiter funktionieren.
+- Sichtbarer Name überall „Tiersuche“ (Titel, Kopfzeile, Startseite, Teilen-Text, tool.json).
+- Neue Adresse `tools/tiersuche/`. Unter `tools/tierversteck/` liegt nur noch eine Weiterleitung, die Suchparameter und `#room=…` mitnimmt – alte Einladungen funktionieren weiter.
+- Speicher-Schlüssel (`tierversteck:…`) und Trystero-App-ID bleiben, damit Einstellungen, Karten-Cache und laufende Spiele erhalten bleiben.
 
 ## Offene Punkte
 

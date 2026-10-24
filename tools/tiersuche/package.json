@@ -1,5 +1,5 @@
 {
-  "name": "tierversteck",
+  "name": "tiersuche",
   "private": true,
   "type": "module",
   "description": "Tiersuche – Verstecken auf echten Karten. Läuft ohne Build-Schritt direkt auf GitHub Pages.",
