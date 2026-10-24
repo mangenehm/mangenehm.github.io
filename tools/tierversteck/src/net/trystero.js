@@ -23,7 +23,8 @@ function loadTrystero() {
   return trysteroPromise;
 }
 
-export function randomRoomId(len = 10) {
+// 4 Zeichen aus 32 ≈ 1 Mio. Codes: kurz zum Abtippen, Zusammenstöße bei wenigen gleichzeitigen Räumen praktisch ausgeschlossen
+export function randomRoomId(len = 4) {
   const chars = 'abcdefghijkmnpqrstuvwxyz23456789';
   const a = new Uint8Array(len);
   crypto.getRandomValues(a);

@@ -26,7 +26,7 @@ Jede Seite versteckt fünf Tiere auf zusammen 13 Orten. Wer zuerst alle Tiere de
 
 ## Online spielen
 
-Gespielt wird nur online, jede Seite auf ihrem eigenen Gerät. Der Ersteller teilt einen Link `…/#room=<id>` (Kopieren, Teilen-Dialog oder QR-Code). Trystero baut die WebRTC-Verbindung über öffentliche Nostr-Relays auf; danach laufen die Daten direkt zwischen den Browsern. Nach einem Reload oder kurzem Abbruch geht es mit dem Stand aus `sessionStorage` weiter.
+Gespielt wird nur online, jede Seite auf ihrem eigenen Gerät. Der Ersteller teilt einen Link `…/#room=<id>` (Kopieren, Teilen-Dialog oder QR-Code) oder den vierstelligen Raum-Code zum Abtippen auf der Startseite. Trystero baut die WebRTC-Verbindung über öffentliche Nostr-Relays auf; danach laufen die Daten direkt zwischen den Browsern. Nach einem Reload oder kurzem Abbruch geht es mit dem Stand aus `sessionStorage` weiter.
 
 **Schummelschutz:** Jede Seite beantwortet die Schüsse auf ihr Brett selbst. Vor dem ersten Schuss sendet jede Seite SHA-256(Aufstellung + Salz); am Ende werden Aufstellung und Salz offengelegt und alle Antworten nachgeprüft. Abweichungen erscheinen als „Spiel ungültig“.
 

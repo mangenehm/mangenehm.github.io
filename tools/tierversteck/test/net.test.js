@@ -135,5 +135,5 @@ test('Protokoll-Prüfung', () => {
   assert.ok(!isValidMessage({ t: 'result', r: 0, result: 'miss' }));
   assert.ok(!isValidMessage({ t: 'hello', v: 1, name: 'x'.repeat(100) }));
   assert.ok(!isValidMessage(null));
-  assert.match(randomRoomId(), /^[a-z0-9]{10}$/);
+  assert.match(randomRoomId(), /^[a-z0-9]{4}$/);
 });
