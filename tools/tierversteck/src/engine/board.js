@@ -16,7 +16,7 @@
 import { ANIMALS, ANIMAL_IDS, TERRAINS } from './shapes.js';
 
 export const MIN_REGIONS = 12;
-export const MAX_REGIONS = 120;
+export const MAX_REGIONS = 200;
 const MAX_NUMBERS = 300000;
 const LINE_KINDS = ['road', 'path', 'rail', 'water'];
 

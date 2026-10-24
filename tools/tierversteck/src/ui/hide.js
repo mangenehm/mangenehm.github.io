@@ -41,7 +41,7 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
     <section class="screen hide">
       <div class="card">
         <h2>${esc(title)}</h2>
-        <p class="muted small hint">Tier auswählen und zusammenhängende Orte antippen. Nochmal tippen nimmt den Ort weg.
+        <p class="muted small hint">Tier auswählen und zusammenhängende Orte antippen. Nochmal tippen nimmt den Ort weg. Mit ＋/− oder zwei Fingern zoomen.
           Im Lieblingsgelände ✨ hinterlässt ein Tier keine Spuren 👣.</p>
         <div class="tray"></div>
         <div class="board-wrap"></div>
@@ -61,6 +61,7 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
   $(node, '[data-act=remove]').onclick = () => { if (selected && pl[selected]) { pl[selected] = null; changed(); } };
   $(node, '[data-act=random]').onclick = () => {
     for (const p of randomFleet(board)) pl[p.animal] = p;
+    view.resetZoom();
     selected = null;
     changed();
   };

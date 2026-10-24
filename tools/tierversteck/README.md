@@ -6,14 +6,14 @@ Live: https://mangenehm.github.io/tools/tierversteck/
 
 ## Spielregeln
 
-Jede Seite versteckt fünf Tiere auf zusammen 9 Orten. Wer zuerst alle Tiere des anderen findet, gewinnt.
+Jede Seite versteckt fünf Tiere auf zusammen 13 Orten. Wer zuerst alle Tiere des anderen findet, gewinnt.
 
 | Tier | Orte | Lieblingsgelände |
 | --- | --- | --- |
-| Schlange | 2 | Wald |
-| Pferd | 3 | Wiese, Park |
-| Hund | 2 | Platz, Hof |
-| Katze | 1 | Häuser |
+| Schlange | 3 | Wald |
+| Pferd | 4 | Wiese, Park |
+| Hund | 3 | Platz, Hof |
+| Katze | 2 | Häuser |
 | Maus | 1 | Häuser |
 
 - Ein Tier mit mehreren Orten belegt benachbarte Orte (sie grenzen aneinander oder liegen sich an einer Straße gegenüber). Zwei Tiere teilen sich nie einen Ort; berühren ist erlaubt.
@@ -21,6 +21,7 @@ Jede Seite versteckt fünf Tiere auf zusammen 9 Orten. Wer zuerst alle Tiere des
 - **Spuren 👣:** Ein Tier ist „im Lieblingsgelände“, wenn mindestens die Hälfte seiner Orte (aufgerundet) dazu passt. Geht eine Suche daneben, meldet die Antwort Spuren, wenn ein Nachbarort ein noch nicht gefundenes Tier enthält, das **nicht** im Lieblingsgelände steht. Tiere im Lieblingsgelände sind unsichtbar – dafür sucht der Gegner dort zuerst.
 - Beim Verstecken glänzt ein Tier ✨, solange es im Lieblingsgelände steht.
 - Wasser darf belegt werden, ist aber für kein Tier Lieblingsgelände.
+- Ein Brett hat je nach Gebiet etwa 55/85/110 Orte. Zum bequemen Antippen lässt sich das Brett zoomen (＋/−, zwei Finger, Mausrad) und gezoomt verschieben; sind die Orte sehr klein, zoomt der erste Tipp automatisch heran.
 
 ## Modi
 

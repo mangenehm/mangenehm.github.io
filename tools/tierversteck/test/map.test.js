@@ -141,6 +141,11 @@ test('Krümel werden verschmolzen, Riesen geteilt', () => {
   const c = components(key, n);
   assert.equal(c.count, 2);
   assert.equal(mergeSmall(c.labels, n, c.count, 10), 1);
+  // zehn Streifen, höchstens sechs Orte erlaubt
+  const stripes = new Int16Array(n * n).map((_, i) => (i % n) >> 2);
+  const s = components(stripes, n);
+  assert.equal(s.count, 10);
+  assert.equal(mergeSmall(s.labels, n, s.count, 1, { maxCount: 6 }), 6);
   const labels = new Int32Array(n * n);
   const count = splitLarge(labels, n, 1, 400, 400);
   assert.equal(count, 4);
@@ -201,7 +206,7 @@ test('buildBoard und randomBoard ergeben gültige Bretter', () => {
   for (let seed = 0; seed < 5; seed++) {
     const rb = randomBoard(makeRng(seed));
     assert.ok(isValidBoard(rb), 'randomBoard ' + seed);
-    assert.ok(rb.regions.length >= 28 && rb.regions.length <= 40, String(rb.regions.length));
+    assert.ok(rb.regions.length >= 70 && rb.regions.length <= 100, String(rb.regions.length));
     assert.ok(new Set(rb.regions.map(x => x.t)).size >= 4);
   }
   assert.deepEqual(randomBoard(makeRng(3)), randomBoard(makeRng(3)));

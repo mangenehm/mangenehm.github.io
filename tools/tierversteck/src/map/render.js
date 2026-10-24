@@ -4,6 +4,8 @@
  * Koordinaten des Bretts sind Einheiten (0 … board.size); `scale` = Pixel je Einheit.
  */
 
+const NUMBER_MIN_CELL = 40;
+
 export const PALETTE = {
   ground: '#efe6d2',
   house:  '#f4c7aa',
@@ -180,7 +182,8 @@ export function drawMap(ctx, board, scale, { numbers = true, paths = regionPaths
 
   drawStreetNames(ctx, roads, scale);
   drawPois(ctx, board.pois || [], scale, board.size);
-  if (numbers) drawNumbers(ctx, board, scale);
+  // Nummern erst, wenn die Orte im Mittel groß genug dafür sind (in der Übersicht großer Bretter zu eng)
+  if (numbers && W / Math.sqrt(board.regions.length) >= NUMBER_MIN_CELL) drawNumbers(ctx, board, scale);
   ctx.restore();
 }
 

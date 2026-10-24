@@ -87,6 +87,7 @@ export function playScreen(root, { game, onShoot, banner = '' }) {
     if (aim == null || !game.myTurn) return;
     const r = aim;
     aim = null;
+    target.resetZoom();
     onShoot(r);
   }
 

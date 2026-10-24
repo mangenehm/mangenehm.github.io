@@ -60,22 +60,22 @@ test('kompletter Hot-Seat-Ablauf über den lokalen Transport', async () => {
 });
 
 test('Zug wechselt immer, Spuren kommen beim Suchenden an', async () => {
-  const board = gridBoard(4, 4);
+  const board = gridBoard();
   const { host, guest } = setup(0, board);
   host.start(); guest.start(); await tick();
   // Gast-Hund auf Häusern (nicht Lieblingsgelände) oben links
   const guestFleet = [
-    { animal: 'dog', regions: [0, 1] },
-    { animal: 'snake', regions: [3, 7] },
-    { animal: 'horse', regions: [12, 13, 14] },
-    { animal: 'cat', regions: [10] },
-    { animal: 'mouse', regions: [15] },
+    { animal: 'dog', regions: [0, 1, 2] },
+    { animal: 'snake', regions: [4, 5, 11] },
+    { animal: 'horse', regions: [24, 25, 26, 27] },
+    { animal: 'cat', regions: [20, 21] },
+    { animal: 'mouse', regions: [35] },
   ];
   await host.commit(randomFleet(board, makeRng(5)));
   await guest.commit(guestFleet);
   await tick();
 
-  host.shoot(2);                       // neben dem Hund und der Schlange
+  host.shoot(3);                       // neben dem Hund und der Schlange
   await tick();
   assert.equal(host.s.outgoing[0].result, 'miss');
   assert.equal(host.s.outgoing[0].tracks, true);
@@ -124,7 +124,7 @@ test('Spielstand lässt sich serialisieren und fortsetzen', async () => {
 });
 
 test('Schummeln wird beim Aufdecken erkannt', async () => {
-  const board = gridBoard(4, 4);
+  const board = gridBoard();
   const fleet = randomFleet(board, makeRng(21));
   const salt = 'abc';
   const commit = await commitFleet(fleet, salt);
