@@ -7,6 +7,7 @@ import { joinScreen } from './ui/lobby.js';
 import { runHotseat } from './app/hotseat.js';
 import { runOnline, loadSession, newHostSession, newGuestSession } from './app/online.js';
 import { store } from './ui/dom.js';
+import { soundOn, setSound, sound } from './ui/feedback.js';
 
 const root = document.getElementById('app');
 const connEl = document.getElementById('conn');
@@ -37,6 +38,14 @@ const ui = {
     connEl.title = detail || '';
   },
 };
+
+const soundBtn = document.getElementById('sound');
+function showSound() {
+  soundBtn.textContent = soundOn() ? '🔊' : '🔇';
+  soundBtn.setAttribute('aria-pressed', String(soundOn()));
+}
+soundBtn.onclick = () => { setSound(!soundOn()); showSound(); sound('tap'); };
+showSound();
 
 leaveBtn.onclick = () => {
   if (!confirm('Spiel wirklich beenden?')) return;

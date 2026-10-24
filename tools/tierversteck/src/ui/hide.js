@@ -8,6 +8,7 @@ import { ANIMALS, ANIMAL_IDS, TERRAIN_INFO } from '../engine/shapes.js';
 import { placementProblem, isInFavorite, randomFleet, validateFleet, regionLabel } from '../engine/board.js';
 import { BoardView } from './boardview.js';
 import { headHtml } from './sprites.js';
+import { sound } from './feedback.js';
 import { el, $, $$, esc, vibrate } from './dom.js';
 
 const PROBLEM_TEXT = {
@@ -62,6 +63,7 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
   $(node, '[data-act=random]').onclick = () => {
     for (const p of randomFleet(board)) pl[p.animal] = p;
     view.resetZoom();
+    sound('place');
     selected = null;
     changed();
   };
@@ -101,8 +103,13 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
       if (!p || complete(selected) || !neighbor) pl[selected] = { animal: selected, regions: [r] };   // neu anfangen
       else p.regions.push(r);
       vibrate(8);
-      // fertig → nächstes offenes Tier auswählen
-      if (complete(selected) && !problemOf(selected)) selected = ANIMAL_IDS.find(id => !complete(id)) || selected;
+      // fertig → kurzer Jubel (✨ im Lieblingsgelände), dann nächstes offenes Tier auswählen
+      if (complete(selected) && !problemOf(selected)) {
+        sound('place');
+        if (isInFavorite(board, pl[selected])) setTimeout(() => sound('sparkle'), 150);
+        view.fx(r, 'place');
+        selected = ANIMAL_IDS.find(id => !complete(id)) || selected;
+      } else sound(complete(selected) ? 'nope' : 'tap');
     } else return;
     changed();
   }

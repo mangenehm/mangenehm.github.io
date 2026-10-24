@@ -3,6 +3,7 @@
 import { BoardView } from './boardview.js';
 import { el, $, esc } from './dom.js';
 import { foundPlacements } from './play.js';
+import { sound, say, confetti } from './feedback.js';
 
 function stats(shots) {
   const hits = shots.filter(s => s.result !== 'miss').length;
@@ -39,6 +40,10 @@ export function endScreen(root, { game, mode, oppPlacements = null, onRematch = 
   root.appendChild(node);
   if (onRematch) $(node, '[data-act=rematch]').onclick = onRematch;
   $(node, '[data-act=new]').onclick = onNew;
+
+  sound('win');
+  say(`${winnerName} gewinnt!`, { interrupt: true });
+  confetti($(node, '.end-head'));
 
   const mine = new BoardView($(node, '.mine'), game.board, { maxWidth: 420 });
   const theirs = new BoardView($(node, '.theirs'), game.board, { maxWidth: 420 });

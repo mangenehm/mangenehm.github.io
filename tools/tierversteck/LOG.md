@@ -17,7 +17,7 @@ Plan: „Tierversteck – Implementierungsplan“ (23.10.2026). Umgesetzt als To
 
 - [x] M1 Gerüst + Engine – Formen (Drehen/Spiegeln), Platzierung (auch diagonal berühren verboten), Schuss, Lieblingsgelände, Konter, Zugfolge, Zustandsmaschine, Zufallsgelände; Tests
 - [x] M2 Karte – Nominatim-Suche beim Absenden mit Trefferliste, Brettgröße 8–12, Zellgröße 20/35/50 m, verschiebbarer Ausschnitt (Pfeile oder Ziehen, 3 Zellen Rand vorgeladen), Overpass mit Ausweich-Endpunkten und `localStorage`-Cache, Rasterung je Klasse mit Priorität bei Gleichstand, eigenes Rendering, Geländeverteilung mit 80-%-Warnung, OSM-Hinweis
-- [x] M3 Hot-Seat – Verstecken (Tippen, Ziehen, Doppeltipp/R drehen, F spiegeln, Zufällig), Glanz im Lieblingsgelände, Zielen + Bestätigen, Sichtschutz mit Zusammenfassung der gegnerischen Züge, Endbildschirm, Revanche
+- [x] M3 Hot-Seat – Verstecken (Tippen, Ziehen, Doppeltipp/R drehen, F spiegeln, Zufällig), Glanz im Lieblingsgelände, Zielen + Bestätigen (später: direkter Tipp), Sichtschutz mit Zusammenfassung der gegnerischen Züge, Endbildschirm, Revanche
 - [x] M4 Online – Trystero-Transport, Einladungslink, Teilen-Dialog, QR-Code, Protokoll mit Prüfung jeder Nachricht, Commitment und Nachprüfung beim Aufdecken, Wiederverbinden nach Reload (Postausgang + `sync`), Dritte im Raum werden ignoriert
 - [x] M5 Grafiken – mit OpenRouter (`google/gemini-3.1-flash-image`) erzeugt: 5 Tier-Sticker, Pfote (Treffer), Staubwolke (Daneben), Titelbild; freigestellt mit `scripts/postprocess-assets.py`, eingebaut mit Maskierung und Drehung. Pferd und Katze gespiegelt, damit der Kopf in der Form liegt. Keine eigenen Kopf-Grafiken – Legenden nutzen Emoji
 - [x] M6 Feinschliff (teilweise) – Mobile-Layout, `prefers-reduced-motion`, Vibration bei eigenem Zug, README mit Regeln. Offen: Sounds, Online-Revanche
@@ -43,6 +43,17 @@ Problem: Mit 30–48 Orten und 9 belegten waren die Tiere auf großen Karten zu 
 - Zoom im Brett (`src/ui/zoom.js` + BoardView): ＋/−/Übersicht, Pinch, Mausrad, gezoomt verschieben; Tipp vs. Ziehen mit 8 px Schwelle; Auto-Lupe, wenn ein Ort im Mittel unter 34 px liegt. Kartenbild wird während der Geste nur skaliert und danach scharf neu gezeichnet. Nummern erst ab ≈ 40 px Ortsgröße.
 - Nach dem Suchen und nach „Zufall“ springt das Brett zurück zur Übersicht. Vorschau beim Erstellen und Endbildschirm bleiben ohne Zoom.
 - Geprüft: Münster Mittel → 98 Orte, Auto-Lupe/Verschieben/Wählen in 390 px Breite; komplette Hot-Seat-Partie (73 Suchen je Seite, 16–18 % Treffer); Mausrad am Desktop.
+
+## 24.10.2026: Direkter Tipp + Rückmeldungen für Kinder
+
+Problem: Suchen brauchte zwei Schritte (Ort wählen, dann bestätigen); das Ergebnis kam als Satz oben in der Karte – zu zäh und für Kinder, die noch nicht lesen, unverständlich.
+
+- Ein Tipp sucht sofort. Schon abgesuchte Orte geben ein „Nö“-Geräusch. Auto-Lupe und Tipp/Ziehen-Schwelle schützen weiterhin vor Fehltipps auf kleinen Orten.
+- Ergebnis direkt am Ort als große Animation (Staubwolke, Pfote, Spuren-Fußabdrücke; gefunden: Tier groß in der Brettmitte mit Konfetti), dazu Geräusch (WebAudio, ohne Dateien), Vibration und kurze Ansage per `speechSynthesis` („Treffer!“, „Du hast den Hund gefunden!“). Gezoomt bleibt das Brett stehen, bis die Animation gelaufen ist.
+- Kopfkarte nur noch mit Symbol + höchstens einem Wort (👆 Du bist dran!, ⏳ Name, 💨 Daneben, 🐾 Treffer!). Die ausführlichen Sätze gehen an Screenreader.
+- Hot-Seat: Sichtschutz mit Bild (📱👉) und Ansage „Bo ist dran.“; beim Start des eigenen Zugs laufen die Suchen des Gegners als Animation auf dem eigenen Revier ab; „Weiter“ erscheint erst nach der Animation.
+- Verstecken: Geräusche beim Antippen, „Plopp“ + ✨ wenn ein Tier fertig ist, Glitzerklang im Lieblingsgelände. Endbildschirm mit Fanfare, Konfetti und Ansage des Siegers.
+- 🔊/🔇 in der Kopfzeile (gespeichert in `localStorage`). `prefers-reduced-motion` zeigt die Symbole ohne Bewegung.
 
 ## Offene Punkte
 
