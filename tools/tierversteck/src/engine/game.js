@@ -8,7 +8,7 @@
  */
 
 import { validateFleet, canonicalFleet, isValidBoard } from './board.js';
-import { newDefense, resolveShot, allFound, nextTurn, other, isFleetFound, FOUND } from './rules.js';
+import { newDefense, resolveShot, allFound, other, isFleetFound, FOUND } from './rules.js';
 import { msg, isValidMessage, PROTOCOL_VERSION } from '../net/protocol.js';
 import { commitFleet, randomSalt, verifyReveal } from '../net/commit.js';
 
@@ -31,10 +31,10 @@ export class PlayerGame {
       board,
       placements: null, salt: null, myCommit: null, oppCommit: null,
       defense: newDefense(),
-      incoming: [],      // Schüsse des Gegners auf mich: {x, y, kind, result, animal?, counter}
-      outgoing: [],      // meine Schüsse: {x, y, kind, result, animal?, cells?, counter}
-      turn: 'host', kind: 'normal',
-      pending: null,     // mein Schuss, auf dessen Antwort ich warte
+      incoming: [],      // Suchen des Gegners bei mir: {r, result, tracks, animal?}
+      outgoing: [],      // meine Suchen: {r, result, tracks, animal?, regions?}
+      turn: 'host',
+      pending: null,     // meine Suche, auf deren Antwort ich warte
       winner: null,
       oppReveal: null, verdict: null,
       helloSent: false,
@@ -58,7 +58,7 @@ export class PlayerGame {
   /** Eigene Aufstellung festlegen und Commitment senden. */
   async commit(placements) {
     if (this.s.phase !== 'hiding' || this.s.myCommit) throw new Error('Gerade nicht möglich');
-    const problem = validateFleet(this.s.board.size, placements);
+    const problem = validateFleet(this.s.board, placements);
     if (problem) throw new Error('Aufstellung ungültig: ' + problem);
     this.s.placements = canonicalFleet(placements);
     this.s.salt = randomSalt();
@@ -68,13 +68,14 @@ export class PlayerGame {
     this.onEvent({ type: 'committed' });
   }
 
-  /** Schuss auf das gegnerische Brett. */
-  shoot(x, y) {
+  /** Ort r im gegnerischen Revier absuchen. */
+  shoot(r) {
     if (!this.myTurn) throw new Error('Nicht am Zug');
-    if (this.s.outgoing.some(s => s.x === x && s.y === y)) throw new Error('Schon beschossen');
-    this.s.pending = { x, y, kind: this.s.kind };
-    this.send(msg.shot(x, y, this.s.kind));
-    this.onEvent({ type: 'shot-sent', x, y });
+    if (!inside(this.s.board, r)) throw new Error('Unbekannter Ort');
+    if (this.s.outgoing.some(s => s.r === r)) throw new Error('Schon abgesucht');
+    this.s.pending = { r };
+    this.send(msg.shot(r));
+    this.onEvent({ type: 'shot-sent', r });
   }
 
   /** Eingehende Nachricht vom Gegner. */
@@ -117,7 +118,6 @@ export class PlayerGame {
     if (this.s.phase === 'hiding' && this.s.myCommit && this.s.oppCommit) {
       this.s.phase = 'playing';
       this.s.turn = 'host';
-      this.s.kind = 'normal';
       this.onEvent({ type: 'play' });
     }
   }
@@ -125,36 +125,35 @@ export class PlayerGame {
   #onShot(m) {
     const s = this.s;
     const shooter = other(s.role);
-    if (s.phase !== 'playing' || s.turn !== shooter || s.kind !== m.kind || !inside(s.board, m.x, m.y)) {
-      this.onEvent({ type: 'error', reason: 'Schuss außer der Reihe' });
+    if (s.phase !== 'playing' || s.turn !== shooter || !inside(s.board, m.r)) {
+      this.onEvent({ type: 'error', reason: 'Suche außer der Reihe' });
       return;
     }
     let r;
-    try { r = resolveShot(s.board, s.placements, s.defense, m.x, m.y, m.kind); }
-    catch { this.onEvent({ type: 'error', reason: 'Feld schon beschossen' }); return; }
-    s.incoming.push({ x: m.x, y: m.y, kind: m.kind, result: r.result, animal: r.animal, counter: r.counter });
-    this.send(msg.result(m.x, m.y, r));
+    try { r = resolveShot(s.board, s.placements, s.defense, m.r); }
+    catch { this.onEvent({ type: 'error', reason: 'Ort schon abgesucht' }); return; }
+    s.incoming.push({ r: m.r, result: r.result, tracks: r.tracks, animal: r.animal });
+    this.send(msg.result(m.r, r));
     const lost = allFound(s.placements, s.defense);
-    this.#advance(shooter, m.kind, r.counter, lost ? shooter : null);
-    this.onEvent({ type: 'incoming', x: m.x, y: m.y, kind: m.kind, ...r });
+    this.#advance(shooter, lost ? shooter : null);
+    this.onEvent({ type: 'incoming', r: m.r, ...r });
   }
 
   #onResult(m) {
     const s = this.s;
     const p = s.pending;
-    if (!p || p.x !== m.x || p.y !== m.y) { this.onEvent({ type: 'error', reason: 'Unerwartete Antwort' }); return; }
+    if (!p || p.r !== m.r) { this.onEvent({ type: 'error', reason: 'Unerwartete Antwort' }); return; }
     s.pending = null;
-    // Ein Konter-Schuss kann keinen Konter auslösen – Behauptung des Gegners ignorieren
-    const counter = p.kind === 'normal' && m.counter;
-    const shot = { x: m.x, y: m.y, kind: p.kind, result: m.result, counter };
-    if (m.result === FOUND) { shot.animal = m.animal; shot.cells = m.cells; }
+    // Spuren gibt es nur bei Daneben – andere Behauptungen ignorieren
+    const shot = { r: m.r, result: m.result, tracks: m.result === 'miss' && m.tracks };
+    if (m.result === FOUND) { shot.animal = m.animal; shot.regions = m.regions; }
     s.outgoing.push(shot);
     const won = isFleetFound(s.outgoing);
-    this.#advance(s.role, p.kind, counter, won ? s.role : null);
+    this.#advance(s.role, won ? s.role : null);
     this.onEvent({ type: 'outgoing', ...shot });
   }
 
-  #advance(shooter, kind, counter, winner) {
+  #advance(shooter, winner) {
     const s = this.s;
     if (winner) {
       s.winner = winner;
@@ -164,9 +163,7 @@ export class PlayerGame {
       if (s.oppReveal) this.#verify();
       return;
     }
-    const n = nextTurn(shooter, kind, counter);
-    s.turn = n.turn;
-    s.kind = n.kind;
+    s.turn = other(shooter);
   }
 
   #onReveal(m) {
@@ -188,4 +185,4 @@ export class PlayerGame {
   }
 }
 
-function inside(board, x, y) { return x < board.size && y < board.size; }
+function inside(board, r) { return Number.isInteger(r) && r >= 0 && r < board.regions.length; }

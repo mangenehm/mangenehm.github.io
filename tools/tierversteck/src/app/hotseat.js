@@ -10,6 +10,7 @@ import { coverScreen } from '../ui/cover.js';
 import { hideScreen } from '../ui/hide.js';
 import { playScreen, describe } from '../ui/play.js';
 import { endScreen } from '../ui/end.js';
+import { toast } from '../ui/dom.js';
 
 const tick = () => new Promise(r => setTimeout(r, 0));
 
@@ -47,7 +48,7 @@ export function runHotseat(ui, { names, board, onExit }) {
           board: g.board,
           title: `${g.s.name}: Tiere verstecken`,
           onDone: async placements => {
-            await g.commit(placements);
+            try { await g.commit(placements); } catch (err) { toast(err.message || 'Verstecken fehlgeschlagen'); return; }
             await tick();
             if (role === 'host') hideFor('guest');
             else nextTurn();
@@ -65,7 +66,7 @@ export function runHotseat(ui, { names, board, onExit }) {
     active = null;
     ui.show(coverScreen, {
       name: g.s.name,
-      title: g.s.kind === 'counter' ? '⚡ Konter-Schuss!' : 'Du bist dran.',
+      title: 'Du bist dran.',
       info: news[role].join(' '),
       onReady: () => showPlay(role),
     });
@@ -77,7 +78,7 @@ export function runHotseat(ui, { names, board, onExit }) {
     screen = ui.show(playScreen, {
       game: g,
       banner: news[role].join(' '),
-      onShoot: (x, y) => g.shoot(x, y),
+      onShoot: r => g.shoot(r),
     });
     news[role] = [];
   }
@@ -88,7 +89,6 @@ export function runHotseat(ui, { names, board, onExit }) {
     screen.update(e);
     const g = games[role];
     if (g.phase === 'over') screen.setContinue(showEnd, 'Ergebnis ansehen');
-    else if (g.s.turn === role) screen.update();             // Konter vorbei → eigener normaler Zug
     else screen.setContinue(() => { screen.setContinue(null); nextTurn(); }, 'Weiter – Gerät übergeben');
   }
 

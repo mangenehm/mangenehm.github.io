@@ -1,210 +1,279 @@
-/* Karte in Spielfarben auf Canvas zeichnen – eigene Darstellung statt Kartenkacheln. */
-
-import { traceFeature, sortedFeatures } from './classify.js';
-import { colLabel } from '../engine/board.js';
+/*
+ * Gezeichneter Stadtplan: Orte als weiche, gemusterte Farbflächen,
+ * Straßen als Bänder mit Namen, Wahrzeichen als Emoji.
+ * Koordinaten des Bretts sind Einheiten (0 … board.size); `scale` = Pixel je Einheit.
+ */
 
 export const PALETTE = {
-  other:    '#efe6d1',
-  green:    '#bfe095',
-  forest:   '#6fae66',
-  forestEdge: '#4f8f4a',
-  water:    '#7fcaee',
-  waterEdge: '#5ab2dd',
-  road:     '#ffffff',
-  roadEdge: '#b9a37a',
-  building: '#eba585',
-  buildingEdge: '#c47b5a',
+  ground: '#efe6d2',
+  house:  '#f4c7aa',
+  green:  '#cbe7a2',
+  forest: '#93c784',
+  plaza:  '#e7dcc4',
+  water:  '#a3d8f2',
 };
 
-// Geländeklassen als kräftige Farbflächen (Schalter „Gelände zeigen“)
-export const OVERLAY = {
-  water: '#2f8fd8', building: '#d9653b', forest: '#2e7d32',
-  green: '#8bc34a', road: '#8d8d8d', other: '#cbbb94',
+export const EDGE = {
+  house: '#d99a78', green: '#93c46a', forest: '#5d9a52', plaza: '#c2b28f', water: '#68b6df',
 };
 
-/** Zeichnet die Karte des Bretts in das Rechteck (ox, oy, size·cell). */
-export function drawMap(ctx, board, cell, ox = 0, oy = 0) {
-  const n = board.size, w = n * cell;
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(ox, oy, w, w);
-  ctx.clip();
-  ctx.fillStyle = PALETTE.other;
-  ctx.fillRect(ox, oy, w, w);
-  if (Array.isArray(board.features) && board.features.length) drawFeatures(ctx, board.features, cell, ox, oy);
-  else drawTerrainCells(ctx, board, cell, ox, oy);
-  ctx.restore();
+const FONT = 'Outfit, system-ui, sans-serif';
+const EMOJI_FONT = 'system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+
+/** Weicher Pfad durch die Ringe eines Orts (Kurven über die Kantenmitten), in Einheiten. */
+export function regionPath(region) {
+  const path = new Path2D();
+  for (const pts of region.p) {
+    const k = pts.length / 2;
+    if (k < 3) continue;
+    const mx = i => (pts[2 * (i % k)] + pts[2 * ((i + 1) % k)]) / 2;
+    const my = i => (pts[2 * (i % k) + 1] + pts[2 * ((i + 1) % k) + 1]) / 2;
+    path.moveTo(mx(k - 1), my(k - 1));
+    for (let i = 0; i < k; i++) path.quadraticCurveTo(pts[2 * i], pts[2 * i + 1], mx(i), my(i));
+    path.closePath();
+  }
+  return path;
 }
 
-function drawFeatures(ctx, features, cell, ox, oy) {
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  const sorted = sortedFeatures(features);
-  const roads = sorted.filter(f => f.c === 'road' && f.k === 'l');
+export function regionPaths(board) { return board.regions.map(regionPath); }
 
-  for (const f of sorted) {
-    if (f.c === 'road' && f.k === 'l') continue;
-    if (f.c === 'building') continue;
-    traceFeature(ctx, f, cell, ox, oy);
-    if (f.k === 'a') {
-      ctx.fillStyle = PALETTE[f.c];
-      ctx.fill('evenodd');
-      if (f.c === 'forest' || f.c === 'water') {
-        ctx.strokeStyle = f.c === 'forest' ? PALETTE.forestEdge : PALETTE.waterEdge;
-        ctx.lineWidth = Math.max(1, cell * 0.04);
-        ctx.stroke();
-      }
-    } else {
-      ctx.strokeStyle = PALETTE[f.c];
-      ctx.lineWidth = Math.max(2, f.w * cell);
-      ctx.stroke();
+const patternCache = new Map();
+
+/** Kleine Kachel mit Deko je Gelände (Dächer, Bäume, Gras, Pflaster, Wellen). */
+function terrainPattern(ctx, t, px) {
+  const key = t + ':' + Math.round(px * 10);
+  if (patternCache.has(key)) return ctx.createPattern(patternCache.get(key), 'repeat');
+  const s = Math.max(8, Math.round(px));
+  const c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d');
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  const col = EDGE[t];
+  if (t === 'house') {
+    for (const [x, y] of [[0.25, 0.3], [0.75, 0.8]]) {
+      const w = s * 0.2;
+      g.fillStyle = 'rgba(255,255,255,.55)';
+      g.fillRect(s * x - w / 2, s * y - w * 0.2, w, w * 0.75);
+      g.fillStyle = col;
+      g.beginPath();
+      g.moveTo(s * x - w * 0.65, s * y - w * 0.15);
+      g.lineTo(s * x, s * y - w * 0.75);
+      g.lineTo(s * x + w * 0.65, s * y - w * 0.15);
+      g.closePath();
+      g.fill();
     }
-  }
-
-  // Straßen: erst alle Ränder, dann alle Flächen – so verschmelzen Kreuzungen weich
-  for (const pass of ['edge', 'fill']) {
-    for (const f of roads) {
-      traceFeature(ctx, f, cell, ox, oy);
-      const wpx = Math.max(3, f.w * cell);
-      ctx.strokeStyle = pass === 'edge' ? PALETTE.roadEdge : PALETTE.road;
-      ctx.lineWidth = pass === 'edge' ? wpx + Math.max(2, cell * 0.06) : wpx;
-      ctx.stroke();
+  } else if (t === 'forest') {
+    g.fillStyle = col;
+    for (const [x, y, r] of [[0.25, 0.3, 0.13], [0.72, 0.22, 0.1], [0.6, 0.72, 0.14], [0.15, 0.82, 0.08]]) {
+      g.beginPath(); g.arc(s * x, s * y, s * r, 0, Math.PI * 2); g.fill();
     }
-  }
-  for (const f of features) {
-    if (f.c !== 'road' || f.k !== 'a') continue;
-    traceFeature(ctx, f, cell, ox, oy);
-    ctx.fillStyle = PALETTE.road;
-    ctx.fill('evenodd');
-  }
-
-  // Gebäude mit weichem Schatten
-  ctx.save();
-  ctx.shadowColor = 'rgba(80, 40, 20, .25)';
-  ctx.shadowOffsetX = ctx.shadowOffsetY = Math.max(1, cell * 0.05);
-  ctx.shadowBlur = cell * 0.08;
-  ctx.fillStyle = PALETTE.building;
-  for (const f of features) {
-    if (f.c !== 'building') continue;
-    traceFeature(ctx, f, cell, ox, oy);
-    ctx.fill('evenodd');
-  }
-  ctx.restore();
-  ctx.strokeStyle = PALETTE.buildingEdge;
-  ctx.lineWidth = Math.max(1, cell * 0.03);
-  for (const f of features) {
-    if (f.c !== 'building') continue;
-    traceFeature(ctx, f, cell, ox, oy);
-    ctx.stroke();
-  }
-}
-
-/** Zufallsgelände ohne Geometrie: Zellen mit kleinen Symbolen. */
-function drawTerrainCells(ctx, board, cell, ox, oy) {
-  const n = board.size;
-  for (let y = 0; y < n; y++) {
-    for (let x = 0; x < n; x++) {
-      const t = board.terrain[y * n + x];
-      const px = ox + x * cell, py = oy + y * cell;
-      if (t === 'other') continue;
-      ctx.fillStyle = t === 'road' ? PALETTE.roadEdge : PALETTE[t];
-      roundRect(ctx, px - 0.5, py - 0.5, cell + 1, cell + 1, 0);
-      ctx.fill();
-      decorate(ctx, t, px, py, cell, (x * 7 + y * 13) % 5);
+  } else if (t === 'green') {
+    g.strokeStyle = col;
+    g.lineWidth = Math.max(1, s * 0.05);
+    for (const [x, y] of [[0.25, 0.35], [0.7, 0.75], [0.8, 0.25]]) {
+      g.beginPath();
+      g.moveTo(s * (x - 0.06), s * (y - 0.08)); g.lineTo(s * x, s * y); g.lineTo(s * (x + 0.06), s * (y - 0.08));
+      g.stroke();
     }
-  }
-}
-
-function decorate(ctx, t, px, py, c, v) {
-  ctx.save();
-  if (t === 'forest') {
-    ctx.fillStyle = PALETTE.forestEdge;
-    for (const [dx, dy] of [[0.3, 0.35], [0.7, 0.3], [0.5, 0.7]]) {
-      ctx.beginPath();
-      ctx.arc(px + c * (dx + v * 0.02), py + c * dy, c * 0.16, 0, Math.PI * 2);
-      ctx.fill();
+  } else if (t === 'plaza') {
+    g.fillStyle = col;
+    for (const [x, y] of [[0.25, 0.25], [0.75, 0.25], [0.5, 0.75], [0, 0.75], [1, 0.75]]) {
+      g.beginPath(); g.arc(s * x, s * y, s * 0.05, 0, Math.PI * 2); g.fill();
     }
   } else if (t === 'water') {
-    ctx.strokeStyle = 'rgba(255,255,255,.6)';
-    ctx.lineWidth = Math.max(1, c * 0.05);
-    for (const dy of [0.38, 0.66]) {
-      ctx.beginPath();
-      ctx.moveTo(px + c * 0.2, py + c * dy);
-      ctx.quadraticCurveTo(px + c * 0.35, py + c * (dy - 0.08), px + c * 0.5, py + c * dy);
-      ctx.quadraticCurveTo(px + c * 0.65, py + c * (dy + 0.08), px + c * 0.8, py + c * dy);
-      ctx.stroke();
-    }
-  } else if (t === 'building') {
-    ctx.fillStyle = PALETTE.buildingEdge;
-    roundRect(ctx, px + c * 0.18, py + c * 0.18, c * 0.64, c * 0.64, c * 0.08);
-    ctx.fill();
-    ctx.fillStyle = PALETTE.building;
-    roundRect(ctx, px + c * 0.22, py + c * 0.22, c * 0.56, c * 0.56, c * 0.06);
-    ctx.fill();
-  } else if (t === 'road') {
-    ctx.fillStyle = PALETTE.road;
-    ctx.fillRect(px, py + c * 0.3, c, c * 0.4);
-    ctx.fillRect(px + c * 0.3, py, c * 0.4, c);
-  } else if (t === 'green') {
-    ctx.strokeStyle = 'rgba(70,120,40,.45)';
-    ctx.lineWidth = Math.max(1, c * 0.04);
-    for (const [dx, dy] of [[0.3, 0.4], [0.65, 0.65]]) {
-      ctx.beginPath();
-      ctx.moveTo(px + c * dx, py + c * (dy + 0.1));
-      ctx.lineTo(px + c * (dx - 0.05), py + c * dy);
-      ctx.moveTo(px + c * dx, py + c * (dy + 0.1));
-      ctx.lineTo(px + c * (dx + 0.05), py + c * dy);
-      ctx.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.75)';
+    g.lineWidth = Math.max(1, s * 0.05);
+    for (const [x, y] of [[0.15, 0.3], [0.55, 0.78]]) {
+      g.beginPath();
+      g.moveTo(s * x, s * y);
+      g.quadraticCurveTo(s * (x + 0.08), s * (y - 0.08), s * (x + 0.16), s * y);
+      g.quadraticCurveTo(s * (x + 0.24), s * (y + 0.08), s * (x + 0.32), s * y);
+      g.stroke();
     }
   }
-  ctx.restore();
+  patternCache.set(key, c);
+  return ctx.createPattern(c, 'repeat');
 }
 
-/** Geländeklassen als halbtransparente Farbflächen. */
-export function drawTerrainOverlay(ctx, board, cell, ox = 0, oy = 0, alpha = 0.55) {
-  const n = board.size;
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  for (let y = 0; y < n; y++) {
-    for (let x = 0; x < n; x++) {
-      ctx.fillStyle = OVERLAY[board.terrain[y * n + x]];
-      ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
-    }
-  }
-  ctx.restore();
+function tracePolyline(ctx, pts, scale) {
+  ctx.moveTo(pts[0] * scale, pts[1] * scale);
+  for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i] * scale, pts[i + 1] * scale);
 }
 
-/** Rasterlinien plus Koordinaten (A–L oben, 1–12 links) im Rand. */
-export function drawGrid(ctx, size, cell, ox, oy, { labels = true, color = 'rgba(40, 50, 40, .28)' } = {}) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1;
+function strokeLines(ctx, lines, scale, style) {
   ctx.beginPath();
-  for (let i = 0; i <= size; i++) {
-    const v = Math.round(i * cell) + 0.5;
-    ctx.moveTo(ox + v, oy); ctx.lineTo(ox + v, oy + size * cell);
-    ctx.moveTo(ox, oy + v); ctx.lineTo(ox + size * cell, oy + v);
-  }
+  for (const l of lines) for (const pts of l.p) tracePolyline(ctx, pts, scale);
+  Object.assign(ctx, style);
   ctx.stroke();
-  if (labels) {
-    ctx.fillStyle = '#5f6f7f';
-    ctx.font = `600 ${Math.max(9, Math.round(cell * 0.36))}px Outfit, system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    for (let i = 0; i < size; i++) {
-      ctx.fillText(colLabel(i), ox + (i + 0.5) * cell, oy - cell * 0.32);
-      ctx.fillText(String(i + 1), ox - cell * 0.36, oy + (i + 0.5) * cell);
+}
+
+/**
+ * Zeichnet das Brett in ein Quadrat der Kantenlänge board.size·scale ab (0, 0).
+ * opts.numbers: Ortsnummern zeigen, opts.paths: vorberechnete regionPaths
+ */
+export function drawMap(ctx, board, scale, { numbers = true, paths = regionPaths(board) } = {}) {
+  const W = board.size * scale;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, W, W);
+  ctx.clip();
+  ctx.fillStyle = PALETTE.ground;
+  ctx.fillRect(0, 0, W, W);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // Orte: Grundfarbe + Muster
+  const tile = 16 * scale * (board.size / 256);
+  board.regions.forEach((r, i) => {
+    ctx.save();
+    ctx.scale(scale, scale);
+    ctx.fillStyle = PALETTE[r.t];
+    ctx.fill(paths[i]);
+    const pat = terrainPattern(ctx, r.t, tile);
+    if (pat) {
+      pat.setTransform?.(new DOMMatrix().scale(1 / scale));
+      ctx.fillStyle = pat;
+      ctx.fill(paths[i]);
     }
+    ctx.restore();
+  });
+
+  const lines = board.lines || [];
+  const by = k => lines.filter(l => l.k === k);
+  // Fugen zwischen den Orten: dort verlaufen (gezeichnet oder gedacht) die Straßen
+  ctx.save();
+  ctx.scale(scale, scale);
+  // dunklere Innenkante, damit jeder Ort als eigene Fläche erkennbar ist
+  board.regions.forEach((r, i) => {
+    ctx.save();
+    ctx.clip(paths[i]);
+    ctx.strokeStyle = EDGE[r.t];
+    ctx.lineWidth = 7 / scale;
+    ctx.stroke(paths[i]);
+    ctx.restore();
+  });
+  ctx.strokeStyle = PALETTE.ground;
+  ctx.lineWidth = Math.max(3.5, scale * 1.2) / scale;
+  paths.forEach(p => ctx.stroke(p));
+  ctx.restore();
+
+  for (const l of by('water')) strokeLines(ctx, [l], scale, { strokeStyle: '#7cc3ea', lineWidth: Math.max(1.5, l.w * scale) });
+
+  for (const l of by('path')) {
+    ctx.save();
+    ctx.setLineDash([scale * 1.5, scale * 1.2]);
+    strokeLines(ctx, [l], scale, { strokeStyle: 'rgba(150, 125, 85, .55)', lineWidth: Math.max(1, l.w * scale * 0.6) });
+    ctx.restore();
+  }
+  for (const l of by('rail')) {
+    strokeLines(ctx, [l], scale, { strokeStyle: '#8f939c', lineWidth: Math.max(2, 1.6 * scale) });
+    ctx.save();
+    ctx.setLineDash([scale * 1.6, scale * 1.6]);
+    strokeLines(ctx, [l], scale, { strokeStyle: '#fff', lineWidth: Math.max(1, 0.7 * scale) });
+    ctx.restore();
+  }
+  const roads = by('road');
+  // erst alle Ränder, dann alle Flächen – so verschmelzen Kreuzungen weich
+  for (const l of roads) strokeLines(ctx, [l], scale, { strokeStyle: '#cdbb98', lineWidth: Math.max(2.5, l.w * scale) + Math.max(1.5, scale * 0.6) });
+  for (const l of roads) strokeLines(ctx, [l], scale, { strokeStyle: '#fffdf8', lineWidth: Math.max(2, l.w * scale) });
+
+  drawStreetNames(ctx, roads, scale);
+  drawPois(ctx, board.pois || [], scale, board.size);
+  if (numbers) drawNumbers(ctx, board, scale);
+  ctx.restore();
+}
+
+function polylineLength(pts) {
+  let len = 0;
+  for (let i = 2; i < pts.length; i += 2) len += Math.hypot(pts[i] - pts[i - 2], pts[i + 1] - pts[i - 1]);
+  return len;
+}
+
+/** Ein Name je Straße, mittig auf ihrem längsten Stück, immer lesbar ausgerichtet. */
+function drawStreetNames(ctx, roads, scale) {
+  const longest = new Map();
+  for (const l of roads) {
+    if (!l.n) continue;
+    for (const pts of l.p) {
+      const len = polylineLength(pts);
+      if (!longest.has(l.n) || len > longest.get(l.n).len) longest.set(l.n, { pts, len });
+    }
+  }
+  const size = Math.max(9, Math.min(13, scale * 3.6));
+  ctx.save();
+  ctx.font = `600 ${size}px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  for (const [name, { pts, len }] of longest) {
+    const w = ctx.measureText(name).width;
+    if (len * scale < w + 16) continue;
+    // Punkt auf halber Länge und Richtung dort
+    let half = len / 2, i = 2;
+    for (; i < pts.length; i += 2) {
+      const seg = Math.hypot(pts[i] - pts[i - 2], pts[i + 1] - pts[i - 1]);
+      if (half <= seg) break;
+      half -= seg;
+    }
+    i = Math.min(i, pts.length - 2);
+    const x0 = pts[i - 2], y0 = pts[i - 1], x1 = pts[i], y1 = pts[i + 1];
+    const seg = Math.hypot(x1 - x0, y1 - y0) || 1;
+    const x = (x0 + ((x1 - x0) * half) / seg) * scale, y = (y0 + ((y1 - y0) * half) / seg) * scale;
+    let a = Math.atan2(y1 - y0, x1 - x0);
+    if (a > Math.PI / 2) a -= Math.PI;
+    if (a < -Math.PI / 2) a += Math.PI;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(a);
+    ctx.strokeStyle = 'rgba(255,253,248,.95)';
+    ctx.lineWidth = 3;
+    ctx.strokeText(name, 0, 0);
+    ctx.fillStyle = '#6d5a3f';
+    ctx.fillText(name, 0, 0);
+    ctx.restore();
   }
   ctx.restore();
 }
 
-export function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
+function drawPois(ctx, pois, scale, size) {
+  const r = Math.max(7, scale * (size / 256) * 4.2);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `${r * 1.25}px ${EMOJI_FONT}`;
+  for (const p of pois) {
+    const x = p.x * scale, y = p.y * scale;
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    ctx.shadowColor = 'rgba(60,40,20,.25)';
+    ctx.shadowBlur = 3;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = '#000';
+    ctx.fillText(p.e, x, y + r * 0.08);
+  }
+  ctx.restore();
+}
+
+function drawNumbers(ctx, board, scale) {
+  const fs = Math.max(8, Math.min(12, scale * (board.size / 256) * 3.4));
+  ctx.save();
+  ctx.font = `700 ${fs}px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  board.regions.forEach((r, i) => {
+    const x = r.c[0] * scale, y = r.c[1] * scale;
+    const t = String(i + 1);
+    const w = Math.max(fs * 1.5, ctx.measureText(t).width + fs * 0.7);
+    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x - w / 2, y - fs * 0.7, w, fs * 1.4, fs * 0.7);
+    else ctx.rect(x - w / 2, y - fs * 0.7, w, fs * 1.4);
+    ctx.fill();
+    ctx.fillStyle = '#5f5242';
+    ctx.fillText(t, x, y + fs * 0.05);
+  });
+  ctx.restore();
 }

@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 
 import { TrysteroTransport, randomRoomId } from '../src/net/trystero.js';
 import { PlayerGame } from '../src/engine/game.js';
-import { randomBoard, randomFleet, makeRng } from '../src/engine/board.js';
+import { randomFleet, makeRng } from '../src/engine/board.js';
+import { randomBoard } from '../src/map/regions.js';
 import { isValidMessage, msg } from '../src/net/protocol.js';
 
 const tick = () => new Promise(r => setTimeout(r, 0));
@@ -92,7 +93,7 @@ test('komplette Online-Partie über den Transport', async () => {
   const net = fakeNetwork();
   const ta = new TrysteroTransport({ roomId: 'r', playerId: 'A', joinRoom: net.joinRoom });
   const tb = new TrysteroTransport({ roomId: 'r', playerId: 'B', joinRoom: net.joinRoom });
-  const host = new PlayerGame({ role: 'host', name: 'Ada', board: randomBoard(9, makeRng(1)), send: m => ta.send(m) });
+  const host = new PlayerGame({ role: 'host', name: 'Ada', board: randomBoard(makeRng(1), { n: 96, targetCount: 25 }), send: m => ta.send(m) });
   const guest = new PlayerGame({ role: 'guest', name: 'Bo', send: m => tb.send(m) });
   ta.onMessage(m => host.receive(m));
   tb.onMessage(m => guest.receive(m));
@@ -100,15 +101,14 @@ test('komplette Online-Partie über den Transport', async () => {
   await ta.connect(); await tb.connect();
   for (let i = 0; i < 6; i++) await tick();
   assert.equal(guest.phase, 'hiding');
-  await host.commit(randomFleet(9, makeRng(2)));
-  await guest.commit(randomFleet(9, makeRng(3)));
+  await host.commit(randomFleet(host.board, makeRng(2)));
+  await guest.commit(randomFleet(guest.board, makeRng(3)));
   for (let i = 0; i < 4; i++) await tick();
   const rng = makeRng(4);
   for (let i = 0; i < 400 && host.phase === 'playing'; i++) {
     const g = host.s.turn === 'host' ? host : guest;
-    let x, y;
-    do { x = Math.floor(rng() * 9); y = Math.floor(rng() * 9); } while (g.s.outgoing.some(s => s.x === x && s.y === y));
-    g.shoot(x, y);
+    const free = g.board.regions.map((_, r) => r).filter(r => !g.s.outgoing.some(s => s.r === r));
+    g.shoot(free[Math.floor(rng() * free.length)]);
     for (let k = 0; k < 3; k++) await tick();
   }
   for (let i = 0; i < 6; i++) await tick();
@@ -117,11 +117,22 @@ test('komplette Online-Partie über den Transport', async () => {
   assert.equal(guest.s.verdict?.ok, true);
 });
 
+test('SHA-256-Ersatz ohne crypto.subtle stimmt mit Node überein', async () => {
+  const { sha256 } = await import('../src/net/commit.js');
+  const { createHash } = await import('node:crypto');
+  for (const s of ['', 'abc', 'x'.repeat(55), 'x'.repeat(56), 'x'.repeat(64), 'Grüße 🐍'.repeat(40)]) {
+    assert.equal(Buffer.from(sha256(new TextEncoder().encode(s))).toString('hex'), createHash('sha256').update(s).digest('hex'));
+  }
+});
+
 test('Protokoll-Prüfung', () => {
   assert.ok(isValidMessage(msg.hello('Ada')));
-  assert.ok(isValidMessage(msg.shot(3, 4, 'counter')));
-  assert.ok(!isValidMessage({ t: 'shot', x: 3, y: 4, kind: 'mega' }));
-  assert.ok(!isValidMessage({ t: 'result', x: 0, y: 0, result: 'found', counter: false }));
+  assert.ok(isValidMessage(msg.shot(3)));
+  assert.ok(!isValidMessage({ t: 'shot', r: -1 }));
+  assert.ok(!isValidMessage({ t: 'shot', x: 3, y: 4 }));
+  assert.ok(isValidMessage(msg.result(2, { result: 'miss', tracks: true })));
+  assert.ok(!isValidMessage({ t: 'result', r: 0, result: 'found', tracks: false }));
+  assert.ok(!isValidMessage({ t: 'result', r: 0, result: 'miss' }));
   assert.ok(!isValidMessage({ t: 'hello', v: 1, name: 'x'.repeat(100) }));
   assert.ok(!isValidMessage(null));
   assert.match(randomRoomId(), /^[a-z0-9]{10}$/);

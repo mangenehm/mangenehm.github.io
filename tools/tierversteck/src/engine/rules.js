@@ -1,60 +1,48 @@
-/* Schuss auflösen, Lieblingsgelände, Konter, Zugfolge. */
+/* Suche auflösen, Spuren, Zugfolge. */
 
-import { ANIMALS, ANIMAL_IDS, placementCells } from './shapes.js';
+import { ANIMALS, ANIMAL_IDS } from './shapes.js';
 import { isInFavorite } from './board.js';
 
 export const MISS = 'miss';
 export const HIT = 'hit';
 export const FOUND = 'found';
 
-/** Verteidigungszustand einer Aufstellung: welche Felder getroffen wurden. */
+/** Verteidigungszustand einer Aufstellung: welche Orte abgesucht wurden. */
 export function newDefense() {
-  return { shots: [], hitAnimals: [] };   // shots: ["x,y"], hitAnimals: einmal je Tier
+  return { shots: [] };   // Region-IDs
 }
 
-/**
- * Löst einen Schuss auf die eigene Aufstellung auf und aktualisiert `defense`.
- * kind: 'normal' | 'counter' – ein Konter löst nie einen weiteren Konter aus.
- * Rückgabe: { result, animal?, cells?, counter }
- */
-export function resolveShot(board, placements, defense, x, y, kind = 'normal') {
-  const key = x + ',' + y;
-  if (defense.shots.includes(key)) throw new Error('Feld wurde schon beschossen');
-  defense.shots.push(key);
+const isFound = (p, shots) => p.regions.every(r => shots.includes(r));
 
-  for (const p of placements) {
-    const cells = placementCells(p);
-    if (!cells.some(([cx, cy]) => cx === x && cy === y)) continue;
-    const firstHit = !defense.hitAnimals.includes(p.animal);
-    if (firstHit) defense.hitAnimals.push(p.animal);
-    const counter = kind === 'normal' && firstHit && isInFavorite(board, p);
-    const allHit = cells.every(([cx, cy]) => defense.shots.includes(cx + ',' + cy));
-    if (allHit) return { result: FOUND, animal: p.animal, cells, counter };
-    return { result: HIT, counter };
+/**
+ * Löst eine Suche auf die eigene Aufstellung auf und aktualisiert `defense`.
+ * Rückgabe: { result, tracks, animal?, regions? }
+ *
+ * Spuren: Bei „Daneben“ ist tracks = true, wenn ein Nachbarort ein noch nicht
+ * gefundenes Tier enthält, das nicht im Lieblingsgelände steht.
+ */
+export function resolveShot(board, placements, defense, r) {
+  if (defense.shots.includes(r)) throw new Error('Ort wurde schon abgesucht');
+  defense.shots.push(r);
+
+  const p = placements.find(q => q.regions.includes(r));
+  if (p) {
+    if (isFound(p, defense.shots)) return { result: FOUND, tracks: false, animal: p.animal, regions: [...p.regions] };
+    return { result: HIT, tracks: false };
   }
-  return { result: MISS, counter: false };
+  const near = new Set(board.adj[r]);
+  const tracks = placements.some(q => !isFound(q, defense.shots) && !isInFavorite(board, q) && q.regions.some(id => near.has(id)));
+  return { result: MISS, tracks };
 }
 
 /** Sind alle Tiere dieser Aufstellung aufgedeckt? */
 export function allFound(placements, defense) {
-  return placements.every(p => placementCells(p).every(([x, y]) => defense.shots.includes(x + ',' + y)));
+  return placements.every(p => isFound(p, defense.shots));
 }
 
 export function other(player) { return player === 'host' ? 'guest' : 'host'; }
 
-/**
- * Wer schießt als Nächstes?
- * - Löst der Schuss einen Konter aus, schießt der Getroffene sofort (Konter).
- * - Nach einem Konter folgt der normale Zug desselben Spielers.
- * - Sonst wechselt der Zug; ein Treffer gibt keinen Extra-Schuss.
- */
-export function nextTurn(shooter, kind, counterTriggered) {
-  if (counterTriggered) return { turn: other(shooter), kind: 'counter' };
-  if (kind === 'counter') return { turn: shooter, kind: 'normal' };
-  return { turn: other(shooter), kind: 'normal' };
-}
-
-/** Anzahl gefundener Tiere aus einer Liste eigener Schüsse. */
+/** Gefundene Tiere aus einer Liste eigener Suchen. */
 export function foundAnimals(shots) {
   return shots.filter(s => s.result === FOUND).map(s => s.animal);
 }

@@ -11,7 +11,7 @@ const ENDPOINTS = [
   'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
 ];
-const CACHE_PREFIX = 'tierversteck:osm:';
+const CACHE_PREFIX = 'tierversteck:osm2:';
 const M_PER_DEG = 111320;
 
 /** Projektion um einen Mittelpunkt; Brett ist size × size Zellen à cellMeters. */
@@ -35,11 +35,13 @@ export function buildQuery(bbox) {
   // etwas Rand, damit Flächen an den Kanten vollständig ankommen
   const pad = (bbox.north - bbox.south) * 0.05;
   const b = [bbox.south - pad, bbox.west - pad, bbox.north + pad, bbox.east + pad].map(v => v.toFixed(6)).join(',');
-  return `[out:json][timeout:25][maxsize:33554432];
+  const re = group => `"^(${Object.keys(POI[group]).join('|')})$"`;
+  return `[out:json][timeout:25][maxsize:67108864];
 (
   way["building"](${b});
   relation["building"](${b});
   way["highway"](${b});
+  way["railway"~"^(rail|light_rail|tram|narrow_gauge)$"](${b});
   way["waterway"](${b});
   way["natural"~"^(water|wood|scrub|heath|grassland)$"](${b});
   relation["natural"~"^(water|wood|scrub|heath)$"](${b});
@@ -47,35 +49,94 @@ export function buildQuery(bbox) {
   relation["landuse"](${b});
   way["leisure"](${b});
   relation["leisure"](${b});
+  way["amenity"~"^(${PLAZA_AMENITY.join('|')})$"](${b});
+  way["place"="square"](${b});
   way["water"](${b});
 );
-out geom;`;
+out geom;
+(
+  nwr["amenity"~${re('amenity')}](${b});
+  nwr["shop"~${re('shop')}](${b});
+  nwr["leisure"~${re('leisure')}](${b});
+  nwr["tourism"~${re('tourism')}](${b});
+  nwr["historic"~${re('historic')}](${b});
+  node["railway"~${re('railway')}](${b});
+);
+out center;`;
 }
 
-const GREEN_LANDUSE = ['grass', 'meadow', 'farmland', 'orchard', 'vineyard', 'allotments', 'village_green', 'recreation_ground', 'cemetery', 'plant_nursery', 'greenfield'];
-const GREEN_LEISURE = ['park', 'garden', 'pitch', 'playground', 'golf_course', 'common', 'dog_park'];
+const GREEN_LANDUSE = ['grass', 'meadow', 'farmland', 'orchard', 'vineyard', 'allotments', 'village_green', 'recreation_ground', 'cemetery', 'plant_nursery', 'greenfield', 'flowerbed'];
+const GREEN_LEISURE = ['park', 'garden', 'golf_course', 'common', 'dog_park', 'nature_reserve'];
+const PLAZA_LANDUSE = ['commercial', 'retail', 'industrial', 'railway', 'construction', 'garages', 'brownfield'];
+const PLAZA_LEISURE = ['pitch', 'playground', 'sports_centre', 'stadium', 'track', 'schoolyard'];
+const PLAZA_AMENITY = ['parking', 'school', 'kindergarten', 'university', 'college', 'hospital', 'marketplace'];
 const ROAD_WIDTH = {
   motorway: 16, trunk: 14, primary: 12, secondary: 10, tertiary: 9,
   motorway_link: 8, trunk_link: 8, primary_link: 8, secondary_link: 8, tertiary_link: 8,
-  residential: 7, unclassified: 7, living_street: 6, pedestrian: 6, road: 6, service: 5,
-  track: 3.5, footway: 3, path: 3, cycleway: 3, bridleway: 3, steps: 3,
+  residential: 7, unclassified: 7, living_street: 6, pedestrian: 6, road: 6, service: 4,
 };
+const PATH_WIDTH = { track: 3, footway: 2, path: 2, cycleway: 2, bridleway: 2, steps: 2 };
+// Diese Straßen trennen Orte voneinander; Zufahrten und Wege liegen innerhalb
+const BARRIER_ROADS = new Set(Object.keys(ROAD_WIDTH).filter(k => k !== 'service'));
 const WATERWAY_WIDTH = { river: 16, canal: 10, stream: 3, ditch: 2, drain: 2 };
+const BARRIER_WATERWAYS = new Set(['river', 'canal', 'stream']);
 
-/** OSM-Tags → { c, k, w? } oder null. Breiten in Metern. */
+/** Wahrzeichen: Tag-Wert → [Emoji, Rang (kleiner = wichtiger), benennt den Ort?] */
+export const POI = {
+  amenity: {
+    school: ['🏫', 1, true], kindergarten: ['🧸', 1, true], place_of_worship: ['⛪', 1, true], townhall: ['🏛️', 1, true],
+    library: ['📚', 2, true], hospital: ['🏥', 1, true], fire_station: ['🚒', 2, true], police: ['🚓', 2, false],
+    theatre: ['🎭', 2, true], cinema: ['🎬', 2, true], post_office: ['📮', 3, false], pharmacy: ['💊', 3, false],
+    doctors: ['🩺', 4, false], bank: ['🏦', 4, false], fuel: ['⛽', 3, false], cafe: ['☕', 4, false],
+    restaurant: ['🍽️', 4, false], fast_food: ['🍟', 4, false], ice_cream: ['🍦', 3, false], pub: ['🍺', 4, false], bar: ['🍸', 5, false],
+  },
+  shop: {
+    supermarket: ['🛒', 2, false], bakery: ['🥨', 3, false], butcher: ['🥩', 4, false], kiosk: ['🗞️', 4, false],
+    convenience: ['🛍️', 4, false], books: ['📖', 4, false], toys: ['🪀', 3, false],
+  },
+  leisure: { playground: ['🛝', 2, false], swimming_pool: ['🏊', 2, true], sports_centre: ['⚽', 2, true], stadium: ['🏟️', 1, true] },
+  tourism: { museum: ['🖼️', 1, true], attraction: ['⭐', 2, true], viewpoint: ['🔭', 3, false], zoo: ['🦁', 1, true] },
+  historic: { castle: ['🏰', 1, true], monument: ['🗿', 2, true], memorial: ['🕯️', 4, false], ruins: ['🏚️', 2, true] },
+  railway: { station: ['🚉', 1, true], halt: ['🚉', 2, true], tram_stop: ['🚋', 4, false] },
+};
+
+const isTunnel = t => (t.tunnel && t.tunnel !== 'no') || Number(t.layer) < 0 || t.location === 'underground';
+
+/**
+ * OSM-Tags → { c, k, w?, b? } oder null. Breiten in Metern, b: trennt Orte.
+ * Flächen: building, water, forest, green, plaza. Linien: road, path, rail, water.
+ */
 export function classifyTags(t = {}, closed = false) {
   if (t.building && t.building !== 'no') return { c: 'building', k: 'a' };
   if (t.natural === 'water' || t.water || t.waterway === 'riverbank' || ['reservoir', 'basin'].includes(t.landuse)) {
     return { c: 'water', k: 'a' };
   }
-  if (t.waterway && WATERWAY_WIDTH[t.waterway]) return { c: 'water', k: 'l', w: WATERWAY_WIDTH[t.waterway] };
+  if (t.waterway && WATERWAY_WIDTH[t.waterway]) {
+    if (isTunnel(t)) return null;
+    return { c: 'water', k: 'l', w: WATERWAY_WIDTH[t.waterway], b: BARRIER_WATERWAYS.has(t.waterway) };
+  }
   if (t.landuse === 'forest' || ['wood', 'scrub', 'heath'].includes(t.natural)) return { c: 'forest', k: 'a' };
   if (GREEN_LANDUSE.includes(t.landuse) || GREEN_LEISURE.includes(t.leisure) || t.natural === 'grassland') {
     return { c: 'green', k: 'a' };
   }
-  if (t.highway && ROAD_WIDTH[t.highway]) {
-    if (closed && t.area === 'yes') return { c: 'road', k: 'a' };
-    return { c: 'road', k: 'l', w: ROAD_WIDTH[t.highway] };
+  if (PLAZA_LANDUSE.includes(t.landuse) || PLAZA_LEISURE.includes(t.leisure) || PLAZA_AMENITY.includes(t.amenity) || t.place === 'square') {
+    return closed ? { c: 'plaza', k: 'a' } : null;
+  }
+  if (t.highway && closed && t.area === 'yes') return { c: 'plaza', k: 'a' };
+  if (t.highway && (ROAD_WIDTH[t.highway] || PATH_WIDTH[t.highway])) {
+    if (isTunnel(t)) return null;
+    if (PATH_WIDTH[t.highway]) return { c: 'path', k: 'l', w: PATH_WIDTH[t.highway], b: false };
+    return { c: 'road', k: 'l', w: ROAD_WIDTH[t.highway], b: BARRIER_ROADS.has(t.highway) };
+  }
+  if (t.railway && !isTunnel(t)) return { c: 'rail', k: 'l', w: 4, b: t.railway !== 'tram' };
+  return null;
+}
+
+/** Wahrzeichen-Info zu Tags oder null: { e, rank, names } */
+export function poiInfo(t = {}) {
+  for (const key of Object.keys(POI)) {
+    const hit = t[key] && POI[key][t[key]];
+    if (hit) return { e: hit[0], rank: hit[1], names: hit[2] };
   }
   return null;
 }
@@ -192,8 +253,8 @@ const round = v => Math.round(v * 1000) / 1000;
  * Overpass-JSON → Features in Zellkoordinaten, beschnitten auf das Brett
  * (mit einer halben Zelle Rand) und vereinfacht.
  */
-export function toFeatures(osm, projection, size, cellMeters) {
-  const lo = -0.5, hi = size + 0.5, tol = 0.02;
+export function toFeatures(osm, projection, size, cellMeters, { tol = 0.02 } = {}) {
+  const lo = -0.5, hi = size + 0.5;
   const features = [];
   const toFlat = pts => pts.filter(Boolean).flatMap(pt => projection.project(pt.lat, pt.lon));
 
@@ -206,27 +267,44 @@ export function toFeatures(osm, projection, size, cellMeters) {
       if (!cls) continue;
       if (cls.k === 'a') { if (!closed) continue; rings = [g]; }
       else line = g;
-      pushFeature(cls, rings, line);
+      pushFeature(cls, rings, line, el.tags?.name);
     } else if (el.type === 'relation' && Array.isArray(el.members)) {
       const cls = classifyTags(el.tags, true);
       if (!cls || cls.k !== 'a') continue;
       const ways = el.members.filter(m => m.type === 'way' && Array.isArray(m.geometry)).map(m => m.geometry.filter(Boolean));
-      pushFeature(cls, stitchRings(ways), null);
+      pushFeature(cls, stitchRings(ways), null, el.tags?.name);
     }
   }
 
-  function pushFeature(cls, rings, line) {
+  function pushFeature(cls, rings, line, name) {
+    const extra = typeof name === 'string' && name.trim() ? { n: name.trim().slice(0, 60) } : {};
     if (rings) {
       const p = rings
         .map(r => clipRing(simplify(toFlat(r), tol), lo, hi).map(round))
         .filter(r => r.length >= 6);
-      if (p.length) features.push({ c: cls.c, k: 'a', p });
+      if (p.length) features.push({ c: cls.c, k: 'a', p, ...extra });
     } else if (line) {
       const p = clipLine(simplify(toFlat(line), tol), lo, hi).map(r => r.map(round)).filter(r => r.length >= 4);
-      if (p.length) features.push({ c: cls.c, k: 'l', w: round(cls.w / cellMeters), p });
+      if (p.length) features.push({ c: cls.c, k: 'l', w: round(cls.w / cellMeters), b: !!cls.b, p, ...extra });
     }
   }
   return features;
+}
+
+/** Wahrzeichen (Knoten bzw. Mittelpunkte) innerhalb des Bretts: [{ e, rank, names, x, y, n? }] */
+export function toPois(osm, projection, size) {
+  const out = [];
+  for (const el of osm.elements || []) {
+    const pos = Number.isFinite(el.lat) ? el : el.center;
+    if (!pos || !Number.isFinite(pos.lat) || !Number.isFinite(pos.lon)) continue;
+    const info = poiInfo(el.tags);
+    if (!info) continue;
+    const [x, y] = projection.project(pos.lat, pos.lon);
+    if (x < 0 || y < 0 || x > size || y > size) continue;
+    const n = typeof el.tags.name === 'string' && el.tags.name.trim() ? el.tags.name.trim().slice(0, 60) : undefined;
+    out.push({ ...info, x: round(x), y: round(y), ...(n ? { n } : {}) });
+  }
+  return out;
 }
 
 function cacheKey(bbox) {
@@ -333,11 +411,14 @@ function raceEndpoints(endpoints, body, { signal, onProgress, fetchImpl, stagger
 function storeCache(key, data) {
   try {
     // nur die nötigsten Felder speichern; alte Einträge bei Platzmangel räumen
-    const slim = { elements: (data.elements || []).map(e => ({ type: e.type, tags: e.tags, geometry: e.geometry, members: e.members?.map(m => ({ type: m.type, role: m.role, geometry: m.geometry })) })) };
+    const slim = { elements: (data.elements || []).map(e => ({
+      type: e.type, tags: e.tags, geometry: e.geometry, lat: e.lat, lon: e.lon, center: e.center,
+      members: e.members?.map(m => ({ type: m.type, role: m.role, geometry: m.geometry })),
+    })) };
     const text = JSON.stringify(slim);
     for (let attempt = 0; attempt < 2; attempt++) {
       try { localStorage.setItem(key, text); return; } catch {
-        Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX)).forEach(k => localStorage.removeItem(k));
+        Object.keys(localStorage).filter(k => k.startsWith('tierversteck:osm')).forEach(k => localStorage.removeItem(k));
       }
     }
   } catch { /* egal – dann eben ohne Cache */ }
