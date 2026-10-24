@@ -17,10 +17,11 @@ Jede Seite versteckt fünf Tiere auf zusammen 13 Orten. Wer zuerst alle Tiere de
 | Maus | 1 | Häuser |
 
 - Ein Tier mit mehreren Orten belegt benachbarte Orte (sie grenzen aneinander oder liegen sich an einer Straße gegenüber). Zwei Tiere teilen sich nie einen Ort; berühren ist erlaubt.
-- Abwechselnd wird ein Ort abgesucht: **Daneben**, **Treffer** oder **Gefunden** (Tier vollständig aufgedeckt). Danach ist immer der andere dran.
+- Abwechselnd wird ein Ort abgesucht – ein Tipp genügt, ohne Bestätigen: **Daneben** 💨, **Treffer** 🐾 oder **Gefunden** (Tier vollständig aufgedeckt). Danach ist immer der andere dran.
 - **Spuren 👣:** Ein Tier ist „im Lieblingsgelände“, wenn mindestens die Hälfte seiner Orte (aufgerundet) dazu passt. Geht eine Suche daneben, meldet die Antwort Spuren, wenn ein Nachbarort ein noch nicht gefundenes Tier enthält, das **nicht** im Lieblingsgelände steht. Tiere im Lieblingsgelände sind unsichtbar – dafür sucht der Gegner dort zuerst.
 - Beim Verstecken glänzt ein Tier ✨, solange es im Lieblingsgelände steht.
 - Wasser darf belegt werden, ist aber für kein Tier Lieblingsgelände.
+- Rückmeldungen sind auch ohne Lesen verständlich: große Animation direkt am Ort, Geräusch, kurze Ansage (Sprachausgabe des Browsers) und Symbole statt Sätzen. 🔊 oben rechts schaltet Ton und Ansagen ab.
 - Ein Brett hat je nach Gebiet etwa 55/85/110 Orte. Zum bequemen Antippen lässt sich das Brett zoomen (＋/−, zwei Finger, Mausrad) und gezoomt verschieben; sind die Orte sehr klein, zoomt der erste Tipp automatisch heran.
 
 ## Modi
@@ -56,7 +57,8 @@ tools/tierversteck/
 │  │  ├─ bc-room.js    Test-Hook: ?net=bc verbindet zwei Tabs per BroadcastChannel
 │  │  ├─ protocol.js   Nachrichtentypen und Prüfung
 │  │  └─ commit.js     Hash-Commitment und Nachprüfung
-│  ├─ ui/          Screens: Start, Erstellen, Lobby/Beitreten, Verstecken, Spiel, Ende, Sichtschutz
+│  ├─ ui/          Screens: Start, Erstellen, Lobby/Beitreten, Verstecken, Spiel, Ende, Sichtschutz;
+│  │               feedback.js: Geräusche (WebAudio), Ansagen, Animationen über dem Brett
 │  ├─ app/         Abläufe für Hot-Seat und Online
 │  └─ main.js
 ├─ assets/         generierte Grafiken (webp) + manifest.json

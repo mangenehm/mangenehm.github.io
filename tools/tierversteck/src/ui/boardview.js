@@ -8,6 +8,7 @@ import { drawMap, regionPaths, PALETTE } from '../map/render.js';
 import { drawSticker, drawMiss, drawHit, drawTracks } from './sprites.js';
 import { ANIMALS } from '../engine/shapes.js';
 import { MAX_Z, clampView, zoomAt, toBoard, sameView } from './zoom.js';
+import { burst } from './feedback.js';
 
 const ORANGE = '#ef6f53';
 const TAP_SLOP = 8;       // mehr Bewegung (CSS-px) gilt als Verschieben, nicht als Tipp
@@ -124,6 +125,17 @@ export class BoardView {
 
   /** Beschriftungspunkt eines Orts in Inhaltskoordinaten (vor der Verschiebung). */
   center(r) { const c = this.board.regions[r].c; return [c[0] * this.S, c[1] * this.S]; }
+
+  /** Große Animation über einem Ort (`found` erscheint in der Brettmitte). */
+  fx(r, kind, opts = {}) {
+    const [x, y] = this.center(r);
+    const mid = this.cssSize / 2;
+    const size = Math.max(56, Math.min(110, this.unit * 2.2));
+    if (kind === 'found') return burst(this.frame, mid, mid, kind, { ...opts, size: this.cssSize * 0.42 });
+    // nah am Rand: nach innen ziehen, damit nichts abgeschnitten wird
+    const k = v => Math.max(size * 0.6, Math.min(this.cssSize - size * 0.6, v));
+    return burst(this.frame, k(x - this.v.tx), k(y - this.v.ty), kind, { ...opts, size });
+  }
 
   draw() {
     if (!this.scale) return;

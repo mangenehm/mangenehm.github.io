@@ -8,7 +8,8 @@ import { PlayerGame } from '../engine/game.js';
 import { createLocalPair } from '../net/local.js';
 import { coverScreen } from '../ui/cover.js';
 import { hideScreen } from '../ui/hide.js';
-import { playScreen, describe } from '../ui/play.js';
+import { playScreen } from '../ui/play.js';
+import { say } from '../ui/feedback.js';
 import { endScreen } from '../ui/end.js';
 import { toast } from '../ui/dom.js';
 
@@ -43,6 +44,7 @@ export function runHotseat(ui, { names, board, onExit }) {
       name: g.s.name,
       title: 'Du versteckst jetzt deine fünf Tiere.',
       info: `${otherName}, bitte nicht hinschauen!`,
+      icon: '🙈',
       onReady: () => {
         screen = ui.show(hideScreen, {
           board: g.board,
@@ -56,6 +58,7 @@ export function runHotseat(ui, { names, board, onExit }) {
         });
       },
     });
+    say(`${g.s.name} versteckt die Tiere. ${otherName}, nicht hinschauen!`, { interrupt: true });
   }
 
   function nextTurn() {
@@ -67,9 +70,10 @@ export function runHotseat(ui, { names, board, onExit }) {
     ui.show(coverScreen, {
       name: g.s.name,
       title: 'Du bist dran.',
-      info: news[role].join(' '),
+      icon: '👆',
       onReady: () => showPlay(role),
     });
+    say(`${g.s.name} ist dran.`, { interrupt: true });
   }
 
   function showPlay(role) {
@@ -77,19 +81,23 @@ export function runHotseat(ui, { names, board, onExit }) {
     active = role;
     screen = ui.show(playScreen, {
       game: g,
-      banner: news[role].join(' '),
+      news: news[role],
+      handover: true,
       onShoot: r => g.shoot(r),
     });
     news[role] = [];
   }
 
   function onEvent(role, e) {
-    if (e.type === 'incoming') news[role].push(describe(e, games[role]));
+    if (e.type === 'incoming') news[role].push(e);
     if (e.type !== 'outgoing' || role !== active) return;
     screen.update(e);
-    const g = games[role];
-    if (g.phase === 'over') screen.setContinue(showEnd, 'Ergebnis ansehen');
-    else screen.setContinue(() => { screen.setContinue(null); nextTurn(); }, 'Weiter – Gerät übergeben');
+    const g = games[role], s = screen;
+    // Knopf erst nach der Animation – sonst tippt man ihn im Eifer gleich mit weg
+    setTimeout(() => {
+      if (g.phase === 'over') s.setContinue(showEnd, '<b class="emoji">🏆</b> Ergebnis');
+      else s.setContinue(() => { s.setContinue(null); nextTurn(); }, '<b class="emoji">🙈</b> Weiter');
+    }, e.result === 'found' ? 1400 : 800);
   }
 
   function showEnd() {
