@@ -13,7 +13,7 @@ export function rulesHtml() {
   return `
     <p>Das Spielfeld ist eine echte Umgebung, aufgeteilt in <b>Orte</b>: Häuserblöcke, Parks, Wälder, Plätze und Teiche,
        begrenzt von echten Straßen. Die Spieler*innen verstecken fünf Tiere.
-       Abwechselnd wird ein Ort abgesucht: <b>Daneben</b>, <b>Treffer</b> oder <b>Gefunden</b>.
+       Abwechselnd wird ein Ort abgesucht.
        Wer zuerst alle Tiere der oder des anderen findet, gewinnt.</p>
     <table class="rules-table">
       <thead><tr><th>Tier</th><th>Reviere</th><th>Lieblingsgelände</th></tr></thead>
@@ -25,7 +25,7 @@ export function rulesHtml() {
       <li><b>Lieblingsgelände ✨:</b> Ein Tier ist im Lieblingsgelände, wenn mindestens die Hälfte seines Reviers (aufgerundet) darin liegt.
           Beim Verstecken glänzt es dann ✨. Wasser darf belegt werden, ist aber für kein Tier Lieblingsgelände.</li>
       <li><b>Spuren 👣:</b> Geht eine Suche daneben, verrät die Antwort, ob in einem Nachbarort ein Tier steckt – aber nur,
-          wenn es <b>nicht</b> im Lieblingsgelände ist. Tiere im Lieblingsgelände hinterlassen keine Spuren – dafür wird dort zuerst gesucht.</li>
+          wenn es <b>nicht</b> im Lieblingsgelände ist. Tiere im Lieblingsgelände hinterlassen keine Spuren – dafür wird dort wahrscheinlich eher gesucht.</li>
     </ul>`;
 }
 
