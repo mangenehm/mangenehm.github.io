@@ -159,12 +159,8 @@ export class BoardView {
     const u = this.unit;
 
     if (L.favs) {
-      // alles außerhalb des Lieblingsgeländes (und ohne Tier) verblasst, das Lieblingsgelände bekommt einen Rand
-      const fav = new Set(L.favs.regions), taken = new Set(L.animals.flatMap(a => a.p.regions));
-      for (let r = 0; r < this.paths.length; r++) {
-        if (fav.has(r)) this.#region(r, { stroke: L.favs.color, width: 2.5 });
-        else if (!taken.has(r)) this.#region(r, { fill: 'rgba(244, 239, 230, .6)' });
-      }
+      // dezenter gestrichelter Rand: nur ein Hinweis, verstecken geht überall
+      for (const r of L.favs.regions) this.#region(r, { stroke: hexAlpha(L.favs.color, 0.8), width: 1.5, dash: [3, 3] });
     }
     for (const r of L.marks) this.#region(r, { fill: 'rgba(255, 255, 255, .45)', stroke: 'rgba(19, 41, 61, .35)', width: 1.5, dash: [4, 3] });
 
