@@ -5,7 +5,7 @@ import { isInFavorite, regionLabel, animalAt } from '../engine/board.js';
 import { BoardView } from './boardview.js';
 import { regionText } from './hide.js';
 import { headHtml } from './sprites.js';
-import { sound, say, phrase } from './feedback.js';
+import { sound } from './feedback.js';
 import { el, $, esc, vibrate } from './dom.js';
 
 /** Aufgedeckte Tiere aus den eigenen Suchen. */
@@ -52,12 +52,9 @@ export function resultHtml(e, game) {
  * @param {object} o
  * @param {import('../engine/game.js').PlayerGame} o.game
  * @param {(r:number)=>void} o.onShoot
- * @param {object[]} [o.news]   Hot-Seat: Suchen des Gegners seit dem letzten eigenen Zug
- * @param {boolean} [o.handover]  Hot-Seat: Platz für den „Weiter“-Knopf freihalten
  */
-export function playScreen(root, { game, onShoot, news = [], handover = false }) {
+export function playScreen(root, { game, onShoot }) {
   let lastIncoming = null;
-  let continueFn = null;
   let result = '';           // Bild zum letzten eigenen Ergebnis
   let srText = '';
   const timers = [];
@@ -67,8 +64,7 @@ export function playScreen(root, { game, onShoot, news = [], handover = false })
   const node = el(`
     <section class="screen play">
       <div class="turn card"><div class="turn-text"></div><div class="banner"></div>
-        <p class="sr-only" aria-live="polite"></p>
-        <div class="turn-actions" ${handover ? '' : 'hidden'}><button class="btn teal big-btn invisible" data-act="continue">Weiter</button></div></div>
+        <p class="sr-only" aria-live="polite"></p></div>
       <div class="boards">
         <div class="card target">
           <h3 class="opp-title"></h3>
@@ -88,8 +84,6 @@ export function playScreen(root, { game, onShoot, news = [], handover = false })
 
   const target = new BoardView($(node, '.target-board'), game.board, { onPointer: onTargetPointer, label: 'Revier des Gegners' });
   const own = new BoardView($(node, '.own-board'), game.board, { maxWidth: 380, label: 'Dein Revier' });
-
-  $(node, '[data-act=continue]').onclick = () => continueFn?.();
 
   function shotAt(r) { return game.s.outgoing.some(s => s.r === r); }
 
@@ -113,13 +107,13 @@ export function playScreen(root, { game, onShoot, news = [], handover = false })
     let text;
     if (s.phase === 'over') text = s.winner === s.role ? '<b class="emoji">🏆</b> Gewonnen!' : '<b class="emoji">😿</b>';
     else if (s.pending) text = '<b class="emoji searching">🔍</b>';
-    else if (game.myTurn) text = '<b class="emoji point">👆</b> Du bist dran!';
+    else if (game.myTurn) text = s.outgoing.at(-1)?.result && s.outgoing.at(-1).result !== 'miss'
+      ? '<b class="emoji point">👆</b> Nochmal!'
+      : '<b class="emoji point">👆</b> Du bist dran!';
     else text = `<b class="emoji">⏳</b> ${esc(opp())}`;
     $(node, '.turn-text').innerHTML = text;
     $(node, '.banner').innerHTML = result;
     node.classList.toggle('my-turn', game.myTurn);
-
-    $(node, '[data-act=continue]').classList.toggle('invisible', !continueFn);
 
     const lastOut = s.outgoing[s.outgoing.length - 1];
     target.set({
@@ -152,40 +146,27 @@ export function playScreen(root, { game, onShoot, news = [], handover = false })
     turn.classList.add('flash');
   }
 
-  /** Eigenes Suchergebnis: Animation am Ort, Geräusch, kurze Ansage. */
+  /** Eigenes Suchergebnis: Animation am Ort und Geräusch. */
   function showOutgoing(e) {
     const kind = e.result === 'miss' ? (e.tracks ? 'tracks' : 'miss') : e.result;
     target.fx(e.r, kind, { animal: e.animal });
     sound(e.result === 'miss' ? 'miss' : e.result);
     if (e.tracks) later(() => sound('tracks'), 350);
     vibrate(e.result === 'miss' ? 20 : [40, 40, 80]);
-    say(phrase(e, opp()), { interrupt: true });
-    if (game.s.phase === 'over' && game.s.winner === game.s.role) later(() => { sound('win'); say('Gewonnen!'); }, 900);
     result = resultHtml(e, game);
-    // gezoomt? Erst das Ergebnis zeigen, dann zurück zur Übersicht
-    later(() => target.resetZoom(), e.result === 'found' ? 1800 : 1100);
+    // Daneben: erst das Ergebnis zeigen, dann zurück zur Übersicht. Nach Treffern geht es gleich weiter – Zoom bleibt
+    if (!game.myTurn) later(() => target.resetZoom(), 1100);
   }
 
   /** Suche des Gegners im eigenen Revier. */
-  function showIncoming(e, { speak = true } = {}) {
+  function showIncoming(e) {
     lastIncoming = e.r;
-    const mine = animalAt(game.s.placements, e.r)?.animal;
     own.fx(e.r, e.result === 'miss' ? 'miss' : 'ouch');
     if (e.result !== 'miss') sound('ouch');
-    if (speak) say(phrase(e, opp(), mine));
   }
 
   update();
-
-  // Hot-Seat: zeigen, was der andere inzwischen gemacht hat
-  if (news.length) {
-    result = news.map(e => resultHtml(e, game)).join('');
-    srText = news.map(e => describe(e, game)).join(' ');
-    lastIncoming = news[news.length - 1].r;
-    update();
-    news.forEach((e, i) => later(() => showIncoming(e, { speak: false }), 350 + i * 700));
-  }
-  if (game.myTurn) later(() => sound('turn'), news.length ? 350 + news.length * 700 : 150);
+  if (game.myTurn) later(() => sound('turn'), 150);
 
   return {
     /** Neues Ereignis aus der Engine anzeigen. */
@@ -194,15 +175,9 @@ export function playScreen(root, { game, onShoot, news = [], handover = false })
       if (e?.type === 'incoming') {
         showIncoming(e);
         result = resultHtml(e, game);
-        if (game.myTurn) later(() => { sound('turn'); say('Du bist dran!'); }, 900);
+        if (game.myTurn) later(() => sound('turn'), 900);
       }
       if (e?.type === 'outgoing' || e?.type === 'incoming') { srText = describe(e, game); flash(); }
-      update();
-    },
-    /** Hot-Seat: „Weiter“-Knopf zeigen (null = verbergen). */
-    setContinue(fn, label = 'Weiter') {
-      continueFn = fn;
-      $(node, '[data-act=continue]').innerHTML = label;
       update();
     },
     destroy() { timers.forEach(clearTimeout); target.destroy(); own.destroy(); },

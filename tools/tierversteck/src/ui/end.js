@@ -3,7 +3,7 @@
 import { BoardView } from './boardview.js';
 import { el, $, esc } from './dom.js';
 import { foundPlacements } from './play.js';
-import { sound, say, confetti } from './feedback.js';
+import { sound, confetti } from './feedback.js';
 
 function stats(shots) {
   const hits = shots.filter(s => s.result !== 'miss').length;
@@ -13,12 +13,9 @@ function stats(shots) {
 /**
  * @param {object} o
  * @param {import('../engine/game.js').PlayerGame} o.game   Sicht des Spielers, der hier zuschaut
- * @param {'online'|'hotseat'} o.mode
- * @param {object[]|null} [o.oppPlacements]  bekannt im Hot-Seat; online aus dem Aufdecken
- * @param {()=>void} [o.onRematch]
  * @param {()=>void} o.onNew
  */
-export function endScreen(root, { game, mode, oppPlacements = null, onRematch = null, onNew }) {
+export function endScreen(root, { game, onNew }) {
   const s = game.s;
   const winnerName = s.winner === s.role ? s.name : s.oppName;
   const node = el(`
@@ -28,8 +25,7 @@ export function endScreen(root, { game, mode, oppPlacements = null, onRematch = 
         <h2>${esc(winnerName)} gewinnt!</h2>
         <p class="verdict small"></p>
         <div class="row-btns">
-          ${onRematch ? '<button class="btn" data-act="rematch">Revanche auf derselben Karte</button>' : ''}
-          <button class="btn ${onRematch ? 'secondary' : ''}" data-act="new">Neues Spiel</button>
+          <button class="btn" data-act="new">Neues Spiel</button>
         </div>
       </div>
       <div class="boards">
@@ -38,11 +34,9 @@ export function endScreen(root, { game, mode, oppPlacements = null, onRematch = 
       </div>
     </section>`);
   root.appendChild(node);
-  if (onRematch) $(node, '[data-act=rematch]').onclick = onRematch;
   $(node, '[data-act=new]').onclick = onNew;
 
   sound('win');
-  say(`${winnerName} gewinnt!`, { interrupt: true });
   confetti($(node, '.end-head'));
 
   const mine = new BoardView($(node, '.mine'), game.board, { maxWidth: 420 });
@@ -50,7 +44,7 @@ export function endScreen(root, { game, mode, oppPlacements = null, onRematch = 
 
   function update() {
     mine.set({ animals: s.placements.map(p => ({ p })), shots: s.incoming });
-    const opp = oppPlacements || (s.verdict?.ok ? s.oppReveal?.placements : null);
+    const opp = s.verdict?.ok ? s.oppReveal?.placements : null;
     const found = new Set(s.outgoing.filter(o => o.result === 'found').map(o => o.animal));
     theirs.set({
       animals: opp
@@ -59,8 +53,7 @@ export function endScreen(root, { game, mode, oppPlacements = null, onRematch = 
       shots: s.outgoing,
     });
     const v = $(node, '.verdict');
-    if (mode === 'hotseat') v.textContent = '';
-    else if (!s.oppReveal || s.verdict?.ok === null || !s.verdict) v.textContent = '⏳ Warte auf die Aufstellung des Gegners zur Prüfung …';
+    if (!s.oppReveal || s.verdict?.ok === null || !s.verdict) v.textContent = '⏳ Warte auf die Aufstellung des Gegners zur Prüfung …';
     else if (s.verdict.ok) v.innerHTML = '✅ Fair gespielt: Die Aufstellung passt zum Commitment und zu allen Antworten.';
     else v.innerHTML = `<b class="bad">⚠️ Spiel ungültig:</b> ${esc(s.verdict.reason)}`;
   }

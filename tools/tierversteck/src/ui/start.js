@@ -20,7 +20,7 @@ export function rulesHtml() {
     </table>
     <ul class="rules-list">
       <li>Ein Tier mit mehreren Orten belegt <b>benachbarte</b> Orte – sie grenzen aneinander oder liegen sich an einer Straße gegenüber. Zwei Tiere teilen sich nie einen Ort.</li>
-      <li>Nach jeder Suche ist der andere dran, auch nach einem Treffer.</li>
+      <li>Nach einem Treffer darfst du gleich nochmal suchen, nach Daneben ist der andere dran.</li>
       <li><b>Spuren 👣:</b> Geht eine Suche daneben, verrät die Antwort, ob in einem Nachbarort ein Tier steckt – aber nur,
           wenn es <b>nicht</b> im Lieblingsgelände ist (mindestens die Hälfte seiner Orte, aufgerundet).
           Tiere im Lieblingsgelände hinterlassen keine Spuren – dafür sucht der Gegner dort zuerst.</li>
@@ -29,7 +29,7 @@ export function rulesHtml() {
     </ul>`;
 }
 
-export function startScreen(root, { onHotseat, onOnline, onJoin }) {
+export function startScreen(root, { onOnline, onJoin }) {
   const hero = asset('hero');
   const node = el(`
     <section class="screen start">
@@ -40,8 +40,7 @@ export function startScreen(root, { onHotseat, onOnline, onJoin }) {
       </div>
       <div class="card">
         <div class="mode-buttons">
-          <button class="btn block" data-act="hotseat">👥 Zu zweit an einem Gerät</button>
-          <button class="btn teal block" data-act="online">🌐 Online-Spiel erstellen</button>
+          <button class="btn block" data-act="online">🌐 Online-Spiel erstellen</button>
         </div>
         <form class="join-row" autocomplete="off">
           <input type="text" name="code" placeholder="Raum-Code oder Einladungslink" aria-label="Raum-Code oder Einladungslink">
@@ -53,7 +52,6 @@ export function startScreen(root, { onHotseat, onOnline, onJoin }) {
         ${rulesHtml()}
       </details>
     </section>`);
-  $(node, '[data-act=hotseat]').onclick = onHotseat;
   $(node, '[data-act=online]').onclick = onOnline;
   $(node, 'form').onsubmit = e => {
     e.preventDefault();

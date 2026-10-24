@@ -1,7 +1,6 @@
 /*
  * Rückmeldungen auch für Kinder, die noch nicht lesen können:
- * Geräusche (WebAudio, ohne Dateien), kurze Ansagen (Sprachausgabe)
- * und große Animationen direkt auf dem Brett.
+ * Geräusche (WebAudio, ohne Dateien) und große Animationen direkt auf dem Brett.
  */
 
 import { ANIMALS } from '../engine/shapes.js';
@@ -16,7 +15,6 @@ export const soundOn = () => on;
 export function setSound(value) {
   on = !!value;
   store('sound', on);
-  if (!on) try { speechSynthesis.cancel(); } catch { /* keine Sprachausgabe */ }
 }
 
 function audio() {
@@ -78,46 +76,6 @@ function whoosh(ac, t0) {
   g.gain.exponentialRampToValueAtTime(0.001, t0 + len);
   src.connect(f).connect(g).connect(ac.destination);
   src.start(t0);
-}
-
-let voice;
-function germanVoice() {
-  if (voice !== undefined) return voice;
-  const list = speechSynthesis.getVoices();
-  if (!list.length) return null;   // Stimmen laden noch – beim nächsten Mal
-  voice = list.find(v => v.lang === 'de-DE' && v.localService) || list.find(v => v.lang?.startsWith('de')) || null;
-  return voice;
-}
-
-/** Kurze Ansage. `interrupt` bricht laufende Ansagen ab. */
-export function say(text, { interrupt = false } = {}) {
-  if (!on || !text) return;
-  try {
-    if (interrupt) speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'de-DE';
-    const v = germanVoice();
-    if (v) u.voice = v;
-    u.rate = 1;
-    u.pitch = 1.1;
-    speechSynthesis.speak(u);
-  } catch { /* keine Sprachausgabe */ }
-}
-
-// Akkusativ für Ansagen: „Du hast den Hund gefunden!“
-const ACC = { snake: 'die Schlange', horse: 'das Pferd', dog: 'den Hund', cat: 'die Katze', mouse: 'die Maus' };
-const ACC_YOUR = { snake: 'deine Schlange', horse: 'dein Pferd', dog: 'deinen Hund', cat: 'deine Katze', mouse: 'deine Maus' };
-
-/** Ansage zu einem Suchergebnis. */
-export function phrase(e, oppName, mineId = null) {
-  if (e.type === 'outgoing') {
-    if (e.result === 'miss') return e.tracks ? 'Spuren! Ein Tier ist ganz nah.' : 'Daneben.';
-    if (e.result === 'hit') return 'Treffer!';
-    return `Du hast ${ACC[e.animal]} gefunden!`;
-  }
-  if (e.result === 'miss') return null;
-  if (e.result === 'hit') return `${oppName} hat ${ACC_YOUR[mineId] || 'dein Tier'} erwischt.`;
-  return `${oppName} hat ${ACC_YOUR[e.animal]} gefunden.`;
 }
 
 /** Bild oder Emoji als HTML für die Effekt-Ebene. */

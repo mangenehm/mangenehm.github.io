@@ -18,7 +18,7 @@ const ACTION = 'tv';
 
 let trysteroPromise = null;
 function loadTrystero() {
-  // erst bei Bedarf laden – Hot-Seat braucht kein WebRTC
+  // erst bei Bedarf laden – die Startseite braucht noch kein WebRTC
   trysteroPromise ??= import('../../vendor/trystero.js');
   return trysteroPromise;
 }

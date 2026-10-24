@@ -135,7 +135,7 @@ export class PlayerGame {
     s.incoming.push({ r: m.r, result: r.result, tracks: r.tracks, animal: r.animal });
     this.send(msg.result(m.r, r));
     const lost = allFound(s.placements, s.defense);
-    this.#advance(shooter, lost ? shooter : null);
+    this.#advance(shooter, lost ? shooter : null, r.result !== 'miss');
     this.onEvent({ type: 'incoming', r: m.r, ...r });
   }
 
@@ -149,11 +149,12 @@ export class PlayerGame {
     if (m.result === FOUND) { shot.animal = m.animal; shot.regions = m.regions; }
     s.outgoing.push(shot);
     const won = isFleetFound(s.outgoing);
-    this.#advance(s.role, won ? s.role : null);
+    this.#advance(s.role, won ? s.role : null, m.result !== 'miss');
     this.onEvent({ type: 'outgoing', ...shot });
   }
 
-  #advance(shooter, winner) {
+  /** Nach Treffer oder Gefunden darf der Suchende nochmal. */
+  #advance(shooter, winner, again) {
     const s = this.s;
     if (winner) {
       s.winner = winner;
@@ -163,7 +164,7 @@ export class PlayerGame {
       if (s.oppReveal) this.#verify();
       return;
     }
-    s.turn = other(shooter);
+    s.turn = again ? shooter : other(shooter);
   }
 
   #onReveal(m) {

@@ -1,4 +1,4 @@
-/* Hot-Seat-Transport: zwei Endpunkte im selben Browser, die sich Nachrichten spiegeln. */
+/* Lokaler Transport für Tests: zwei Endpunkte im selben Prozess, die sich Nachrichten spiegeln. */
 
 import { BaseTransport } from './transport.js';
 
