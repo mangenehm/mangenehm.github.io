@@ -71,6 +71,15 @@ Problem: Suchen brauchte zwei Schritte (Ort wählen, dann bestätigen); das Erge
 - Neue Adresse `tools/tiersuche/`. Unter `tools/tierversteck/` liegt nur noch eine Weiterleitung, die Suchparameter und `#room=…` mitnimmt – alte Einladungen funktionieren weiter.
 - Speicher-Schlüssel (`tierversteck:…`) und Trystero-App-ID bleiben, damit Einstellungen, Karten-Cache und laufende Spiele erhalten bleiben.
 
+## 24.10.2026: Kartendaten aus Vektorkacheln
+
+Problem: Overpass-Abfragen dauerten 10–40 s oder scheiterten (Messung Münster Mittel: overpass-api.de 406, private.coffee 429, mail.ru 504 bzw. 25 s für 3,2 MB).
+
+- Neu `src/map/tiles.js`: Vektorkacheln von OpenFreeMap (Zoom 14, OpenMapTiles-Schema, CDN, ohne Schlüssel) laden und in dasselbe Format wie eine Overpass-Antwort umsetzen – Rasterung, Orte, Namen und Protokoll bleiben unverändert. Straßennamen kommen aus `transportation_name` und werden über gemeinsame Stützpunkte den Straßenstücken zugeordnet. Decoder: `pbf` + `@mapbox/vector-tile`, gebündelt in `vendor/vector-tile.js`.
+- Münster: Laden 80–350 ms statt 25 s; Mittel 98 Orte wie zuvor, Straßennamen und Wahrzeichen vorhanden.
+- Overpass bleibt als Ausweg, wenn Kacheln nicht erreichbar sind; Abfrage jetzt mit `out geom(bbox)`. Kacheldaten landen nicht in `localStorage` (bis zu 4–5 MB), das erledigt der Browser-Cache.
+- Bekannte Unterschiede zu Overpass: Parkplätze und `place=square` fehlen in den Kacheln als Flächen; Gebäude sind zu Blöcken zusammengefasst (fürs Raster egal).
+
 ## Offene Punkte
 
 - Revanche im selben Raum (derzeit: neues Spiel)

@@ -69,7 +69,7 @@ export function createScreen(root, { onDone, onBack }) {
           </div>
           <p class="status small muted"></p>
           <div class="shares"></div>
-          <p class="attribution map-only">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende (ODbL)</p>
+          <p class="attribution map-only"><a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · © <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> · © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende (ODbL)</p>
         </div>
       </div>
 
