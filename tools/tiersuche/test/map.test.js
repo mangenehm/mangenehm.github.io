@@ -61,7 +61,7 @@ test('Projektion: Mittelpunkt liegt in der Brettmitte, Norden oben', () => {
   const [xE] = pr.project(52.5, pr.bbox.east);
   assert.ok(Math.abs(yN) < 1e-6);
   assert.ok(Math.abs(xE - 10) < 1e-6);
-  assert.match(buildQuery(pr.bbox), /out geom;/);
+  assert.match(buildQuery(pr.bbox), /out geom\(/);
   const moved = shiftCenter({ lat: 52.5, lon: 13.4 }, 30, 0);
   assert.ok(Math.abs(makeProjection({ lat: 52.5, lon: 13.4 }, 10, 30).project(moved.lat, moved.lon)[0] - 6) < 1e-6);
 });
@@ -233,7 +233,7 @@ test('fetchOsm: hängender Server blockiert nicht, nächster wird parallel gefra
   const data = await fetchOsm(freshBbox(), {
     endpoints: ['https://a/x', 'https://b/x', 'https://c/x'],
     fetchImpl: fakeFetch({ 'https://a/x': 'hang', 'https://b/x': 'hang', 'https://c/x': 5 }, calls),
-    staggerMs: 20, timeoutMs: 1000, onProgress: p => seen.push(p.attempt),
+    staggerMs: 20, timeoutMs: 1000, onProgress: p => seen.push(p.attempt), tiles: false,
   });
   assert.equal(data.elements[0].from, 'https://c/x');
   assert.deepEqual(seen, [1, 2, 3]);
@@ -245,7 +245,7 @@ test('fetchOsm: Fehler führt sofort zum nächsten Server', async () => {
   const data = await fetchOsm(freshBbox(), {
     endpoints: ['https://a/x', 'https://b/x'],
     fetchImpl: fakeFetch({ 'https://a/x': 'status406', 'https://b/x': 1 }, calls),
-    staggerMs: 5000, timeoutMs: 5000,
+    staggerMs: 5000, timeoutMs: 5000, tiles: false,
   });
   assert.equal(data.elements[0].from, 'https://b/x');
   assert.ok(Date.now() - t0 < 1000);
@@ -255,7 +255,7 @@ test('fetchOsm: alle scheitern → Fehler mit Gründen, Zeitlimit greift', async
   await assert.rejects(fetchOsm(freshBbox(), {
     endpoints: ['https://a/x', 'https://b/x'],
     fetchImpl: fakeFetch({ 'https://a/x': 'status406', 'https://b/x': 'hang' }, []),
-    staggerMs: 10, timeoutMs: 50, retryDelayMs: 10,
+    staggerMs: 10, timeoutMs: 50, retryDelayMs: 10, tiles: false,
   }), /a: HTTP 406; b: keine Antwort/);
 });
 
@@ -263,7 +263,7 @@ test('fetchOsm: Abbruch durch Aufrufer liefert AbortError', async () => {
   const ctrl = new AbortController();
   const p = fetchOsm(freshBbox(), {
     signal: ctrl.signal, endpoints: ['https://a/x'],
-    fetchImpl: fakeFetch({ 'https://a/x': 'hang' }, []), timeoutMs: 5000,
+    fetchImpl: fakeFetch({ 'https://a/x': 'hang' }, []), timeoutMs: 5000, tiles: false,
   });
   ctrl.abort();
   await assert.rejects(p, { name: 'AbortError' });
@@ -274,14 +274,14 @@ test('fetchOsm: Überlastung → zweite Runde, dauerhafte Fehler → keine', asy
   const flaky = (url, init) => fakeFetch({ 'https://a/x': n++ === 0 ? 'status429' : 1 }, [])(url, init);
   const rounds = [];
   const data = await fetchOsm(freshBbox(), {
-    endpoints: ['https://a/x'], fetchImpl: flaky, retryDelayMs: 10, onProgress: p => rounds.push(p.round),
+    endpoints: ['https://a/x'], fetchImpl: flaky, retryDelayMs: 10, onProgress: p => rounds.push(p.round), tiles: false,
   });
   assert.equal(data.elements[0].from, 'https://a/x');
   assert.deepEqual(rounds, [1, 2]);
 
   const calls = [];
   await assert.rejects(fetchOsm(freshBbox(), {
-    endpoints: ['https://a/x'], fetchImpl: fakeFetch({ 'https://a/x': 'status406' }, calls), retryDelayMs: 10,
+    endpoints: ['https://a/x'], fetchImpl: fakeFetch({ 'https://a/x': 'status406' }, calls), retryDelayMs: 10, tiles: false,
   }), /HTTP 406/);
   assert.equal(calls.length, 1);
 });

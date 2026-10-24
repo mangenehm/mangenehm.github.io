@@ -78,7 +78,7 @@ export function playScreen(root, { game, onShoot }) {
           <div class="animal-list own-list"></div>
         </div>
       </div>
-      <p class="attribution">${game.board.source === 'osm' ? '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende (ODbL)' : ''}</p>
+      <p class="attribution">${game.board.source === 'osm' ? '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · © <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> · © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende (ODbL)' : ''}</p>
     </section>`);
   root.appendChild(node);
 

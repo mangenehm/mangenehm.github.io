@@ -1,6 +1,7 @@
 /*
  * OSM-Daten für den Brettausschnitt laden und in kompakte Features
  * in Zellkoordinaten umwandeln (0 … size, y nach unten).
+ * Erst aus Vektorkacheln (tiles.js, schnell), bei Problemen per Overpass-Abfrage.
  *
  * Feature: { c: Geländeklasse, k: 'a' (Fläche) | 'l' (Linie), w?: Linienbreite in Zellen,
  *            p: [[x0, y0, x1, y1, …], …] }   – Ringe (Fläche, evenodd) bzw. Linienzüge
@@ -11,7 +12,9 @@ const ENDPOINTS = [
   'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
 ];
-const CACHE_PREFIX = 'tierversteck:osm2:';
+import { fetchTiles } from './tiles.js';
+
+const CACHE_PREFIX = 'tierversteck:osm3:';
 const M_PER_DEG = 111320;
 
 /** Projektion um einen Mittelpunkt; Brett ist size × size Zellen à cellMeters. */
@@ -36,6 +39,7 @@ export function buildQuery(bbox) {
   const pad = (bbox.north - bbox.south) * 0.05;
   const b = [bbox.south - pad, bbox.west - pad, bbox.north + pad, bbox.east + pad].map(v => v.toFixed(6)).join(',');
   const re = group => `"^(${Object.keys(POI[group]).join('|')})$"`;
+  // out geom(bbox): Geometrie riesiger Relationen (Wälder, Stadtteile) nur im Ausschnitt – sonst Abbruch/504
   return `[out:json][timeout:25][maxsize:67108864];
 (
   way["building"](${b});
@@ -53,7 +57,7 @@ export function buildQuery(bbox) {
   way["place"="square"](${b});
   way["water"](${b});
 );
-out geom;
+out geom(${b});
 (
   nwr["amenity"~${re('amenity')}](${b});
   nwr["shop"~${re('shop')}](${b});
@@ -312,20 +316,30 @@ function cacheKey(bbox) {
 }
 
 /**
- * Lädt die OSM-Daten (mit Cache in localStorage und Ausweich-Endpunkten).
- * Antwortet ein Server nicht binnen staggerMs, wird parallel der nächste gefragt;
+ * Lädt die OSM-Daten: Overpass-Cache in localStorage, dann Vektorkacheln, zuletzt Overpass mit Ausweich-Endpunkten.
+ * Overpass: Antwortet ein Server nicht binnen staggerMs, wird parallel der nächste gefragt;
  * die erste brauchbare Antwort gewinnt. Jede Anfrage bricht nach timeoutMs ab.
  * onProgress({ attempt, total, host }) meldet jeden gestarteten Versuch.
  */
 export async function fetchOsm(bbox, {
   signal, onProgress, fetchImpl = (...a) => fetch(...a),
-  endpoints = ENDPOINTS, staggerMs = 6000, timeoutMs = 45000, retryDelayMs = 4000,
+  endpoints = ENDPOINTS, staggerMs = 6000, timeoutMs = 45000, retryDelayMs = 4000, tiles = true,
 } = {}) {
   const key = cacheKey(bbox);
   try {
     const cached = localStorage.getItem(key);
     if (cached) return JSON.parse(cached);
   } catch { /* Speicher nicht verfügbar */ }
+
+  if (tiles) {
+    try {
+      // nicht in localStorage: Kacheln hält der Browser-Cache, und die Daten sprengen schnell die 5 MB
+      return await fetchTiles(bbox, { signal, fetchImpl });
+    } catch (err) {
+      if (signal?.aborted) throw err;
+      console.warn('Kacheln nicht verfügbar, frage Overpass:', err.message);
+    }
+  }
 
   const body = 'data=' + encodeURIComponent(buildQuery(bbox));
   const opts = { signal, fetchImpl, staggerMs, timeoutMs };

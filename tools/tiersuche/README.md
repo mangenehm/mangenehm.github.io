@@ -43,7 +43,8 @@ tools/tiersuche/
 │  │  └─ game.js     Zustandsmaschine (Lobby → Verstecken → Spiel → Ende)
 │  ├─ map/
 │  │  ├─ geocode.js  Adresse → Koordinaten (Nominatim, nur beim Absenden, ≤ 1/s)
-│  │  ├─ overpass.js OSM-Daten + Wahrzeichen laden (Ausweich-Endpunkte, Cache), in Brettkoordinaten umrechnen
+│  │  ├─ tiles.js    OSM-Daten aus Vektorkacheln (OpenFreeMap, schnell) im Overpass-Format
+│  │  ├─ overpass.js OSM-Daten + Wahrzeichen laden (Kacheln, sonst Overpass mit Ausweich-Endpunkten), in Brettkoordinaten umrechnen
 │  │  ├─ classify.js Features rastern: Flächenklasse und Trennlinien (Straßen, Bahn, Flüsse) je Pixel
 │  │  ├─ regions.js  Raster → Orte: Blöcke zwischen den Straßen, Krümel verschmelzen, Riesen teilen,
 │  │  │              Nachbarn, Gelände, Umrisse, Namen („Häuser an der Lindenstraße“); Fantasie-Gegend
@@ -95,4 +96,4 @@ Die Tier-Sticker werden auf die Bounding Box der Grundform gelegt, mit der Form-
 
 ## Lizenzen
 
-Kartendaten © OpenStreetMap-Mitwirkende (ODbL). Gebündelte Bibliotheken siehe `vendor/README.md`.
+Kartendaten © OpenStreetMap-Mitwirkende (ODbL), Vektorkacheln von OpenFreeMap (© OpenMapTiles). Gebündelte Bibliotheken siehe `vendor/README.md`.
