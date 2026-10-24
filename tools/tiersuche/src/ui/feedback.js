@@ -91,7 +91,7 @@ function pic(key, emoji) {
  * @param {'miss'|'tracks'|'hit'|'found'|'ouch'|'place'|'aim'} kind   aim: pulsierender Ring
  * @param {number} size        Grundgröße in CSS-Pixeln
  */
-export function burst(frame, x, y, kind, { animal = null, size = 60 } = {}) {
+export function burst(frame, x, y, kind, { animal = null, fav = false, size = 60 } = {}) {
   const fx = document.createElement('div');
   fx.className = `fx fx-${kind}`;
   fx.setAttribute('aria-hidden', 'true');
@@ -101,7 +101,7 @@ export function burst(frame, x, y, kind, { animal = null, size = 60 } = {}) {
   if (kind === 'miss') fx.innerHTML = pic('miss', '💨');
   else if (kind === 'tracks') fx.innerHTML = `${pic('miss', '💨')}<b class="fx-steps"><i>👣</i><i>👣</i><i>👣</i></b>`;
   else if (kind === 'hit' || kind === 'ouch') fx.innerHTML = pic('hit', '🐾');
-  else if (kind === 'place') fx.innerHTML = '<span class="emoji">✨</span>';
+  else if (kind === 'place') fx.innerHTML = fav ? '<span class="emoji">✨</span>' : pic(animal, ANIMALS[animal].emoji);   // ✨ nur im Lieblingsgelände
   else if (kind === 'found') {
     fx.innerHTML = `<span class="fx-star">${pic(animal, ANIMALS[animal].emoji)}</span>` +
       Array.from({ length: 14 }, (_, i) => `<i class="confetti" style="--a:${i * 360 / 14}deg;--c:${['#ef6f53', '#e9b949', '#4f9a5a', '#1f7a7a', '#b77a4a'][i % 5]}"></i>`).join('');

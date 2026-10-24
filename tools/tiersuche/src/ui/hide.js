@@ -110,8 +110,9 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
       // fertig → kurzer Jubel (✨ im Lieblingsgelände), dann nächstes offenes Tier auswählen
       if (complete(selected) && !problemOf(selected)) {
         sound('place');
-        if (isInFavorite(board, pl[selected])) setTimeout(() => sound('sparkle'), 150);
-        view.fx(r, 'place');
+        const fav = isInFavorite(board, pl[selected]);
+        if (fav) setTimeout(() => sound('sparkle'), 150);
+        view.fx(r, 'place', { animal: selected, fav });
         selected = ORDER.find(id => !complete(id)) || selected;
       } else sound(complete(selected) ? 'nope' : 'tap');
     } else return;
@@ -145,7 +146,7 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
       .map(id => `${ANIMALS[id].name} ${problemOf(id) === 'size' ? `braucht noch ${ANIMALS[id].size - pl[id].regions.length} Ort(e)` : PROBLEM_TEXT[problemOf(id)]}`);
     $(node, '.problems').textContent = probs.join(' · ');
     $(node, '.fav-info').innerHTML = fav
-      ? `${headHtml(selected)} <b>${esc(ANIMALS[selected].name)}</b> mag ${esc(fav.map(t => TERRAIN_INFO[t].label).join(', '))} ✨ – passende Orte sind hervorgehoben.`
+      ? `${headHtml(selected)} <b>${esc(ANIMALS[selected].name)}</b> mag ${esc(fav.map(t => TERRAIN_INFO[t].label).join(', '))} ✨ – passende Orte sind gestrichelt umrandet. Verstecken kannst du es überall.`
       : '';
     const all = placements();
     $(node, '[data-act=done]').disabled = all.length !== ANIMAL_IDS.length || !!validateFleet(board, all);
