@@ -17,7 +17,7 @@ import { simplify } from './overpass.js';
 
 const ZONE_OF_CLASS = [0, 0, 1, 2, 2, 3];   // other, building → bebaut; water; forest, green → grün; plaza
 const MIN_SHARE = 0.22;     // kleiner als 22 % der Zielgröße → verschmelzen
-const MAX_SHARE = 2.1;      // größer als 210 % → teilen
+const MAX_SHARE = 1.6;      // größer als 160 % → teilen
 const MIN_CONTACT = 3;      // so viele Pixel gemeinsame Grenze machen zwei Orte zu Nachbarn
 
 // ---------- Grundbausteine ----------
@@ -487,7 +487,7 @@ export function buildBoard({ cls, barrier, n, targetCount, features = [], pois =
 // ---------- Zufallsbrett ----------
 
 /** Zufallsbrett ohne Karte: verzerrte Voronoi-Zellen mit Geländeflecken. */
-export function randomBoard(rng = Math.random, { n = 160, targetCount = 36 } = {}) {
+export function randomBoard(rng = Math.random, { n = 192, targetCount = 85 } = {}) {
   const side = Math.round(Math.sqrt(targetCount));
   const seeds = [];
   for (let gy = 0; gy < side; gy++) for (let gx = 0; gx < side; gx++) {
@@ -515,8 +515,10 @@ export function randomBoard(rng = Math.random, { n = 160, targetCount = 36 } = {
   // Geländeflecken über den Nachbarschaftsgraphen wachsen lassen
   regions.forEach(r => { r.t = 'house'; });
   const free = () => regions.map((r, i) => i).filter(i => regions[i].t === 'house');
+  // Fleckenzahl wächst mit der Ortsanzahl (ausgelegt auf 36 Orte)
+  const per = Math.max(1, regions.length / 36);
   for (const [t, blobs, len] of [['forest', 2, 4], ['green', 3, 3], ['plaza', 3, 2], ['water', 1, 2]]) {
-    for (let b = 0; b < blobs; b++) {
+    for (let b = 0; b < Math.round(blobs * per); b++) {
       const f = free();
       if (!f.length) break;
       let cur = f[Math.floor(rng() * f.length)];

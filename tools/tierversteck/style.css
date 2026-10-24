@@ -143,7 +143,16 @@ input[type=text]:focus, select:focus { border-color: var(--teal); outline: none;
 
 /* ---------- Brett ---------- */
 .board-wrap { width: 100%; margin: 0 auto; }
+.board-frame { position: relative; margin: 0 auto; }
 .board-canvas { display: block; margin: 0 auto; border-radius: 12px; user-select: none; -webkit-user-select: none; }
+.zoom-ctl { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 6px; }
+.zoom-ctl button {
+  width: 36px; height: 36px; padding: 0; border: 1px solid rgba(19, 41, 61, .18); border-radius: 10px;
+  background: rgba(255, 253, 248, .86); color: var(--ink, #13293d); font-size: 1.15rem; line-height: 1; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(60, 40, 20, .18);
+}
+.zoom-ctl button:disabled { opacity: .35; cursor: default; }
+.zoom-ctl button[hidden] { display: none; }
 
 /* ---------- Verstecken ---------- */
 .tray { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px 0 12px; }

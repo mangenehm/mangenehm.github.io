@@ -13,19 +13,19 @@ export const TERRAIN_INFO = {
 // Reihenfolge = Reihenfolge in Listen, Legende und Hash-Kodierung
 export const ANIMALS = {
   snake: {
-    id: 'snake', name: 'Schlange', emoji: '🐍', color: '#7bbf4a', size: 2,
+    id: 'snake', name: 'Schlange', emoji: '🐍', color: '#7bbf4a', size: 3,
     favorite: ['forest'], favoriteLabel: 'Wald',
   },
   horse: {
-    id: 'horse', name: 'Pferd', emoji: '🐴', color: '#b77a4a', size: 3,
+    id: 'horse', name: 'Pferd', emoji: '🐴', color: '#b77a4a', size: 4,
     favorite: ['green'], favoriteLabel: 'Wiese, Park',
   },
   dog: {
-    id: 'dog', name: 'Hund', emoji: '🐶', color: '#e0a940', size: 2,
+    id: 'dog', name: 'Hund', emoji: '🐶', color: '#e0a940', size: 3,
     favorite: ['plaza'], favoriteLabel: 'Platz, Hof',
   },
   cat: {
-    id: 'cat', name: 'Katze', emoji: '🐱', color: '#e9785a', size: 1,
+    id: 'cat', name: 'Katze', emoji: '🐱', color: '#e9785a', size: 2,
     favorite: ['house'], favoriteLabel: 'Häuser',
   },
   mouse: {

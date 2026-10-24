@@ -34,8 +34,17 @@ Problem: Das Quadratraster mit Mehrheitsentscheid je Zelle machte die Gegend unk
 - Zufallsgelände → „Fantasie-Gegend“ aus verzerrten Voronoi-Orten.
 - Geprüft mit Münster (Prinzipalmarkt): 44 Orte, Straßenzüge, Domplatz und Wahrzeichen gut wiederzuerkennen.
 
+## 24.10.2026: Mehr Orte + Zoom
+
+Problem: Mit 30–48 Orten und 9 belegten waren die Tiere auf großen Karten zu schnell gefunden; kleinere Orte wären auf dem Handy fummelig.
+
+- Zielanzahl Klein/Mittel/Groß ≈ 55/85/110 Orte, große Blöcke werden früher geteilt (`MAX_SHARE` 1,6), höchstens 200 Orte je Brett.
+- Tiere größer: Schlange 3, Pferd 4, Hund 3, Katze 2, Maus 1 = 13 Orte (≈ 15 % bei 85). Protokoll-Version 3.
+- Zoom im Brett (`src/ui/zoom.js` + BoardView): ＋/−/Übersicht, Pinch, Mausrad, gezoomt verschieben; Tipp vs. Ziehen mit 8 px Schwelle; Auto-Lupe, wenn ein Ort im Mittel unter 34 px liegt. Kartenbild wird während der Geste nur skaliert und danach scharf neu gezeichnet. Nummern erst ab ≈ 40 px Ortsgröße.
+- Nach dem Suchen und nach „Zufall“ springt das Brett zurück zur Übersicht. Vorschau beim Erstellen und Endbildschirm bleiben ohne Zoom.
+- Geprüft: Münster Mittel → 98 Orte, Auto-Lupe/Verschieben/Wählen in 390 px Breite; komplette Hot-Seat-Partie (73 Suchen je Seite, 16–18 % Treffer); Mausrad am Desktop.
+
 ## Offene Punkte
 
 - Online-Revanche im selben Raum (derzeit: neues Spiel)
-- Playtest: Maus auf 12×12 ggf. zu schwer
 - WebRTC hinter strikten Firewalls: nur Fehlermeldung, kein TURN-Server

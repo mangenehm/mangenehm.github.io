@@ -83,7 +83,7 @@ export function createScreen(root, { mode, onDone, onBack }) {
   $(node, '[data-set=area]').value = st.area;
 
   view = new BoardView($(node, '.preview-board'), randomBoard(makeRng(1)), {
-    maxWidth: 460, label: 'Vorschau des Spielbretts', onPointer: onPreviewPointer,
+    maxWidth: 460, label: 'Vorschau des Spielbretts', onPointer: onPreviewPointer, zoomable: false,
   });
 
   // ---------- Ereignisse ----------

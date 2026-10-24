@@ -12,24 +12,25 @@ import { gridBoard } from './helpers.js';
 
 const setT = (b, id, t) => { b.regions[id].t = t; return b; };
 
-test('fünf Tiere auf zusammen 9 Orten', () => {
+test('fünf Tiere auf zusammen 13 Orten', () => {
   assert.equal(Object.keys(ANIMALS).length, 5);
-  assert.equal(TOTAL_REGIONS, 9);
+  assert.equal(TOTAL_REGIONS, 13);
 });
 
+// gridBoard 6 × 6: Id = 6·y + x
 test('Platzierung: Anzahl, Zusammenhang, Überlappung', () => {
   const b = gridBoard();
-  const horse = { animal: 'horse', regions: [0, 1, 2] };
+  const horse = { animal: 'horse', regions: [0, 1, 2, 3] };
   assert.equal(placementProblem(b, horse), null);
-  assert.equal(placementProblem(b, { animal: 'horse', regions: [0, 1] }), 'size');
-  assert.equal(placementProblem(b, { animal: 'horse', regions: [0, 1, 1] }), 'size');
-  assert.equal(placementProblem(b, { animal: 'horse', regions: [0, 1, 99] }), 'size');
-  assert.equal(placementProblem(b, { animal: 'horse', regions: [0, 1, 3] }), 'apart');
-  assert.equal(placementProblem(b, { animal: 'horse', regions: [0, 5, 10] }), 'apart');   // nur diagonal
+  assert.equal(placementProblem(b, { animal: 'horse', regions: [0, 1, 2] }), 'size');
+  assert.equal(placementProblem(b, { animal: 'horse', regions: [0, 1, 2, 2] }), 'size');
+  assert.equal(placementProblem(b, { animal: 'horse', regions: [0, 1, 2, 99] }), 'size');
+  assert.equal(placementProblem(b, { animal: 'horse', regions: [0, 1, 2, 4] }), 'apart');
+  assert.equal(placementProblem(b, { animal: 'horse', regions: [0, 7, 14, 21] }), 'apart');   // nur diagonal
   assert.equal(placementProblem(b, { animal: 'mouse', regions: [2] }, [horse]), 'overlap');
-  assert.equal(placementProblem(b, { animal: 'mouse', regions: [3] }, [horse]), null);       // berühren ist erlaubt
-  assert.ok(isConnected(b, [0, 4, 5, 6]));
-  assert.ok(!isConnected(b, [0, 5]));
+  assert.equal(placementProblem(b, { animal: 'mouse', regions: [4] }, [horse]), null);       // berühren ist erlaubt
+  assert.ok(isConnected(b, [0, 6, 7, 8]));
+  assert.ok(!isConnected(b, [0, 7]));
 });
 
 test('validateFleet erkennt fehlende und doppelte Tiere', () => {
@@ -51,52 +52,55 @@ test('randomFleet liefert gültige Aufstellungen', () => {
 
 test('Lieblingsgelände: mindestens die Hälfte (aufgerundet)', () => {
   const b = gridBoard();
-  const horse = { animal: 'horse', regions: [0, 1, 2] };   // 3 Orte → 2 nötig
+  const horse = { animal: 'horse', regions: [0, 1, 2, 3] };   // 4 Orte → 2 nötig
   setT(b, 0, 'green');
   assert.equal(isInFavorite(b, horse), false);
   setT(b, 2, 'green');
   assert.equal(isInFavorite(b, horse), true);
-  const dog = { animal: 'dog', regions: [4, 5] };          // 2 Orte → 1 nötig
+  const dog = { animal: 'dog', regions: [6, 7, 8] };          // 3 Orte → 2 nötig
+  setT(b, 7, 'plaza');
   assert.equal(isInFavorite(b, dog), false);
-  setT(b, 5, 'plaza');
+  setT(b, 8, 'plaza');
   assert.equal(isInFavorite(b, dog), true);
-  assert.equal(isInFavorite(b, { animal: 'mouse', regions: [15] }), true);
+  assert.equal(isInFavorite(b, { animal: 'mouse', regions: [35] }), true);
   // Wasser ist für kein Tier Lieblingsgelände
   for (const a of Object.values(ANIMALS)) assert.ok(!a.favorite.includes('water'));
 });
 
 test('resolveShot: Daneben, Treffer, Gefunden', () => {
   const b = gridBoard();
-  const fleet = [{ animal: 'horse', regions: [0, 1, 2] }];
+  const fleet = [{ animal: 'horse', regions: [0, 1, 2, 3] }];
   const d = newDefense();
-  assert.equal(resolveShot(b, fleet, d, 15).result, 'miss');
+  assert.equal(resolveShot(b, fleet, d, 35).result, 'miss');
   assert.equal(resolveShot(b, fleet, d, 0).result, 'hit');
   assert.equal(resolveShot(b, fleet, d, 1).result, 'hit');
-  const r = resolveShot(b, fleet, d, 2);
+  assert.equal(resolveShot(b, fleet, d, 2).result, 'hit');
+  const r = resolveShot(b, fleet, d, 3);
   assert.equal(r.result, 'found');
   assert.equal(r.animal, 'horse');
-  assert.deepEqual(r.regions, [0, 1, 2]);
-  assert.throws(() => resolveShot(b, fleet, d, 2));
+  assert.deepEqual(r.regions, [0, 1, 2, 3]);
+  assert.throws(() => resolveShot(b, fleet, d, 3));
   assert.ok(allFound(fleet, d));
 });
 
 test('Spuren: nur bei Daneben, nur neben Tieren außerhalb des Lieblingsgeländes', () => {
   const b = gridBoard();
-  const dog = { animal: 'dog', regions: [0, 1] };       // auf Häusern → hinterlässt Spuren
-  const cat = { animal: 'cat', regions: [15] };         // auf Häusern = Lieblingsgelände → keine Spuren
+  const dog = { animal: 'dog', regions: [0, 1, 2] };    // auf Häusern → hinterlässt Spuren
+  const cat = { animal: 'cat', regions: [34, 35] };     // auf Häusern = Lieblingsgelände → keine Spuren
   const fleet = [dog, cat];
   let d = newDefense();
-  assert.equal(resolveShot(b, fleet, d, 2).tracks, true);    // Nachbar von 1
-  assert.equal(resolveShot(b, fleet, d, 5).tracks, true);    // Nachbar von 1 (unten)
-  assert.equal(resolveShot(b, fleet, d, 14).tracks, false);  // Nachbar der Katze
-  assert.equal(resolveShot(b, fleet, d, 10).tracks, false);  // diagonal zählt nicht
+  assert.equal(resolveShot(b, fleet, d, 3).tracks, true);    // Nachbar von 2
+  assert.equal(resolveShot(b, fleet, d, 8).tracks, true);    // Nachbar von 2 (unten)
+  assert.equal(resolveShot(b, fleet, d, 33).tracks, false);  // Nachbar der Katze
+  assert.equal(resolveShot(b, fleet, d, 9).tracks, false);   // diagonal zählt nicht
   assert.equal(resolveShot(b, fleet, d, 0).tracks, false);   // Treffer: nie Spuren
-  resolveShot(b, fleet, d, 1);                               // Hund gefunden
-  assert.equal(resolveShot(b, fleet, d, 4).tracks, false);   // gefundene Tiere hinterlassen keine Spuren
-  // Hund auf einem Platz → im Lieblingsgelände → unsichtbar
-  setT(b, 1, 'plaza');
+  resolveShot(b, fleet, d, 1);
+  resolveShot(b, fleet, d, 2);                               // Hund gefunden
+  assert.equal(resolveShot(b, fleet, d, 6).tracks, false);   // gefundene Tiere hinterlassen keine Spuren
+  // Hund auf Plätzen → im Lieblingsgelände → unsichtbar
+  setT(setT(b, 1, 'plaza'), 2, 'plaza');
   d = newDefense();
-  assert.equal(resolveShot(b, fleet, d, 2).tracks, false);
+  assert.equal(resolveShot(b, fleet, d, 3).tracks, false);
 });
 
 test('isFleetFound', () => {
@@ -119,7 +123,7 @@ test('Bretter prüfen', () => {
   assert.ok(!isValidBoard({ ...gridBoard(), lines: [{ k: 'lava', w: 1, p: [[0, 0, 1, 1]] }] }));
   assert.equal(regionLabel(6), 'Ort 7');
   assert.equal(dominantTerrain(gridBoard()), 'house');
-  assert.equal(dominantTerrain(setT(setT(setT(setT(gridBoard(), 0, 'green'), 1, 'forest'), 2, 'water'), 3, 'plaza')), null);
+  assert.equal(dominantTerrain(setT(setT(setT(setT(gridBoard(4, 4), 0, 'green'), 1, 'forest'), 2, 'water'), 3, 'plaza')), null);
 });
 
 test('canonicalFleet sortiert Tiere und Orte', () => {

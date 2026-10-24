@@ -9,9 +9,9 @@ export const BOARD_UNITS = 256;
 
 // Ausschnittgrößen: Kantenlänge in Metern und gewünschte Anzahl Orte
 export const AREAS = {
-  s: { meters: 450, regions: 28, label: 'Klein (≈ 450 m)' },
-  m: { meters: 650, regions: 38, label: 'Mittel (≈ 650 m)' },
-  l: { meters: 900, regions: 48, label: 'Groß (≈ 900 m)' },
+  s: { meters: 450, regions: 55, label: 'Klein (≈ 450 m)' },
+  m: { meters: 650, regions: 85, label: 'Mittel (≈ 650 m)' },
+  l: { meters: 900, regions: 110, label: 'Groß (≈ 900 m)' },
 };
 
 // So viel Rand (Anteil der Kantenlänge je Seite) wird mitgeladen, damit sich der Ausschnitt ohne neue Abfrage verschieben lässt

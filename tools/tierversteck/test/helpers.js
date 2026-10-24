@@ -1,7 +1,7 @@
 /* Testhilfen */
 
 /** w × h Orte als Quadrate; Nachbarn links/rechts/oben/unten. Id = y·w + x. */
-export function gridBoard(w = 4, h = 4, t = 'house') {
+export function gridBoard(w = 6, h = 6, t = 'house') {
   const regions = [], adj = [];
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     regions.push({ t, n: `Block ${x},${y}`, c: [x * 10 + 5, y * 10 + 5], p: [[x * 10, y * 10, x * 10 + 10, y * 10, x * 10 + 10, y * 10 + 10, x * 10, y * 10 + 10]] });
