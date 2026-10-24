@@ -39,7 +39,7 @@ export function lobbyScreen(root, { roomId, status = 'connecting', onCancel }) {
         </div>
         ${navigator.share ? '<button class="btn teal block" data-act="share">Teilen …</button>' : ''}
         <div class="qr"><canvas aria-label="QR-Code mit dem Einladungslink"></canvas></div>
-        <p class="room-code small muted">Raum-Code: <b>${esc(roomId)}</b></p>
+        <p class="room-code muted">Raum-Code <b>${esc(roomId.toUpperCase())}</b></p>
         <p class="lobby-status"></p>
       </div>
       <button class="btn secondary block" data-act="cancel">Abbrechen</button>
@@ -70,7 +70,7 @@ export function joinScreen(root, { roomId, name = '', onJoin, onCancel }) {
     <section class="screen join">
       <div class="card">
         <h2>Spiel beitreten</h2>
-        <p class="muted small">Raum <b>${esc(roomId)}</b></p>
+        <p class="muted small">Raum <b>${esc(roomId.toUpperCase())}</b></p>
         <form autocomplete="off">
           <label class="field"><span>Dein Name</span><input type="text" name="name" maxlength="20" value="${esc(name)}" placeholder="Bo" required></label>
           <button class="btn block" type="submit">Beitreten</button>

@@ -61,6 +61,10 @@ Problem: Suchen brauchte zwei Schritte (Ort wählen, dann bestätigen); das Erge
 - Sprachausgabe wieder entfernt – nur noch Geräusche.
 - Modus „Zu zweit an einem Gerät“ entfernt (Hot-Seat-Ablauf, Sichtschutz, Revanche). `local.js` bleibt als Transport für die Tests.
 
+## 24.10.2026: Kurzer Raum-Code
+
+- Raum-Code 4 statt 10 Zeichen (Alphabet ohne l/o/0/1, ≈ 1 Mio. Codes), in der Lobby groß und in Großbuchstaben. Beitreten ignoriert Groß/Klein. Spieler-IDs bleiben 16 Zeichen.
+
 ## Offene Punkte
 
 - Revanche im selben Raum (derzeit: neues Spiel)

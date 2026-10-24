@@ -246,6 +246,7 @@ input[type=text]:focus, select:focus { border-color: var(--teal); outline: none;
 .qr { display: flex; justify-content: center; margin: 14px 0 6px; }
 .qr canvas { width: 200px; height: 200px; border-radius: 14px; box-shadow: var(--shadow); image-rendering: pixelated; }
 .room-code { text-align: center; }
+.room-code b { display: block; font-size: 2.2rem; letter-spacing: .25em; color: var(--ink); }
 .lobby-status { text-align: center; font-weight: 600; }
 .lobby-status.error { color: var(--coral-dark); }
 .lobby .btn.teal { margin-top: 10px; }
