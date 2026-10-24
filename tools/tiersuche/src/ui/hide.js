@@ -17,6 +17,9 @@ const PROBLEM_TEXT = {
   overlap: 'teilt einen Ort mit einem anderen Tier',
 };
 
+// Verstecken vom größten zum kleinsten Tier (ANIMAL_IDS bleibt für die Kodierung unverändert)
+const ORDER = [...ANIMAL_IDS].sort((a, b) => ANIMALS[b].size - ANIMALS[a].size);
+
 /** Ortsbeschreibung für Hinweiszeilen: „Ort 12 · Häuser an der Lindenstraße (Häuser)“ */
 export function regionText(board, r) {
   const reg = board.regions[r];
@@ -35,7 +38,7 @@ export function regionText(board, r) {
 export function hideScreen(root, { board, title, draft = [], onDone, onDraft = () => {} }) {
   const pl = Object.fromEntries(ANIMAL_IDS.map(id => [id, null]));
   for (const p of draft) if (ANIMAL_IDS.includes(p?.animal) && Array.isArray(p.regions)) pl[p.animal] = { animal: p.animal, regions: [...p.regions] };
-  let selected = ANIMAL_IDS.find(id => !complete(id)) || null;
+  let selected = ORDER.find(id => !complete(id)) || null;
   let info = '';
 
   const node = el(`
@@ -45,6 +48,7 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
         <p class="muted small hint">Tier auswählen und zusammenhängende Orte antippen. Nochmal tippen nimmt den Ort weg. Mit ＋/− oder zwei Fingern zoomen.
           Im Lieblingsgelände ✨ hinterlässt ein Tier keine Spuren 👣.</p>
         <div class="tray"></div>
+        <p class="fav-info small" aria-live="polite"></p>
         <div class="board-wrap"></div>
         <p class="region-info small muted" aria-live="polite"></p>
         <div class="tools">
@@ -108,7 +112,7 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
         sound('place');
         if (isInFavorite(board, pl[selected])) setTimeout(() => sound('sparkle'), 150);
         view.fx(r, 'place');
-        selected = ANIMAL_IDS.find(id => !complete(id)) || selected;
+        selected = ORDER.find(id => !complete(id)) || selected;
       } else sound(complete(selected) ? 'nope' : 'tap');
     } else return;
     changed();
@@ -126,7 +130,9 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
   }
 
   function draw() {
+    const fav = selected && ANIMALS[selected].favorite;
     view.set({
+      favs: fav ? { color: ANIMALS[selected].color, regions: board.regions.flatMap((reg, r) => fav.includes(reg.t) && !owner(r) ? [r] : []) } : null,
       marks: candidates(),
       animals: ANIMAL_IDS.filter(id => pl[id]).map(id => ({
         p: pl[id],
@@ -138,13 +144,16 @@ export function hideScreen(root, { board, title, draft = [], onDone, onDraft = (
     const probs = ANIMAL_IDS.filter(id => pl[id] && problemOf(id))
       .map(id => `${ANIMALS[id].name} ${problemOf(id) === 'size' ? `braucht noch ${ANIMALS[id].size - pl[id].regions.length} Ort(e)` : PROBLEM_TEXT[problemOf(id)]}`);
     $(node, '.problems').textContent = probs.join(' · ');
+    $(node, '.fav-info').innerHTML = fav
+      ? `${headHtml(selected)} <b>${esc(ANIMALS[selected].name)}</b> mag ${esc(fav.map(t => TERRAIN_INFO[t].label).join(', '))} ✨ – passende Orte sind hervorgehoben.`
+      : '';
     const all = placements();
     $(node, '[data-act=done]').disabled = all.length !== ANIMAL_IDS.length || !!validateFleet(board, all);
     $(node, '[data-act=remove]').disabled = !(selected && pl[selected]);
   }
 
   function renderTray() {
-    $(node, '.tray').innerHTML = ANIMAL_IDS.map(id => {
+    $(node, '.tray').innerHTML = ORDER.map(id => {
       const a = ANIMALS[id];
       const p = pl[id];
       const ok = complete(id) && !problemOf(id);

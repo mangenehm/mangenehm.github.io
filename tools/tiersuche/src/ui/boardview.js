@@ -46,6 +46,7 @@ export class BoardView {
     this.layers = {
       animals: [],     // [{ p, glow, invalid, ghost, selected, dim }]
       shots: [],       // [{ r, result, tracks }]
+      favs: null,      // { regions: [r], color } Lieblingsgelände des ausgewählten Tiers
       marks: [],       // [r] dezent hervorgehoben (z. B. mögliche Nachbarn)
       aim: null,       // r mit Fadenkreuz
       last: null,      // r zuletzt abgesucht
@@ -157,6 +158,14 @@ export class BoardView {
     ctx.setTransform(dpr, 0, 0, dpr, -v.tx * dpr, -v.ty * dpr);
     const u = this.unit;
 
+    if (L.favs) {
+      // alles außerhalb des Lieblingsgeländes (und ohne Tier) verblasst, das Lieblingsgelände bekommt einen Rand
+      const fav = new Set(L.favs.regions), taken = new Set(L.animals.flatMap(a => a.p.regions));
+      for (let r = 0; r < this.paths.length; r++) {
+        if (fav.has(r)) this.#region(r, { stroke: L.favs.color, width: 2.5 });
+        else if (!taken.has(r)) this.#region(r, { fill: 'rgba(244, 239, 230, .6)' });
+      }
+    }
     for (const r of L.marks) this.#region(r, { fill: 'rgba(255, 255, 255, .45)', stroke: 'rgba(19, 41, 61, .35)', width: 1.5, dash: [4, 3] });
 
     // Orte der Tiere einfärben

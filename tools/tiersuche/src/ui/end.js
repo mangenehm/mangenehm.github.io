@@ -1,4 +1,4 @@
-/* Endbildschirm: Sieger, beide Reviere aufgedeckt, Fairness-Prüfung. */
+/* Endbildschirm: Sieger, beide Reviere aufgedeckt. */
 
 import { BoardView } from './boardview.js';
 import { el, $, esc } from './dom.js';
@@ -23,7 +23,6 @@ export function endScreen(root, { game, onNew }) {
       <div class="card end-head">
         <div class="trophy" aria-hidden="true">🏆</div>
         <h2>${esc(winnerName)} gewinnt!</h2>
-        <p class="verdict small"></p>
         <div class="row-btns">
           <button class="btn" data-act="new">Neues Spiel</button>
         </div>
@@ -52,10 +51,6 @@ export function endScreen(root, { game, onNew }) {
         : foundPlacements(s.outgoing).map(p => ({ p })),
       shots: s.outgoing,
     });
-    const v = $(node, '.verdict');
-    if (!s.oppReveal || s.verdict?.ok === null || !s.verdict) v.textContent = '⏳ Warte auf die Aufstellung des Gegners zur Prüfung …';
-    else if (s.verdict.ok) v.innerHTML = '✅ Fair gespielt: Die Aufstellung passt zum Commitment und zu allen Antworten.';
-    else v.innerHTML = `<b class="bad">⚠️ Spiel ungültig:</b> ${esc(s.verdict.reason)}`;
   }
   update();
 
