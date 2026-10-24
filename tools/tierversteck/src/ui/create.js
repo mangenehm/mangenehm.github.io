@@ -10,10 +10,10 @@ import { BoardView } from './boardview.js';
 import { regionText } from './hide.js';
 import { el, $, $$, esc, store } from './dom.js';
 
-export function createScreen(root, { mode, onDone, onBack }) {
+export function createScreen(root, { onDone, onBack }) {
   const saved = store('create') || {};
   const st = {
-    names: mode === 'hotseat' ? [saved.name1 || '', saved.name2 || ''] : [saved.name1 || ''],
+    names: [saved.name1 || ''],
     source: saved.source || 'map',
     area: AREAS[saved.area] ? saved.area : 'm',
     place: saved.place || null,          // { lat, lon, label }
@@ -31,9 +31,9 @@ export function createScreen(root, { mode, onDone, onBack }) {
   const node = el(`
     <section class="screen create">
       <div class="card">
-        <h2>${mode === 'hotseat' ? 'Wer spielt?' : 'Dein Name'}</h2>
+        <h2>Dein Name</h2>
         <div class="names">
-          ${st.names.map((n, i) => `<label class="field"><span>${mode === 'hotseat' ? `Spieler ${i + 1}` : 'Name'}</span>
+          ${st.names.map((n, i) => `<label class="field"><span>Name</span>
             <input type="text" maxlength="20" data-name="${i}" value="${esc(n)}" placeholder="${i ? 'Bo' : 'Ada'}"></label>`).join('')}
         </div>
       </div>
@@ -75,7 +75,7 @@ export function createScreen(root, { mode, onDone, onBack }) {
 
       <div class="row-btns">
         <button class="btn secondary" data-act="back">Zurück</button>
-        <button class="btn" data-act="next" disabled>${mode === 'hotseat' ? 'Tiere verstecken' : 'Raum erstellen'}</button>
+        <button class="btn" data-act="next" disabled>Raum erstellen</button>
       </div>
     </section>`);
   root.appendChild(node);
@@ -243,7 +243,7 @@ export function createScreen(root, { mode, onDone, onBack }) {
   function persist() {
     store('create', {
       ...store('create'),
-      name1: st.names[0], ...(mode === 'hotseat' ? { name2: st.names[1] } : {}),
+      name1: st.names[0],
       source: st.source, area: st.area,
       place: st.place && { ...st.place, lat: st.center.lat, lon: st.center.lon },
     });

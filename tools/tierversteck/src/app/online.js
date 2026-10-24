@@ -135,7 +135,7 @@ export async function runOnline(ui, { session, board = null, saved = null, onExi
       screen = ui.show(playScreen, { game, onShoot: r => game.shoot(r) });
     } else if (s.phase === 'over') {
       document.title = 'Tierversteck';
-      screen = ui.show(endScreen, { game, mode: 'online', onNew: leave });
+      screen = ui.show(endScreen, { game, onNew: leave });
     }
   }
 }

@@ -55,7 +55,13 @@ Problem: Suchen brauchte zwei Schritte (Ort wählen, dann bestätigen); das Erge
 - Verstecken: Geräusche beim Antippen, „Plopp“ + ✨ wenn ein Tier fertig ist, Glitzerklang im Lieblingsgelände. Endbildschirm mit Fanfare, Konfetti und Ansage des Siegers.
 - 🔊/🔇 in der Kopfzeile (gespeichert in `localStorage`). `prefers-reduced-motion` zeigt die Symbole ohne Bewegung.
 
+## 24.10.2026: Treffer = nochmal, nur Töne, nur online
+
+- Nach Treffer oder Gefunden sucht man gleich nochmal, nach Daneben wechselt der Zug (wie Schiffe versenken). Kopfkarte zeigt dann 👆 Nochmal!, das Brett bleibt gezoomt. Protokoll-Version 4.
+- Sprachausgabe wieder entfernt – nur noch Geräusche.
+- Modus „Zu zweit an einem Gerät“ entfernt (Hot-Seat-Ablauf, Sichtschutz, Revanche). `local.js` bleibt als Transport für die Tests.
+
 ## Offene Punkte
 
-- Online-Revanche im selben Raum (derzeit: neues Spiel)
+- Revanche im selben Raum (derzeit: neues Spiel)
 - WebRTC hinter strikten Firewalls: nur Fehlermeldung, kein TURN-Server

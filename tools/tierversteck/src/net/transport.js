@@ -6,7 +6,7 @@
  *   transport.onStatus(handler)      handler('connecting' | 'connected' | 'lost' | 'error', detail?)
  *   transport.close()
  *
- * Umsetzungen: local.js (Hot-Seat) und trystero.js (online).
+ * Umsetzungen: local.js (Tests) und trystero.js (online).
  */
 
 export class BaseTransport {

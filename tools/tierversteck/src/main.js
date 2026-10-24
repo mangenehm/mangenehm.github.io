@@ -4,7 +4,6 @@ import { loadAssets } from './ui/sprites.js';
 import { startScreen } from './ui/start.js';
 import { createScreen } from './ui/create.js';
 import { joinScreen } from './ui/lobby.js';
-import { runHotseat } from './app/hotseat.js';
 import { runOnline, loadSession, newHostSession, newGuestSession } from './app/online.js';
 import { store } from './ui/dom.js';
 import { soundOn, setSound, sound } from './ui/feedback.js';
@@ -56,13 +55,7 @@ leaveBtn.onclick = () => {
 function home() {
   ui.setConn(null);
   ui.show(startScreen, {
-    onHotseat: () => ui.show(createScreen, {
-      mode: 'hotseat',
-      onBack: home,
-      onDone: ({ names, board }) => runHotseat(ui, { names, board, onExit: home }),
-    }),
     onOnline: () => ui.show(createScreen, {
-      mode: 'online',
       onBack: home,
       onDone: ({ names, board }) => runOnline(ui, { session: newHostSession(names[0]), board, onExit: home }),
     }),

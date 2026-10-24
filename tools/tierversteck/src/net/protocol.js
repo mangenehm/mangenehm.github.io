@@ -16,7 +16,7 @@
 import { isValidBoard, MAX_REGIONS } from '../engine/board.js';
 import { ANIMAL_IDS } from '../engine/shapes.js';
 
-export const PROTOCOL_VERSION = 3;
+export const PROTOCOL_VERSION = 4;
 
 const isInt = (n, lo, hi) => Number.isInteger(n) && n >= lo && n <= hi;
 const isRegion = r => isInt(r, 0, MAX_REGIONS - 1);

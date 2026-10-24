@@ -31,7 +31,7 @@ async function playToEnd(host, guest, rng) {
   }
 }
 
-test('kompletter Hot-Seat-Ablauf über den lokalen Transport', async () => {
+test('kompletter Ablauf über den lokalen Transport', async () => {
   const { host, guest, events } = setup(1);
   host.start(); guest.start();
   await tick();
@@ -59,7 +59,7 @@ test('kompletter Hot-Seat-Ablauf über den lokalen Transport', async () => {
   assert.ok(events.host.some(e => e.type === 'verdict' && e.ok));
 });
 
-test('Zug wechselt immer, Spuren kommen beim Suchenden an', async () => {
+test('Zug wechselt nach Daneben, Treffer gibt einen Zug extra, Spuren kommen beim Suchenden an', async () => {
   const board = gridBoard();
   const { host, guest } = setup(0, board);
   host.start(); guest.start(); await tick();
@@ -85,12 +85,12 @@ test('Zug wechselt immer, Spuren kommen beim Suchenden an', async () => {
   await tick();
   assert.ok(host.myTurn);
 
-  host.shoot(0);                       // Treffer: trotzdem wechselt der Zug
+  host.shoot(0);                       // Treffer: nochmal
   await tick();
   assert.equal(host.s.outgoing[1].result, 'hit');
   assert.equal(host.s.outgoing[1].tracks, false);
-  assert.ok(guest.myTurn);
-  assert.ok(!host.myTurn);
+  assert.ok(host.myTurn);
+  assert.ok(!guest.myTurn);
 });
 
 test('Suchen außer der Reihe werden ignoriert', async () => {
@@ -148,4 +148,29 @@ test('Schummeln wird beim Aufdecken erkannt', async () => {
   assert.equal((await verifyReveal({ board, commit, placements: moved, salt, shots: [] })).ok, false);
   // falsches Salz
   assert.equal((await verifyReveal({ board, commit, placements: fleet, salt: 'x', shots: [] })).ok, false);
+});
+
+test('nach Treffer nochmal, nach Daneben ist der andere dran', async () => {
+  const { host, guest } = setup(7);
+  host.start(); guest.start();
+  await tick();
+  await host.commit(randomFleet(host.board, makeRng(8)));
+  const fleet = randomFleet(guest.board, makeRng(9));
+  await guest.commit(fleet);
+  await tick();
+  const taken = new Set(fleet.flatMap(p => p.regions));
+  const hit = fleet.find(p => p.regions.length > 1).regions[0];
+  const miss = host.board.regions.map((_, r) => r).find(r => !taken.has(r));
+
+  host.shoot(hit);
+  await tick();
+  assert.equal(host.s.outgoing.at(-1).result, 'hit');
+  assert.ok(host.myTurn, 'Treffer: nochmal');
+  assert.equal(guest.s.turn, 'host');
+
+  host.shoot(miss);
+  await tick();
+  assert.equal(host.s.outgoing.at(-1).result, 'miss');
+  assert.ok(!host.myTurn);
+  assert.ok(guest.myTurn);
 });
