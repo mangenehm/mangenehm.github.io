@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Wie nah sind Webseiten inhaltlich verwandt? Ähnlichste Seiten, Duplikate, Themencluster und Heatmap aus Embedding-Daten – lokal im Browser.">
+  <title>Seitenverwandtschaft</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='9' cy='10' r='5' fill='%232a78d6'/%3E%3Ccircle cx='23' cy='9' r='4' fill='%232a78d6' opacity='.6'/%3E%3Ccircle cx='17' cy='23' r='6' fill='%23eb6834'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <h1>Seitenverwandtschaft</h1>
+      <p>Wie nah sind deine Seiten inhaltlich miteinander verwandt?</p>
+      <a class="back" href="../../">← Alle Tools</a>
+    </header>
+
+    <section id="load" class="card">
+      <h2>Embeddings laden</h2>
+      <p class="muted small">CSV mit einer Spalte für die URL (z.&nbsp;B. <code>Address</code>) und einer Spalte mit dem Vektor, etwa <code>[0.012, -0.034, …]</code> oder <code>0.012,-0.034,…</code> – so wie ihn Screaming Frog mit einer Embedding-Extraktion exportiert. Der Vektor darf auch auf viele Zahlenspalten verteilt sein. Die Datei verlässt deinen Rechner nicht.</p>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept=".csv,.tsv,.txt,text/csv">
+        <strong>CSV-Datei auswählen</strong>
+        <span class="muted small">oder hierher ziehen</span>
+      </label>
+      <div class="row">
+        <button class="btn" id="sample">Mit Beispieldaten ausprobieren</button>
+        <a href="#" id="sampleCsv" class="small">Beispiel-CSV herunterladen</a>
+      </div>
+
+      <div id="mapping" hidden>
+        <h3 style="margin-top:16px">Erkannte Spalten</h3>
+        <div class="grid-opts">
+          <label class="field"><span>URL</span><select id="mapUrl"></select></label>
+          <label class="field"><span>Titel (optional)</span><select id="mapTitle"></select></label>
+          <label class="field"><span>Embedding-Vektor</span><select id="mapVec"></select></label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="reparse">Mit dieser Zuordnung neu einlesen</button>
+          <span id="parseInfo" class="muted small"></span>
+        </div>
+      </div>
+
+      <details class="opts" id="opts">
+        <summary>Einstellungen</summary>
+        <div class="grid-opts">
+          <label class="field"><span>Nachbarn je Seite</span><input type="number" id="optK" min="5" max="50" value="20"><small>Wie viele ähnlichste Seiten gespeichert werden</small></label>
+          <label class="field"><span>Paare ab Ähnlichkeit</span><input type="number" id="optThr" min="0.5" max="0.999" step="0.01" value="0.90"><small>Kosinus-Ähnlichkeit, 1 = identisch</small></label>
+          <label class="field"><span>Max. gespeicherte Paare</span><input type="number" id="optMax" min="1000" max="2000000" step="1000" value="200000"><small>Nur die ähnlichsten werden behalten</small></label>
+          <label class="field"><span>Anzahl Cluster</span><input type="number" id="optClusters" min="2" max="200" placeholder="automatisch"><small>Leer = √(Seiten / 2)</small></label>
+          <label class="check"><input type="checkbox" id="optReduce"><span><b>Schnellmodus</b><br><span class="muted">Vektoren beim Einlesen auf 256 Dimensionen verkleinern (Zufallsprojektion). Deutlich schneller und speichersparender bei großen Dateien, Werte werden leicht ungenauer.</span></span></label>
+        </div>
+      </details>
+    </section>
+
+    <section id="progress" class="card progress" hidden aria-live="polite">
+      <div class="row" style="justify-content:space-between">
+        <strong id="progLabel">Lese Datei …</strong>
+        <span id="progPct" class="num muted">0 %</span>
+      </div>
+      <div class="bar"><i id="progBar"></i></div>
+      <div class="row" style="justify-content:space-between">
+        <span id="progSub" class="muted small"></span>
+        <button class="btn" id="cancel">Abbrechen</button>
+      </div>
+    </section>
+    <p id="error" class="error" hidden></p>
+
+    <section id="results" hidden>
+      <div class="stats" id="stats"></div>
+      <div id="notices"></div>
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-view="search" aria-selected="true">Seite</button>
+        <button role="tab" data-view="pairs" aria-selected="false">Paare &amp; Duplikate</button>
+        <button role="tab" data-view="map" aria-selected="false">Cluster &amp; Karte</button>
+        <button role="tab" data-view="heatmap" aria-selected="false">Heatmap</button>
+        <button role="tab" data-view="export" aria-selected="false">Export</button>
+      </nav>
+      <div id="view-search" class="view"></div>
+      <div id="view-pairs" class="view" hidden></div>
+      <div id="view-map" class="view" hidden></div>
+      <div id="view-heatmap" class="view" hidden></div>
+      <div id="view-export" class="view" hidden></div>
+    </section>
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
