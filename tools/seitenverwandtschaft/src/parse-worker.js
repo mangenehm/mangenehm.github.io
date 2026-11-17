@@ -141,7 +141,6 @@ function detectMapping(header, rows) {
 
 async function parseFile(m) {
   const file = m.file;
-  const reduceTo = m.reduceTo | 0;
   let header = null, mapping = m.mapping || null, D = 44;
   const pending = [];
   let ready = false;
@@ -231,56 +230,9 @@ async function parseFile(m) {
   if (!ready) flushPending();
   if (n < 2) throw new Error('Zu wenige gültige Zeilen mit Vektoren gefunden (' + n + ').');
 
-  X = X.subarray(0, n * dim);
-  let outDim = dim;
-  if (reduceTo > 0 && dim > reduceTo) {
-    X = randomProject(X, n, dim, reduceTo);
-    outDim = reduceTo;
-  } else if (X.buffer.byteLength !== n * dim * 4) {
-    X = X.slice();
-  }
+  X = X.slice(0, n * dim);
   self.postMessage(
-    { type: 'done', n, dim: outDim, origDim: dim, X, urls, titles: titles.some(Boolean) ? titles : null, skipped, mapping, header },
+    { type: 'done', n, dim, X, urls, titles: titles.some(Boolean) ? titles : null, skipped, mapping, header },
     [X.buffer]
   );
-}
-
-/* Zufallsprojektion (Gauß) mit anschließender Normierung – erhält Kosinus-Abstände näherungsweise. */
-function randomProject(X, n, d, r) {
-  let seed = 12345;
-  const rnd = () => {
-    seed = (seed + 0x6D2B79F5) >>> 0;
-    let t = seed;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-  const R = new Float32Array(d * r); // Zeile k = Eingabedimension
-  for (let i = 0; i < R.length; i += 2) {
-    const u = Math.max(rnd(), 1e-12), v = rnd();
-    const mag = Math.sqrt(-2 * Math.log(u));
-    R[i] = mag * Math.cos(2 * Math.PI * v);
-    if (i + 1 < R.length) R[i + 1] = mag * Math.sin(2 * Math.PI * v);
-  }
-  const Y = new Float32Array(n * r);
-  const acc = new Float64Array(r);
-  let lastPost = 0;
-  for (let i = 0; i < n; i++) {
-    acc.fill(0);
-    const o = i * d;
-    for (let k = 0; k < d; k++) {
-      const x = X[o + k];
-      if (x === 0) continue;
-      const ro = k * r;
-      for (let c = 0; c < r; c++) acc[c] += x * R[ro + c];
-    }
-    let norm = 0;
-    for (let c = 0; c < r; c++) norm += acc[c] * acc[c];
-    norm = norm > 0 ? 1 / Math.sqrt(norm) : 0;
-    const yo = i * r;
-    for (let c = 0; c < r; c++) Y[yo + c] = acc[c] * norm;
-    const now = Date.now();
-    if (now - lastPost > 200) { lastPost = now; self.postMessage({ type: 'progress', phase: 'reduce', value: (i + 1) / n, rows: n }); }
-  }
-  return Y;
 }

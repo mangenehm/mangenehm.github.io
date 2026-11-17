@@ -55,7 +55,7 @@ export function makeSample(n = 3000, d = 256) {
       put(dv, rnd() < 0.5 ? u + 'druckversion/' : u + '?ref=newsletter', title);
     }
   }
-  return { n, d, X, urls, titles, origDim: d, skipped: { noVector: 0, wrongDim: 0, zero: 0, noUrl: 0 }, name: 'Beispieldaten' };
+  return { n, d, X, urls, titles, sample: true };
 }
 
 export function sampleCsv(ds, rows = 200) {

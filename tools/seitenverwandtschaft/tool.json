@@ -1,8 +1,11 @@
 {
     "name": "Seitenverwandtschaft",
-    "description": "Zeigt anhand von Embeddings (CSV mit URL und Vektor, z. B. aus Screaming Frog), wie nah Webseiten inhaltlich miteinander verwandt sind: ähnlichste Seiten je URL, Duplikat-Paare, Themencluster auf einer Karte und eine Heatmap. Alles läuft lokal im Browser – auch für zehntausende Seiten.",
+    "description": "Zeigt zu einer beliebigen Seite, wie nah alle anderen Seiten inhaltlich verwandt sind – auf Basis von Embeddings aus einer CSV (z. B. Screaming Frog). Neue Texte lassen sich per OpenRouter einbetten und mit den Seiten vergleichen. Rangliste als CSV exportierbar, die Daten bleiben lokal im Browser.",
     "category": "Projekt",
-    "tags": ["SEO", "Embeddings", "Analyse"],
+    "tags": [
+        "SEO",
+        "Embeddings"
+    ],
     "created": "2026-11-16",
-    "lastUpdated": "2026-11-16"
+    "lastUpdated": "2026-11-17"
 }
